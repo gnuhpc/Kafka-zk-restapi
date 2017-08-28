@@ -16,17 +16,21 @@ __Contact__ : gnuhpc
 __Contact Email__ : gnuhpc@gmail.com
 __Github__ : https://github.com/gnuhpc
 
+=== Version Information
+Currently, this rest api only support kafka 0.11 brokers. 0.10.x will be supported later.
 
 === URI scheme
 [%hardbreaks]
-__Host__ : localhost:8081
-__BasePath__ : /api
+__Host__ : localhost:8121
+__BasePath__ : /
+
+You can access Swagger-UI by accessing http://127.0.0.1:8121/api
 
 
-=== Tags
+=== https://raw.githubusercontent.com/gnuhpc/Kafka-zk-restapi/master/docs/paths.adoc[Api List]
 
-* kafka-controller : Kafka Controller
-* zookeeper-controller : Zookeeper Controller
+* kafka-controller : Kafka Api
+* zookeeper-controller : Zookeeper Api
 
-
+=== https://raw.githubusercontent.com/gnuhpc/Kafka-zk-restapi/master/docs/definitions.adoc[Data model Definitions]
 

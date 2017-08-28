@@ -1,0 +1,28 @@
+kafka:
+  brokers: hadoop1:9092,hadoop2:9092,hadoop3:9092
+  offset:
+    topic: "__consumer_offsets"
+
+zookeeper:
+  uris: hadoop1:3181,hadoop2:3181,hadoop3:3181
+
+server:
+  port: 8121
+  context-path: /
+
+spring:
+  kafka:
+    bootstrap-servers: ${kafka.brokers}
+    consumer:
+      group-id: "kafka-zk-rest"
+      exclude.internal.topics: false
+      key-deserializer: org.apache.kafka.common.serialization.ByteBufferDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.ByteBufferDeserializer
+  mvc:
+    throw-exception-if-no-handler-found: true
+  output:
+    ansi:
+      enabled: detect
+  aop:
+    auto: true
+

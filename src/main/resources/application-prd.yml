@@ -1,0 +1,28 @@
+kafka:
+  brokers: KAFKA01:9092,KAFKA02:9092,KAFKA03:9092,KAFKA04:9092,KAFKA05:9092,KAFKA06:9092,KAFKA07:9092,KAFKA08:9092
+  offset:
+    topic: "__consumer_offsets"
+
+zookeeper:
+  uris: KAFKA01:2181,KAFKA02:2181,KAFKA03:2181,KAFKA04:2181,KAFKA05:2181
+
+server:
+  port: 8121
+  context-path: /
+
+spring:
+  kafka:
+    bootstrap-servers: ${kafka.brokers}
+    consumer:
+      group-id: "kafka-zk-rest"
+      exclude.internal.topics: false
+      key-deserializer: org.apache.kafka.common.serialization.ByteBufferDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.ByteBufferDeserializer
+  mvc:
+    throw-exception-if-no-handler-found: true
+  output:
+    ansi:
+      enabled: detect
+  aop:
+    auto: true
+

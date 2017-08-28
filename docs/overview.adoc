@@ -1,0 +1,32 @@
+= Kafka REST API
+
+
+[[_overview]]
+== Overview
+Kafka/ZK REST API to perform some administration/metric monitor task in daily work.
+
+=== Version information
+[%hardbreaks]
+__Version__ : 0.1.0
+
+
+=== Contact information
+[%hardbreaks]
+__Contact__ : gnuhpc
+__Contact Email__ : gnuhpc@gmail.com
+__Github__ : https://github.com/gnuhpc
+
+
+=== URI scheme
+[%hardbreaks]
+__Host__ : localhost:8081
+__BasePath__ : /api
+
+
+=== Tags
+
+* kafka-controller : Kafka Controller
+* zookeeper-controller : Zookeeper Controller
+
+
+

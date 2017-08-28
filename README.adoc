@@ -5,6 +5,51 @@
 == Overview
 Kafka/ZK REST API to perform some administration/metric monitor task in daily work.
 
+// tag::base-t[]
+.Following feature are provided:
+* Broker List
+* Topic create/delete/describe
+* Topic config create/update/delete/list
+* Topic partition add and reassign
+* Consumer group(old zk based/new kafka based) list/describe
+* Offset check/reset
+* Consumer Group Lag check
+// end::base-t[]
+
+
+=== How to build and run
+
+You can build this restapi server using maven.
+
+#git clone https://github.com/gnuhpc/Kafka-zk-restapi.git +
+#cd Kafka-zk-restapi/ +
+#mvn clean package +
+
+You will find zip/tar under directory: Kafka-zk-restapi/target
+
+You can get it running by unzip/untaring the distribution package and run bin/start.sh
+
+
+
+=== Support Kafka Version Information
+Currently, this rest api only support kafka 0.11 brokers. 0.10.x will be supported later.
+
+=== URI scheme
+[%hardbreaks]
+__Host__ : localhost:8121
+__BasePath__ : /
+
+You can access Swagger-UI by accessing http://127.0.0.1:8121/api
+
+
+=== https://github.com/gnuhpc/Kafka-zk-restapi/blob/master/docs/paths.adoc[Api List]
+
+* kafka-controller : Kafka Api
+* zookeeper-controller : Zookeeper Api
+
+=== https://github.com/gnuhpc/Kafka-zk-restapi/blob/master/docs/definitions.adoc[Data model Definitions]
+
+
 === Version information
 [%hardbreaks]
 __Version__ : 0.1.0
@@ -16,21 +61,4 @@ __Contact__ : gnuhpc
 __Contact Email__ : gnuhpc@gmail.com
 __Github__ : https://github.com/gnuhpc
 
-=== Version Information
-Currently, this rest api only support kafka 0.11 brokers. 0.10.x will be supported later.
-
-=== URI scheme
-[%hardbreaks]
-__Host__ : localhost:8121
-__BasePath__ : /
-
-You can access Swagger-UI by accessing http://127.0.0.1:8121/api
-
-
-=== https://raw.githubusercontent.com/gnuhpc/Kafka-zk-restapi/master/docs/paths.adoc[Api List]
-
-* kafka-controller : Kafka Api
-* zookeeper-controller : Zookeeper Api
-
-=== https://raw.githubusercontent.com/gnuhpc/Kafka-zk-restapi/master/docs/definitions.adoc[Data model Definitions]
 

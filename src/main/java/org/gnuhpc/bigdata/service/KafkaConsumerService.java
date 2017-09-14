@@ -8,32 +8,20 @@ import lombok.extern.log4j.Log4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.TopicPartition;
 import org.gnuhpc.bigdata.componet.OffsetStorage;
-import org.gnuhpc.bigdata.config.KafkaConfig;
-import org.gnuhpc.bigdata.model.ConsumerGroupDesc;
-import org.gnuhpc.bigdata.model.TopicMeta;
-import org.gnuhpc.bigdata.model.TopicPartitionInfo;
 import org.gnuhpc.bigdata.service.impl.KafkaAdminService;
-import org.joda.time.LocalDateTime;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.listener.ConsumerSeekAware;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.PostConstruct;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicInteger;
 
 @Log4j
-@Service
 public class KafkaConsumerService implements ConsumerSeekAware {
     @Autowired
     private OffsetStorage offsetStorage;

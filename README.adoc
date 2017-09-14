@@ -17,18 +17,30 @@ Kafka/ZK REST API to perform some administration/metric monitor task in daily wo
 // end::base-t[]
 
 
+=== Installation and run
+You can download the release package at
+https://github.com/gnuhpc/Kafka-zk-restapi/releases
+
+You can get it running by unzip/untaring the distribution package and run bin/start.sh
+
+Java 8 jre/jdk needed.
+
 === How to build and run
 
 You can build this restapi server using maven.
 
 #git clone https://github.com/gnuhpc/Kafka-zk-restapi.git +
 #cd Kafka-zk-restapi/ +
+
+Change the following settings of application-home.yml in src/main/resources to valid value:
+kafka.brokers
+zookeeper.uris
+
 #mvn clean package +
 
 You will find zip/tar under directory: Kafka-zk-restapi/target
 
 You can get it running by unzip/untaring the distribution package and run bin/start.sh
-
 
 
 === Support Kafka Version Information
@@ -42,12 +54,14 @@ __BasePath__ : /
 You can access Swagger-UI by accessing http://127.0.0.1:8121/api
 
 
-=== https://github.com/gnuhpc/Kafka-zk-restapi/blob/master/docs/paths.adoc[Api List]
+=== https://github.com/gnuhpc/Kafka-zk-restapi/blob/master/docs/paths.adoc[API LIST for 0.11]
+=== https://github.com/gnuhpc/Kafka-zk-restapi/blob/0.10.x/docs/paths.adoc[API LIST for 0.10.x]
 
 * kafka-controller : Kafka Api
 * zookeeper-controller : Zookeeper Api
 
-=== https://github.com/gnuhpc/Kafka-zk-restapi/blob/master/docs/definitions.adoc[Data model Definitions]
+=== https://github.com/gnuhpc/Kafka-zk-restapi/blob/master/docs/definitions.adoc[Data Model Definitions]
+=== https://github.com/gnuhpc/Kafka-zk-restapi/blob/0.10.x/docs/definitions.adoc[Data Model Definitions]
 
 
 === Version information

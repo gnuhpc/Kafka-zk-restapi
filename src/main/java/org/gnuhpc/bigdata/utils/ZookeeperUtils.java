@@ -39,7 +39,6 @@ import java.util.regex.Pattern;
 @Log4j
 @Setter
 @Getter
-@Configuration
 public class ZookeeperUtils {
 
     //For Stat Command parse

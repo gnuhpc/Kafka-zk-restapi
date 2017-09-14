@@ -34,12 +34,10 @@ public class TopicDetail {
     private int factor;
     private String name;
     private Properties prop;
-    private String reassignStr;
 
     public TopicDetail() {
         this.partitions = DEFAULT_PARTITION_NUMBER;
         this.factor = DEFAULT_REPLICATION_FACTOR;
         this.prop = new Properties();
-        this.reassignStr="";
     }
 }

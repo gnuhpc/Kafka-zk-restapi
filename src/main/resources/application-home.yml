@@ -2,6 +2,8 @@ kafka:
   brokers: hadoop1:9092,hadoop2:9092,hadoop3:9092
   offset:
     topic: "__consumer_offsets"
+    partitions: 50
+    reset: true
 
 zookeeper:
   uris: hadoop1:3181,hadoop2:3181,hadoop3:3181
@@ -9,15 +11,13 @@ zookeeper:
 server:
   port: 8121
   context-path: /
+  debug: true
 
 spring:
   kafka:
     bootstrap-servers: ${kafka.brokers}
     consumer:
       group-id: "kafka-zk-rest"
-      exclude.internal.topics: false
-      key-deserializer: org.apache.kafka.common.serialization.ByteBufferDeserializer
-      value-deserializer: org.apache.kafka.common.serialization.ByteBufferDeserializer
   mvc:
     throw-exception-if-no-handler-found: true
   output:

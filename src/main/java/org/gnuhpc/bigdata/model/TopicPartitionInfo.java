@@ -10,7 +10,7 @@ import java.util.List;
 @Setter
 @ToString
 @EqualsAndHashCode
-public class TopicPartitionInfo
+public class TopicPartitionInfo implements Comparable<TopicPartitionInfo>
 {
     private int partitionId;
     private String leader;
@@ -33,5 +33,13 @@ public class TopicPartitionInfo
 
     public void setMessageAvailable() {
         this.messageAvailable = this.endOffset - this.startOffset;
+    }
+
+
+    @Override
+    public int compareTo(TopicPartitionInfo topicPartitionInfo) {
+        if (this.partitionId < topicPartitionInfo.partitionId) return -1;
+        else if (this.partitionId == topicPartitionInfo.partitionId) return 0;
+        else return 1;
     }
 }

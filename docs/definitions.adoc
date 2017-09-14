@@ -54,6 +54,8 @@ __optional__|integer(int32)
 __optional__|string
 |**currentOffset** +
 __optional__|integer(int64)
+|**groupName** +
+__optional__|string
 |**host** +
 __optional__|string
 |**lag** +
@@ -66,6 +68,21 @@ __optional__|integer(int32)
 __optional__|enum (RUNNING, PENDING)
 |**topic** +
 __optional__|string
+|**type** +
+__optional__|enum (NEW, OLD)
+|===
+
+
+[[_generalresponse]]
+=== GeneralResponse
+
+[options="header", cols=".^3,.^4"]
+|===
+|Name|Schema
+|**msg** +
+__optional__|string
+|**state** +
+__optional__|enum (success, failure)
 |===
 
 
@@ -134,8 +151,6 @@ __optional__|string
 __optional__|integer(int32)
 |**prop** +
 __optional__|< string, object > map
-|**reassignStr** +
-__optional__|string
 |===
 
 

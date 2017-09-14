@@ -2,6 +2,7 @@ package org.gnuhpc.bigdata.controller;
 
 import com.google.common.net.HostAndPort;
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import org.gnuhpc.bigdata.model.ZkServerEnvironment;
 import org.gnuhpc.bigdata.model.ZkServerStat;
 import org.gnuhpc.bigdata.service.ZookeeperService;
@@ -26,6 +27,7 @@ public class ZookeeperController {
     private ZookeeperService zookeeperService;
 
     @GetMapping("/ls/{path}")
+    @ApiOperation(value = "List a zookeeper path")
     public List<String> ls(@PathVariable("path") String path){
         try {
             return zookeeperUtils.getCuratorClient().getChildren().forPath("/"+path);
@@ -37,24 +39,21 @@ public class ZookeeperController {
     }
 
     @GetMapping("/connstate")
+    @ApiOperation(value = "Get the connection state of zookeeper")
     public String zkConnState(){
         return zookeeperUtils.getCuratorClient().getState().toString();
     }
 
-    @GetMapping("/ping")
-    public String ping(){
-        return "pong";
-    }
-
     @GetMapping("/stat")
+    @ApiOperation(value = "Get the service state of zookeeper")
     public Map<HostAndPort,ZkServerStat> getStat(){
         return zookeeperService.stat();
     }
 
     @GetMapping("/env")
+    @ApiOperation(value = "Get the environment information of zookeeper")
     public Map<HostAndPort,ZkServerEnvironment> getEnv(){
         return zookeeperService.environment();
     }
-
 
 }

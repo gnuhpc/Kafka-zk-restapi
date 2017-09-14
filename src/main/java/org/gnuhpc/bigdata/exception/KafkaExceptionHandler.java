@@ -1,5 +1,6 @@
 package org.gnuhpc.bigdata.exception;
 
+import lombok.extern.log4j.Log4j;
 import org.apache.kafka.common.errors.ApiException;
 import org.springframework.boot.context.config.ResourceNotFoundException;
 import org.springframework.http.HttpStatus;
@@ -10,8 +11,9 @@ import javax.validation.ConstraintViolation;
 import javax.validation.ConstraintViolationException;
 import java.util.Set;
 
+@Log4j
 @RestControllerAdvice
-public class ExceptionHandlingController {
+public class KafkaExceptionHandler {
     @ExceptionHandler(Exception.class)
     public RestErrorResponse handleException(Exception ex){
         RestErrorResponse.Builder builder = new RestErrorResponse.Builder();

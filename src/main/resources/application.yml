@@ -1,3 +1,8 @@
 spring:
   profiles:
     active: home
+
+server:
+  error:
+    whitelabel:
+      enabled: false

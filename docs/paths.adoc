@@ -37,7 +37,7 @@ GET /kafka/brokers
 
 
 [[_getmessageusingget]]
-==== getMessage
+==== Get the message from the offset of the partition in the topic, decoder is not supported yet
 ....
 GET /kafka/consumer/{topic}/{partition}/{offset}
 ....
@@ -48,14 +48,14 @@ GET /kafka/consumer/{topic}/{partition}/{offset}
 [options="header", cols=".^2,.^3,.^9,.^4"]
 |===
 |Type|Name|Description|Schema
+|**Path**|**offset** +
+__required__|offset|integer(int64)
+|**Path**|**partition** +
+__required__|partition|integer(int32)
+|**Path**|**topic** +
+__required__|topic|string
 |**Query**|**decoder** +
 __optional__|decoder|string
-|**Query**|**offset** +
-__optional__|offset|integer(int64)
-|**Query**|**partition** +
-__optional__|partition|integer(int32)
-|**Query**|**topic** +
-__optional__|topic|string
 |===
 
 
@@ -82,9 +82,9 @@ __optional__|topic|string
 
 
 [[_deleteoldconsumergroupusingdelete]]
-==== deleteOldConsumerGroup
+==== Delete old Consumer Group
 ....
-DELETE /kafka/consumergroup/old/{consumergroup}
+DELETE /kafka/consumergroup/{consumergroup}
 ....
 
 
@@ -93,8 +93,8 @@ DELETE /kafka/consumergroup/old/{consumergroup}
 [options="header", cols=".^2,.^3,.^9,.^4"]
 |===
 |Type|Name|Description|Schema
-|**Query**|**consumergroup** +
-__optional__|consumergroup|string
+|**Path**|**consumergroup** +
+__required__|consumergroup|string
 |===
 
 
@@ -103,7 +103,7 @@ __optional__|consumergroup|string
 [options="header", cols=".^2,.^14,.^4"]
 |===
 |HTTP Code|Description|Schema
-|**200**|OK|boolean
+|**200**|OK|<<_generalresponse,GeneralResponse>>
 |**204**|No Content|No Content
 |**401**|Unauthorized|No Content
 |**403**|Forbidden|No Content
@@ -132,10 +132,10 @@ GET /kafka/consumergroup/{consumergroup}/{topic}/lastcommittime
 [options="header", cols=".^2,.^3,.^9,.^4"]
 |===
 |Type|Name|Description|Schema
-|**Query**|**consumergroup** +
-__optional__|consumergroup|string
-|**Query**|**topic** +
-__optional__|topic|string
+|**Path**|**consumergroup** +
+__required__|consumergroup|string
+|**Path**|**topic** +
+__required__|topic|string
 |===
 
 
@@ -162,9 +162,9 @@ __optional__|topic|string
 
 
 [[_resetoffsetusingput]]
-==== resetOffset
+==== Reset consumer group offset, earliest/latest can be used
 ....
-PUT /kafka/consumergroup/{consumergroup}/{topic}/{partition}/{offset}
+PUT /kafka/consumergroup/{consumergroup}/{type}/{topic}/{partition}/{offset}
 ....
 
 
@@ -173,14 +173,16 @@ PUT /kafka/consumergroup/{consumergroup}/{topic}/{partition}/{offset}
 [options="header", cols=".^2,.^3,.^9,.^4"]
 |===
 |Type|Name|Description|Schema
-|**Query**|**consumergroup** +
-__optional__|consumergroup|string
-|**Query**|**offset** +
-__optional__|offset|string
-|**Query**|**partition** +
-__optional__|partition|integer(int32)
-|**Query**|**topic** +
-__optional__|topic|string
+|**Path**|**consumergroup** +
+__required__|consumergroup|string
+|**Path**|**offset** +
+__required__|offset|string
+|**Path**|**partition** +
+__required__|partition|integer(int32)
+|**Path**|**topic** +
+__required__|topic|string
+|**Path**|**type** +
+__required__|type|string
 |===
 
 
@@ -189,7 +191,7 @@ __optional__|topic|string
 [options="header", cols=".^2,.^14,.^4"]
 |===
 |HTTP Code|Description|Schema
-|**200**|OK|No Content
+|**200**|OK|<<_generalresponse,GeneralResponse>>
 |**201**|Created|No Content
 |**401**|Unauthorized|No Content
 |**403**|Forbidden|No Content
@@ -207,49 +209,10 @@ __optional__|topic|string
 * `*/*`
 
 
-[[_listallnewconsumergroupsusingget]]
-==== List new consumer groups
+[[_listallconsumergroupsusingget]]
+==== List consumer groups from zk and kafka
 ....
-GET /kafka/consumergroups/new
-....
-
-
-===== Parameters
-
-[options="header", cols=".^2,.^3,.^9,.^4"]
-|===
-|Type|Name|Description|Schema
-|**Query**|**t** +
-__optional__|t|string
-|===
-
-
-===== Responses
-
-[options="header", cols=".^2,.^14,.^4"]
-|===
-|HTTP Code|Description|Schema
-|**200**|OK|< string > array
-|**401**|Unauthorized|No Content
-|**403**|Forbidden|No Content
-|**404**|Not Found|No Content
-|===
-
-
-===== Consumes
-
-* `application/json`
-
-
-===== Produces
-
-* `*/*`
-
-
-[[_describenewcgusingget]]
-==== List new consumergroups lag and offset by consumergroup and topic
-....
-GET /kafka/consumergroups/new/{consumerGroup}/{topic}
+GET /kafka/consumergroups
 ....
 
 
@@ -258,8 +221,6 @@ GET /kafka/consumergroups/new/{consumerGroup}/{topic}
 [options="header", cols=".^2,.^3,.^9,.^4"]
 |===
 |Type|Name|Description|Schema
-|**Query**|**consumerGroup** +
-__optional__|consumerGroup|string
 |**Query**|**topic** +
 __optional__|topic|string
 |===
@@ -270,7 +231,7 @@ __optional__|topic|string
 [options="header", cols=".^2,.^14,.^4"]
 |===
 |HTTP Code|Description|Schema
-|**200**|OK|< <<_consumergroupdesc,ConsumerGroupDesc>> > array
+|**200**|OK|< string, < string > array > map
 |**401**|Unauthorized|No Content
 |**403**|Forbidden|No Content
 |**404**|Not Found|No Content
@@ -287,49 +248,10 @@ __optional__|topic|string
 * `*/*`
 
 
-[[_listalloldconsumergroupsusingget]]
-==== List old consumer groups from zk
+[[_describecgusingget]]
+==== Describe consumer groups, showing lag and offset
 ....
-GET /kafka/consumergroups/old
-....
-
-
-===== Parameters
-
-[options="header", cols=".^2,.^3,.^9,.^4"]
-|===
-|Type|Name|Description|Schema
-|**Query**|**t** +
-__optional__|t|string
-|===
-
-
-===== Responses
-
-[options="header", cols=".^2,.^14,.^4"]
-|===
-|HTTP Code|Description|Schema
-|**200**|OK|< string > array
-|**401**|Unauthorized|No Content
-|**403**|Forbidden|No Content
-|**404**|Not Found|No Content
-|===
-
-
-===== Consumes
-
-* `application/json`
-
-
-===== Produces
-
-* `*/*`
-
-
-[[_describeoldcgusingget]]
-==== List old consumergroups lag and offset by consumergroup and topic
-....
-GET /kafka/consumergroups/old/{consumerGroup}/{topic}
+GET /kafka/consumergroups/{consumerGroup}/{type}
 ....
 
 
@@ -338,8 +260,10 @@ GET /kafka/consumergroups/old/{consumerGroup}/{topic}
 [options="header", cols=".^2,.^3,.^9,.^4"]
 |===
 |Type|Name|Description|Schema
-|**Query**|**consumerGroup** +
-__optional__|consumerGroup|string
+|**Path**|**consumerGroup** +
+__required__|consumerGroup|string
+|**Path**|**type** +
+__required__|type|string
 |**Query**|**topic** +
 __optional__|topic|string
 |===
@@ -350,7 +274,7 @@ __optional__|topic|string
 [options="header", cols=".^2,.^14,.^4"]
 |===
 |HTTP Code|Description|Schema
-|**200**|OK|< <<_consumergroupdesc,ConsumerGroupDesc>> > array
+|**200**|OK|< string, < <<_consumergroupdesc,ConsumerGroupDesc>> > array > map
 |**401**|Unauthorized|No Content
 |**403**|Forbidden|No Content
 |**404**|Not Found|No Content
@@ -459,13 +383,11 @@ PUT /kafka/partitions/reassign/execute
 
 ===== Parameters
 
-[options="header", cols=".^2,.^3,.^9,.^4,.^2"]
+[options="header", cols=".^2,.^3,.^9,.^4"]
 |===
-|Type|Name|Description|Schema|Default
-|**Query**|**throttle** +
-__optional__|throttle|integer(int64)|`"-1"`
+|Type|Name|Description|Schema
 |**Body**|**reassignStr** +
-__required__|reassignStr|string|
+__required__|reassignStr|string
 |===
 
 
@@ -573,6 +495,8 @@ POST /kafka/topics/create
 [options="header", cols=".^2,.^3,.^9,.^4"]
 |===
 |Type|Name|Description|Schema
+|**Query**|**reassignStr** +
+__optional__|reassignStr|string
 |**Body**|**topic** +
 __required__|topic|<<_topicdetail,TopicDetail>>
 |===
@@ -583,7 +507,7 @@ __required__|topic|<<_topicdetail,TopicDetail>>
 [options="header", cols=".^2,.^14,.^4"]
 |===
 |HTTP Code|Description|Schema
-|**201**|Created|boolean
+|**201**|Created|<<_topicmeta,TopicMeta>>
 |**401**|Unauthorized|No Content
 |**403**|Forbidden|No Content
 |**404**|Not Found|No Content
@@ -661,7 +585,7 @@ __required__|topic|string
 [options="header", cols=".^2,.^14,.^4"]
 |===
 |HTTP Code|Description|Schema
-|**200**|OK|boolean
+|**200**|OK|<<_generalresponse,GeneralResponse>>
 |**204**|No Content|No Content
 |**401**|Unauthorized|No Content
 |**403**|Forbidden|No Content
@@ -1024,7 +948,7 @@ GET /kafka/topics/{topic}/exist
 [options="header", cols=".^2,.^3,.^9,.^4"]
 |===
 |Type|Name|Description|Schema
-|**Query**|**topic** +
+|**Path**|**topic** +
 __required__|topic|string
 |===
 
@@ -1075,7 +999,7 @@ __required__|message|string
 [options="header", cols=".^2,.^14,.^4"]
 |===
 |HTTP Code|Description|Schema
-|**201**|Created|No Content
+|**201**|Created|<<_generalresponse,GeneralResponse>>
 |**401**|Unauthorized|No Content
 |**403**|Forbidden|No Content
 |**404**|Not Found|No Content
@@ -1127,7 +1051,7 @@ Zookeeper Controller
 
 
 [[_zkconnstateusingget]]
-==== zkConnState
+==== Get the connection state of zookeeper
 ....
 GET /zk/connstate
 ....
@@ -1156,7 +1080,7 @@ GET /zk/connstate
 
 
 [[_getenvusingget]]
-==== getEnv
+==== Get the environment information of zookeeper
 ....
 GET /zk/env
 ....
@@ -1185,7 +1109,7 @@ GET /zk/env
 
 
 [[_lsusingget]]
-==== ls
+==== List a zookeeper path
 ....
 GET /zk/ls/{path}
 ....
@@ -1223,37 +1147,8 @@ __required__|path|string
 * `*/*`
 
 
-[[_pingusingget]]
-==== ping
-....
-GET /zk/ping
-....
-
-
-===== Responses
-
-[options="header", cols=".^2,.^14,.^4"]
-|===
-|HTTP Code|Description|Schema
-|**200**|OK|string
-|**401**|Unauthorized|No Content
-|**403**|Forbidden|No Content
-|**404**|Not Found|No Content
-|===
-
-
-===== Consumes
-
-* `application/json`
-
-
-===== Produces
-
-* `*/*`
-
-
 [[_getstatusingget]]
-==== getStat
+==== Get the service state of zookeeper
 ....
 GET /zk/stat
 ....

@@ -7,7 +7,6 @@ import org.gnuhpc.bigdata.model.ZkServerEnvironment;
 import org.gnuhpc.bigdata.model.ZkServerStat;
 import org.gnuhpc.bigdata.utils.ZookeeperUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
@@ -19,11 +18,11 @@ public class ZookeeperService {
     @Autowired
     private ZookeeperUtils zookeeperUtils;
 
-    public Map<HostAndPort,ZkServerStat> stat() {
+    public Map<HostAndPort, ZkServerStat> stat() {
         return zookeeperUtils.getZookeeperConfig().getHostAndPort().stream()
                 .collect(Collectors.toMap(
-                        hp->hp,
-                        hp->zookeeperUtils.parseStatResult(
+                        hp -> hp,
+                        hp -> zookeeperUtils.parseStatResult(
                                 zookeeperUtils.executeCommand(
                                         hp.getHostText(),
                                         hp.getPort(),
@@ -33,11 +32,11 @@ public class ZookeeperService {
                 ));
     }
 
-    public Map<HostAndPort,ZkServerEnvironment> environment() {
+    public Map<HostAndPort, ZkServerEnvironment> environment() {
         return zookeeperUtils.getZookeeperConfig().getHostAndPort().stream()
                 .collect(Collectors.toMap(
-                        hp->hp,
-                        hp->zookeeperUtils.parseEnvResult(
+                        hp -> hp,
+                        hp -> zookeeperUtils.parseEnvResult(
                                 zookeeperUtils.executeCommand(
                                         hp.getHostText(),
                                         hp.getPort(),

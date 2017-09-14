@@ -5,7 +5,7 @@
 
     <groupId>org.gnuhpc.bigdata</groupId>
     <artifactId>kafka-rest-springboot</artifactId>
-    <version>0.1.0-release</version>
+    <version>0.10.x-release</version>
     <packaging>jar</packaging>
 
     <name>kafka-zk-rest-springboot</name>
@@ -481,7 +481,7 @@
                 <version>2.4.1</version>
                 <configuration>
                     <descriptor>src/main/resources/distribution/kafka-zk-springboot-distribution.xml</descriptor>
-                    <finalName>kafka-zk-springboot-distribution</finalName>
+                    <finalName>kafka-zk-api-${project.version}-dist</finalName>
                 </configuration>
                 <executions>
                     <execution>

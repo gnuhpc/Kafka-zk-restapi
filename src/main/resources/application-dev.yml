@@ -9,6 +9,7 @@ zookeeper:
 server:
   port: 8121
   context-path: /
+  debug: true
 
 spring:
   kafka:

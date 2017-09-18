@@ -15,7 +15,6 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import org.gnuhpc.bigdata.componet.OffsetStorage;
 import org.gnuhpc.bigdata.config.KafkaConfig;
 import org.gnuhpc.bigdata.config.ZookeeperConfig;
-import org.gnuhpc.bigdata.service.IKafkaAdminService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 

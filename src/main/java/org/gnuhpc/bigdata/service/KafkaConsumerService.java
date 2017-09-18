@@ -8,13 +8,11 @@ import lombok.extern.log4j.Log4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.TopicPartition;
 import org.gnuhpc.bigdata.componet.OffsetStorage;
-import org.gnuhpc.bigdata.service.impl.KafkaAdminService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.listener.ConsumerSeekAware;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.handler.annotation.Header;
-import org.springframework.stereotype.Service;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -47,11 +45,11 @@ public class KafkaConsumerService implements ConsumerSeekAware {
             @Header(KafkaHeaders.RECEIVED_PARTITION_ID) int partition,
             @Header(KafkaHeaders.RECEIVED_TOPIC) String topic) {
         //set the offset of the partition being processed to the beginning. If already set, ignore it.
-        if (resetInitArray[partition]) {
-            long beginningOffset = kafkaAdminService.getBeginningOffset(topic, partition);
-            this.seekCallBack.get().seek(topic, partition, beginningOffset + 1);
-            resetInitArray[partition] = false;
-        }
+//        if (resetInitArray[partition]) {
+//            long beginningOffset = kafkaAdminService.getBeginningOffset(topic, partition);
+//            this.seekCallBack.get().seek(topic, partition, beginningOffset + 1);
+//            resetInitArray[partition] = false;
+//        }
 
         //Parse the commit offset message and store it in offsetStorage
         Map<GroupTopicPartition,OffsetAndMetadata> offsetMap;

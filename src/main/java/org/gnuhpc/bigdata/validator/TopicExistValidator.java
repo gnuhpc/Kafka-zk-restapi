@@ -1,6 +1,6 @@
 package org.gnuhpc.bigdata.validator;
 
-import org.gnuhpc.bigdata.service.impl.KafkaAdminService;
+import org.gnuhpc.bigdata.service.KafkaAdminService;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.validation.ConstraintValidator;

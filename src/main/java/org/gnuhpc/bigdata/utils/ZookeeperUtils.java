@@ -47,7 +47,7 @@ public class ZookeeperUtils {
     private final Pattern versionLinePattern = Pattern.compile(".*: (\\d+\\.\\d+\\.\\d+.*),.* built on (.*)");
     private final Pattern ipv4ClientLinePattern = Pattern.compile("/(\\d+\\.\\d+\\.\\d+\\.\\d+):(\\d+)\\[(\\d+)\\]\\((.*)");
     private final Pattern ipv6ClientLinePattern = Pattern.compile("/(\\d+:\\d+:\\d+:\\d+:\\d+:\\d+:\\d+:\\d+\\%\\d+):(\\d+)\\[(\\d+)\\]\\((.*)");
-    private final Pattern latenciesPattern = Pattern.compile(".*: (\\d+)/(\\d+)/(\\d+)");
+    private final Pattern latenciesPattern = Pattern.compile(".*: (-?\\d+)/(-?\\d+)/(-?\\d+)");
 
 
     @Autowired

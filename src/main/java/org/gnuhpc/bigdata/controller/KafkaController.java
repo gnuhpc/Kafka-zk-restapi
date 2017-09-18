@@ -8,7 +8,7 @@ import org.apache.kafka.common.errors.ApiException;
 import org.apache.kafka.common.errors.InvalidTopicException;
 import org.gnuhpc.bigdata.constant.GeneralResponseState;
 import org.gnuhpc.bigdata.model.*;
-import org.gnuhpc.bigdata.service.IKafkaAdminService;
+import org.gnuhpc.bigdata.service.KafkaAdminService;
 import org.gnuhpc.bigdata.service.KafkaProducerService;
 import org.gnuhpc.bigdata.validator.ConsumerGroupExistConstraint;
 import org.gnuhpc.bigdata.validator.TopicExistConstraint;
@@ -28,7 +28,7 @@ import java.util.Properties;
 @RestController
 public class KafkaController {
     @Autowired
-    private IKafkaAdminService kafkaAdminService;
+    private KafkaAdminService kafkaAdminService;
 
     @Autowired
     private KafkaProducerService kafkaProducerService;

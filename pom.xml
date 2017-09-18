@@ -51,6 +51,15 @@
     </pluginRepositories>
 
     <repositories>
+            <repository>
+                <id>central</id>
+                <name>Central Repository</name>
+                <url>http://maven.cmbc.com.cn:38080/content/repositories/mirror-central</url>
+                <layout>default</layout>
+                <snapshots>
+                    <enabled>false</enabled>
+                </snapshots>
+            </repository>
         <repository>
             <id>jcentral</id>
             <name>bintray</name>

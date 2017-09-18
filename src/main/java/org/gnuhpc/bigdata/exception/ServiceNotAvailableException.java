@@ -1,8 +1,10 @@
 package org.gnuhpc.bigdata.exception;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @Data
+@EqualsAndHashCode
 public class ServiceNotAvailableException extends RuntimeException{
     private String serviceType;
     private String serviceState;

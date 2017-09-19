@@ -20,7 +20,6 @@ import kafka.server.ConfigType;
 import kafka.utils.ZKGroupTopicDirs;
 import kafka.utils.ZkUtils;
 import lombok.extern.log4j.Log4j;
-import org.apache.commons.collections.map.HashedMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -576,7 +575,7 @@ public class KafkaAdminService{
             List<AdminClient.ConsumerSummary> consumerSummaryList,
             String consumerGroup,
             String topic) {
-        Map<String, List<ConsumerGroupDesc>> result = new HashedMap();
+        Map<String, List<ConsumerGroupDesc>> result = new HashMap<>();
         List<ConsumerGroupDesc> cgdList;
         ConsumerGroupDesc cgd;
         ConsumerState state;

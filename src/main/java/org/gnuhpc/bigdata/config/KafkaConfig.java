@@ -30,7 +30,6 @@ import java.util.Map;
 
 @Log4j
 @Data
-@ConfigurationProperties(prefix = "kafka")
 @EnableKafka
 @Configuration
 public class KafkaConfig {

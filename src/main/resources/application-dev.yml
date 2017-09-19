@@ -17,7 +17,7 @@ spring:
   kafka:
     bootstrap-servers: ${kafka.brokers}
     consumer:
-      group-id: "__kafka-zk-rest4"
+      group-id: "__kafka-zk-rest"
   mvc:
     throw-exception-if-no-handler-found: true
   output:

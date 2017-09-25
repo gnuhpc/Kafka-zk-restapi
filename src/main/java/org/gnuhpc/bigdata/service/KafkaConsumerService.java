@@ -24,9 +24,6 @@ public class KafkaConsumerService implements ConsumerSeekAware {
     @Autowired
     private OffsetStorage offsetStorage;
 
-    @Autowired
-    private KafkaAdminService kafkaAdminService;
-
     private boolean[] resetInitArray;
 
     private final ThreadLocal<ConsumerSeekCallback> seekCallBack = new ThreadLocal<>();

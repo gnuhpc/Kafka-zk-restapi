@@ -1,13 +1,12 @@
-
 = Kafka REST API
 
 
 [[_overview]]
 == Overview
-Kafka/ZK REST API to perform some administration/metric monitor task in daily work.
+Kafka/ZK REST API to perform administration/metric monitor tasks in daily work.
 
 // tag::base-t[]
-.Following feature are provided:
+.Following features are provided:
 * Broker List
 * Topic create/delete/describe
 * Topic config create/update/delete/list
@@ -43,9 +42,14 @@ You will find zip/tar under directory: Kafka-zk-restapi/target
 
 You can get it running by unzip/untaring the distribution package and run bin/start.sh
 
+*For 0.10.x, please checkout the branch 0.10.x by calling the command:*
+
+git clone -b 0.10.x https://github.com/gnuhpc/Kafka-zk-restapi.git
+
+
 
 === Support Kafka Version Information
-Currently, this rest api only support kafka 0.11 brokers. 0.10.x will be supported later.
+Currently, this rest api supports both kafka 0.11.x and 0.10.x brokers.
 
 === URI scheme
 [%hardbreaks]
@@ -58,14 +62,24 @@ You can access Swagger-UI by accessing http://127.0.0.1:8121/api
 === https://github.com/gnuhpc/Kafka-zk-restapi/blob/master/docs/paths.adoc[API LIST for 0.11]
 === https://github.com/gnuhpc/Kafka-zk-restapi/blob/0.10.x/docs/paths.adoc[API LIST for 0.10.x]
 
+image::https://raw.githubusercontent.com/gnuhpc/Kafka-zk-restapi/0.10.x/pics/ShowApi.png[API]
+
 * kafka-controller : Kafka Api
 * zookeeper-controller : Zookeeper Api
 
 === https://github.com/gnuhpc/Kafka-zk-restapi/blob/master/docs/definitions.adoc[Data Model Definitions]
 === https://github.com/gnuhpc/Kafka-zk-restapi/blob/0.10.x/docs/definitions.adoc[Data Model Definitions]
 
+
+=== Version information
+[%hardbreaks]
+__Version__ : 0.1.0
+
+
 === Contact information
 [%hardbreaks]
 __Contact__ : gnuhpc
 __Contact Email__ : gnuhpc@gmail.com
 __Github__ : https://github.com/gnuhpc
+
+

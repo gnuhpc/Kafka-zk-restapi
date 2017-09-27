@@ -6,7 +6,7 @@
 Kafka/ZK REST API to perform administration/metric monitor tasks in daily work.
 
 
-=== http://gnuhpc.vicp.io/api[Demo URL for 0.10.x]
+=== http://gnuhpc.vicp.io:8121/api[Demo URL for 0.10.x]
 
 // tag::base-t[]
 .Following features are provided:

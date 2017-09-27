@@ -5,6 +5,9 @@
 == Overview
 Kafka/ZK REST API to perform administration/metric monitor tasks in daily work.
 
+
+=== http://gnuhpc.vicp.io/api [Demo URL for 0.10.x]
+
 // tag::base-t[]
 .Following features are provided:
 * Broker List
@@ -67,8 +70,8 @@ image::https://raw.githubusercontent.com/gnuhpc/Kafka-zk-restapi/0.10.x/pics/Sho
 * kafka-controller : Kafka Api
 * zookeeper-controller : Zookeeper Api
 
-=== https://github.com/gnuhpc/Kafka-zk-restapi/blob/master/docs/definitions.adoc[Data Model Definitions]
-=== https://github.com/gnuhpc/Kafka-zk-restapi/blob/0.10.x/docs/definitions.adoc[Data Model Definitions]
+=== https://github.com/gnuhpc/Kafka-zk-restapi/blob/0.10.x/docs/definitions.adoc[Data Model Definitions for 0.10.x]
+=== https://github.com/gnuhpc/Kafka-zk-restapi/blob/master/docs/definitions.adoc[Data Model Definitions for 0.11]
 
 
 === Version information

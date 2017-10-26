@@ -46,7 +46,6 @@ public class ZookeeperUtils {
     private static final String PROP_DELIMITER = ":";
     private final Pattern versionLinePattern = Pattern.compile(".*: (\\d+\\.\\d+\\.\\d+.*),.* built on (.*)");
     private final Pattern ipv4ClientLinePattern = Pattern.compile("/(\\d+\\.\\d+\\.\\d+\\.\\d+):(\\d+)\\[(\\d+)\\]\\((.*)");
-    private final Pattern ipv6ClientLinePattern = Pattern.compile("/(\\d+:\\d+:\\d+:\\d+:\\d+:\\d+:\\d+:\\d+\\%\\d+):(\\d+)\\[(\\d+)\\]\\((.*)");
     private final Pattern latenciesPattern = Pattern.compile(".*: (-?\\d+)/(-?\\d+)/(-?\\d+)");
 
 
@@ -186,7 +185,11 @@ public class ZookeeperUtils {
         List<ZkServerClient> clients = new LinkedList<>();
         for (String clientLine : clientLines) {
             if (!StringUtils.isWhitespace(clientLine)) {
-                clients.add(parseClient(clientLine));
+                Matcher matcher = ipv4ClientLinePattern.matcher(clientLine);
+                //Skip the ipv6 address
+                if(matcher.find()){
+                    clients.add(parseClient(matcher));
+                }
             }
         }
         return clients;
@@ -201,13 +204,7 @@ public class ZookeeperUtils {
         return Integer.parseInt(value.trim());
     }
 
-    private ZkServerClient parseClient(String line) {
-        Matcher matcher = ipv4ClientLinePattern.matcher(line);
-        boolean ipv4found = matcher.find();
-        if (!ipv4found) {
-            matcher = ipv6ClientLinePattern.matcher(line);
-            matcher.find();
-        }
+    private ZkServerClient parseClient(Matcher matcher) {
         String host = matcher.group(1);
         Integer port = Integer.parseInt(matcher.group(2));
         Integer ops = Integer.parseInt(matcher.group(3));

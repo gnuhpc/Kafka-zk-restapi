@@ -69,7 +69,7 @@ import static java.util.stream.Collectors.toList;
 @Service
 @Log4j
 @Validated
-public class KafkaAdminService{
+public class KafkaAdminService {
 
     private static final int channelSocketTimeoutMs = 600;
     private static final int channelRetryBackoffMs = 600;
@@ -96,7 +96,7 @@ public class KafkaAdminService{
     //For Json serialized
     private Gson gson;
 
-    private scala.Option<String> NONE = scala.Option.apply(null);
+    private Option<String> NONE = Option.apply(null);
 
     @PostConstruct
     private void init() {
@@ -156,13 +156,21 @@ public class KafkaAdminService{
     public List<TopicBrief> listTopicBrief() {
         KafkaConsumer consumer = createNewConsumer(DEFAULTCP);
         Map<String, List<PartitionInfo>> topicMap = consumer.listTopics();
-        return topicMap.entrySet().parallelStream().map(e -> {
+        List<TopicBrief> result = topicMap.entrySet().parallelStream().map(e -> {
                     String topic = e.getKey();
                     long isrCount = e.getValue().parallelStream().flatMap(pi -> Arrays.stream(pi.replicas())).count();
                     long replicateCount = e.getValue().parallelStream().flatMap(pi -> Arrays.stream(pi.inSyncReplicas())).count();
-                    return new TopicBrief(topic, e.getValue().size(), isrCount / replicateCount);
+                    if (replicateCount == 0) {
+                        return new TopicBrief(topic, e.getValue().size(), 0);
+                    } else {
+                        return new TopicBrief(topic, e.getValue().size(), isrCount / replicateCount);
+                    }
                 }
         ).collect(toList());
+
+        consumer.close();
+
+        return result;
     }
 
     public boolean existTopic(String topicName) {
@@ -217,6 +225,8 @@ public class KafkaAdminService{
 
         Collections.sort(topicMeta.getTopicPartitionInfos());
 
+        consumer.close();
+
         return topicMeta;
     }
 
@@ -224,16 +234,6 @@ public class KafkaAdminService{
         log.warn("Delete topic " + topic);
         AdminUtils.deleteTopic(zkUtils, topic);
 
-        //Wait for a while
-        try {
-            Thread.sleep(100);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        if (existTopic(topic)) {
-            throw new ApiException("Delete topic failed for unknown reason!");
-        }
         return new GeneralResponse(GeneralResponseState.success, topic + " has been deleted.");
     }
 
@@ -281,7 +281,7 @@ public class KafkaAdminService{
     }
 
     public Properties updateTopicConfByKey(@TopicExistConstraint String topic, String key, String value) {
-        Properties props = new Properties();
+        Properties props = getTopicConf(topic);
         props.setProperty(key, value);
         String validValue = String.valueOf(updateTopicConf(topic, props).get(key));
         if (!validValue.equals("null") && validValue.equals(value)) {
@@ -372,7 +372,7 @@ public class KafkaAdminService{
                 ));
 
 
-        java.util.Map<TopicAndPartition, ReassignmentStatus> reassignedPartitionsStatus =
+        Map<TopicAndPartition, ReassignmentStatus> reassignedPartitionsStatus =
                 partitionsToBeReassigned.entrySet().stream().collect(Collectors.toMap(
                         Map.Entry::getKey,
                         pbr -> ReassignPartitionsCommand.checkIfPartitionReassignmentSucceeded(
@@ -392,6 +392,7 @@ public class KafkaAdminService{
     }
 
     private List<String> listAllOldConsumerGroups() {
+        log.info("Finish getting old consumers");
         return CollectionConvertor.seqConvertJavaList(zkUtils.getConsumerGroups());
     }
 
@@ -421,32 +422,35 @@ public class KafkaAdminService{
     }
 
     private List<String> listAllNewConsumerGroups() {
+        log.info("Calling the listAllConsumerGroupsFlattened");
         List activeGroups = CollectionConvertor.seqConvertJavaList(kafkaAdminClient.listAllConsumerGroupsFlattened()).stream()
                 .map(GroupOverview::groupId).collect(toList());
+        log.info("Checking the groups in storage");
         List usedTobeGroups = storage.getMap().entrySet().stream().map(Map.Entry::getKey).collect(toList());
 
         //Merge two lists
         activeGroups.removeAll(usedTobeGroups);
         activeGroups.addAll(usedTobeGroups);
         Collections.sort(activeGroups);
+        log.info("Finish getting new consumers");
         return activeGroups;
     }
 
     private List<String> listNewConsumerGroupsByTopic(@TopicExistConstraint String topic) {
-        AdminClient.ConsumerSummary cs;
         String t;
         List<String> consumersList = listAllNewConsumerGroups();
 
         Map<String, String> consumerTopicMap = new HashMap<>();
         for (String c : consumersList) {
             List<AdminClient.ConsumerSummary> consumerSummaryList = CollectionConvertor.listConvertJavaList(kafkaAdminClient.describeConsumerGroup(c));
-            if (consumerSummaryList.size() > 0) {
-                cs = consumerSummaryList.get(0);
-                t = CollectionConvertor.listConvertJavaList(cs.assignment()).stream().collect(toList()).get(0).topic();
-                consumerTopicMap.put(c, t);
+            for (AdminClient.ConsumerSummary cs : consumerSummaryList) {
+                List<TopicPartition> topicList = CollectionConvertor.listConvertJavaList(cs.assignment()).stream().collect(toList());
+                for (TopicPartition tp : topicList) {
+                    consumerTopicMap.put(c, tp.topic());
+                }
             }
         }
-        List<java.util.Map.Entry<String, String>> consumerEntryList = consumerTopicMap.entrySet().stream().collect(
+        List<Map.Entry<String, String>> consumerEntryList = consumerTopicMap.entrySet().stream().collect(
                 Collectors.groupingBy(
                         Map.Entry::getValue,
                         Collectors.toList()
@@ -457,7 +461,7 @@ public class KafkaAdminService{
     }
 
     public Map<String, List<ConsumerGroupDesc>> describeOldCG(String consumerGroup, String topic) {
-        if(!isOldConsumerGroup(consumerGroup)){
+        if (!isOldConsumerGroup(consumerGroup)) {
             throw new RuntimeException(consumerGroup + " non-exist");
         }
         Map<String, List<ConsumerGroupDesc>> result = new HashMap<>();
@@ -563,13 +567,13 @@ public class KafkaAdminService{
 
         Map<GroupTopicPartition, OffsetAndMetadata> cgdMap = storage.get(consumerGroup);
 
-        AdminClient adminClient = AdminClient.create(kafkaUtils.getProp());
         List<AdminClient.ConsumerSummary> consumerSummaryList =
-                CollectionConvertor.listConvertJavaList(adminClient.describeConsumerGroup(consumerGroup));
+                CollectionConvertor.listConvertJavaList(kafkaAdminClient.describeConsumerGroup(consumerGroup));
 
         return setCGD(cgdMap, consumerSummaryList, consumerGroup, topic);
     }
 
+    //Set consumergroupdescription for new consumer group
     private Map<String, List<ConsumerGroupDesc>> setCGD(
             Map<GroupTopicPartition, OffsetAndMetadata> storageMap,
             List<AdminClient.ConsumerSummary> consumerSummaryList,
@@ -579,64 +583,105 @@ public class KafkaAdminService{
         List<ConsumerGroupDesc> cgdList;
         ConsumerGroupDesc cgd;
         ConsumerState state;
-        List<String> topicList = storageMap.entrySet().stream()
-                .map(e -> e.getKey().topicPartition().topic()).distinct()
-                .filter(e -> {
-                    if (Strings.isNullOrEmpty(topic)) {
-                        return true;
-                    } else {
-                        return e.equals(topic);
-                    }
-                })
-                .collect(toList());
+        List<String> topicList;
+        ConsumerType type = ConsumerType.NEW;
 
+        //Nothing about this consumer group obtained, return an empty map directly
+        if (consumerSummaryList.size() == 0 && storageMap == null) {
+            return Collections.emptyMap();
+        }
+
+        // If no information obtained from describeconsumergroup
+        // we fetch topic list from our in-memory storageMap
+        if ( consumerSummaryList.size() == 0 && storageMap != null) {
+            topicList = storageMap.entrySet().stream()
+                    .map(e -> e.getKey().topicPartition().topic()).distinct()
+                    .filter(e -> {
+                        if (Strings.isNullOrEmpty(topic)) {
+                            return true;
+                        } else {
+                            return e.equals(topic);
+                        }
+                    })
+                    .collect(toList());
+        } else {
+            topicList = consumerSummaryList.stream().flatMap(
+                    cs -> CollectionConvertor.listConvertJavaList(cs.assignment()).stream())
+                    .map(tp -> tp.topic()).distinct().collect(toList());
+        }
+
+        //Iterate the topic list
         for (String t : topicList) {
-            //First get the information of this topic
-            Map<GroupTopicPartition,OffsetAndMetadata> topicStorage = new HashMap<>();
-            for(Map.Entry<GroupTopicPartition,OffsetAndMetadata> e: storageMap.entrySet()){
-                if(e.getKey().topicPartition().topic().equals(t)){
-                    topicStorage.put(e.getKey(),e.getValue());
-                }
 
+            TopicMeta topicMeta = describeTopic(t);
+            Map<Integer, Long> partitionEndOffsetMap = topicMeta.getTopicPartitionInfos().stream()
+                    .collect(Collectors.toMap(
+                            tpi -> tpi.getPartitionId(),
+                            tpi -> tpi.getEndOffset()
+                            )
+                    );
+
+            //First get the information of this topic
+            Map<GroupTopicPartition, OffsetAndMetadata> topicStorage = new HashMap<>();
+            //Second get the current offset of each partition in this topic
+            Map<Integer, Long> partitionCurrentOffsetMap = new HashMap<>();
+
+            // Try to fetch current offset from in-memory storage map
+            if (storageMap != null) {
+                for (Map.Entry<GroupTopicPartition, OffsetAndMetadata> e : storageMap.entrySet()) {
+                    if (e.getKey().topicPartition().topic().equals(t)) {
+                        topicStorage.put(e.getKey(), e.getValue());
+                    }
+                }
             }
+
+            //If the length of consumerSummaryList is 0, it indicates that the consumergroup's state is pending
             if (consumerSummaryList.size() == 0) {
                 cgdList = new ArrayList<>();
                 state = ConsumerState.PENDING;
-                TopicMeta topicMeta = describeTopic(t);
-                Map<Integer, Long> partitionEndOffsetMap = topicMeta.getTopicPartitionInfos().stream()
-                        .collect(Collectors.toMap(
-                                tpi -> tpi.getPartitionId(),
-                                tpi -> tpi.getEndOffset()
-                                )
-                        );
-                //Second get the current offset of each partition in this topic
-                Map<Integer, Long> partitionCurrentOffsetMap = partitionCurrentOffsetMap = topicStorage.entrySet().stream()
-                        .filter(e -> e.getKey().topicPartition().topic().equals(t))
-                        .collect(Collectors.toMap(
-                                e -> e.getKey().topicPartition().partition(),
-                                e -> {
-                                    if(e.getValue()==null){
-                                        return -1l;
-                                    } else{
-                                        return e.getValue().offset();
+
+                if (storageMap != null) {
+                    partitionCurrentOffsetMap = topicStorage.entrySet().stream()
+                            .filter(e -> e.getKey().topicPartition().topic().equals(t))
+                            .collect(Collectors.toMap(
+                                    e -> e.getKey().topicPartition().partition(),
+                                    e -> {
+                                        if (e.getValue() == null) {
+                                            return -1l;
+                                        } else {
+                                            return e.getValue().offset();
+                                        }
                                     }
-                                }
-                        ));
+                            ));
+                }
                 for (Map.Entry<GroupTopicPartition, OffsetAndMetadata> storage : topicStorage.entrySet()) {
                     cgd = new ConsumerGroupDesc();
                     cgd.setGroupName(consumerGroup);
                     cgd.setTopic(t);
                     cgd.setConsumerId("-");
                     cgd.setPartitionId(storage.getKey().topicPartition().partition());
-                    cgd.setCurrentOffset(partitionCurrentOffsetMap.get(cgd.getPartitionId()));
-                    cgd.setLogEndOffset(partitionEndOffsetMap.get(cgd.getPartitionId()));
+                    if (partitionCurrentOffsetMap.size() != 0) {
+                        cgd.setCurrentOffset(partitionCurrentOffsetMap.get(cgd.getPartitionId()));
+                    } else {
+                        cgd.setCurrentOffset(-1l);
+                    }
+
+                    Long endOffset = partitionEndOffsetMap.get(cgd.getPartitionId());
+
+                    if(endOffset==null){ //if endOffset is null ,the partition of this topic has no leader replication
+                        cgd.setLogEndOffset(-1l);
+                    } else {
+                        cgd.setLogEndOffset(endOffset);
+                    }
                     cgd.setLag();
                     cgd.setHost("-");
                     cgd.setState(state);
-                    cgd.setType(ConsumerType.NEW);
+                    cgd.setType(type);
                     cgdList.add(cgd);
                 }
-            } else {
+
+            }  // Indicates the consumer group is running
+            else {
                 cgdList = new ArrayList<>();
                 state = ConsumerState.RUNNING;
                 List<AdminClient.ConsumerSummary> consumerFilterList = consumerSummaryList.stream().filter(cs -> {
@@ -648,35 +693,40 @@ public class KafkaAdminService{
                     }
                 }).collect(toList());
 
-                for (AdminClient.ConsumerSummary cs : consumerFilterList){
+                for (AdminClient.ConsumerSummary cs : consumerFilterList) {
                     //First get the end offset of each partition in a topic
                     List<TopicPartition> assignment = CollectionConvertor.listConvertJavaList(cs.assignment());
-                    TopicMeta topicMeta = describeTopic(t);
-                    Map<Integer, Long> partitionEndOffsetMap = topicMeta.getTopicPartitionInfos()
-                            .stream().collect(Collectors.toMap(
-                                    tpi -> tpi.getPartitionId(),
-                                    tpi -> tpi.getEndOffset()
-                                    )
-                            );
+
                     //Second get the current offset of each partition in this topic
-                    Map<Integer, Long> partitionCurrentOffsetMap = topicStorage.entrySet().stream()
-                            .collect(Collectors.toMap(
-                                    e -> e.getKey().topicPartition().partition(),
-                                    e -> e.getValue().offset()
-                            ));
+                    if (storageMap != null) {
+                        partitionCurrentOffsetMap = topicStorage.entrySet().stream()
+                                .collect(Collectors.toMap(
+                                        e -> e.getKey().topicPartition().partition(),
+                                        e -> e.getValue().offset()
+                                ));
+                    }
 
                     for (TopicPartition tp : assignment) {
                         cgd = new ConsumerGroupDesc();
                         cgd.setGroupName(consumerGroup);
                         cgd.setTopic(tp.topic());
                         cgd.setPartitionId(tp.partition());
-                        cgd.setCurrentOffset(partitionCurrentOffsetMap.get(tp.partition()));
-                        cgd.setLogEndOffset(partitionEndOffsetMap.get(tp.partition()));
+                        if (partitionCurrentOffsetMap.size() != 0) {
+                            cgd.setCurrentOffset(partitionCurrentOffsetMap.get(tp.partition()));
+                        } else {
+                            cgd.setCurrentOffset(-1l);
+                        }
+                        Long endOffset = partitionEndOffsetMap.get(tp.partition());
+                        if(endOffset==null){ //if endOffset is null ,the partition of this topic has no leader replication
+                            cgd.setLogEndOffset(-1l);
+                        } else {
+                            cgd.setLogEndOffset(endOffset);
+                        }
                         cgd.setLag();
                         cgd.setConsumerId(cs.clientId());
                         cgd.setHost(cs.clientHost());
                         cgd.setState(state);
-                        cgd.setType(ConsumerType.NEW);
+                        cgd.setType(type);
                         cgdList.add(cgd);
                     }
                 }
@@ -694,14 +744,15 @@ public class KafkaAdminService{
         TopicPartition tp = new TopicPartition(topic, partition);
         long beginningOffset = getBeginningOffset(topic, partition);
         long endOffset = getEndOffset(topic, partition);
-        if(beginningOffset == endOffset){
+        if (beginningOffset == endOffset) {
             throw new ApiException("There is no message in this partition of this topic");
         }
         if (offset < beginningOffset || offset >= endOffset) {
             log.error(offset + " error");
+            consumer.close();
             throw new ApiException(
                     "offsets must be between " + String.valueOf(beginningOffset
-                            + " and " + (endOffset-1)
+                            + " and " + (endOffset - 1)
                     )
             );
         }
@@ -724,20 +775,22 @@ public class KafkaAdminService{
                 break;
             }
         }
+
+        consumer.close();
         return last;
     }
 
     public GeneralResponse resetOffset(@TopicExistConstraint String topic, int partition,
                                        String consumerGroup,
                                        String type, String offset) {
-        if (!Strings.isNullOrEmpty(type) && type.equals("new")){
-            if(!isNewConsumerGroup(consumerGroup)) {
+        if (!Strings.isNullOrEmpty(type) && type.equals("new")) {
+            if (!isNewConsumerGroup(consumerGroup)) {
                 throw new ApiException("Consumer group " + consumerGroup + " is non-exist!");
             }
         }
 
-        if (!Strings.isNullOrEmpty(type) && type.equals("old")){
-            if(!isOldConsumerGroup(consumerGroup)) {
+        if (!Strings.isNullOrEmpty(type) && type.equals("old")) {
+            if (!isOldConsumerGroup(consumerGroup)) {
                 throw new ApiException("Consumer group " + consumerGroup + " is non-exist!");
             }
         }
@@ -751,7 +804,7 @@ public class KafkaAdminService{
         }
 
         if ((!Strings.isNullOrEmpty(type) && type.equals("new")) && isNewConsumerGroup(consumerGroup)) {
-        //if type is new or the consumergroup itself is new
+            //if type is new or the consumergroup itself is new
             KafkaConsumer consumer = createNewConsumer(consumerGroup);
             TopicPartition tp = new TopicPartition(topic, partition);
             if (offset.equals("earliest")) {
@@ -761,9 +814,10 @@ public class KafkaAdminService{
             } else {
                 if (Long.parseLong(offset) <= beginningOffset || Long.parseLong(offset) > endOffset) {
                     log.error(offset + " error");
+                    consumer.close();
                     throw new ApiException(
                             "offsets must be between " + String.valueOf(beginningOffset
-                                    + " and " + (endOffset-1)
+                                    + " and " + (endOffset - 1)
                             )
                     );
                 }
@@ -772,6 +826,7 @@ public class KafkaAdminService{
                 consumer.seek(tp, offsetToBeReset);
             }
             consumer.commitSync();
+            consumer.close();
         }
 
         //if type is old or the consumer group itself is old
@@ -786,7 +841,7 @@ public class KafkaAdminService{
                     log.error(offset + " error");
                     throw new ApiException(
                             "offsets must be between " + String.valueOf(beginningOffset
-                                    + " and " + (endOffset-1)
+                                    + " and " + (endOffset - 1)
                             )
                     );
                 }
@@ -802,13 +857,13 @@ public class KafkaAdminService{
         return new GeneralResponse(GeneralResponseState.success, "Reset the offset successfully!");
     }
 
-    public Map<String, Map<Integer, java.lang.Long>> getLastCommitTime(@ConsumerGroupExistConstraint String consumerGroup,
+    public Map<String, Map<Integer, Long>> getLastCommitTime(@ConsumerGroupExistConstraint String consumerGroup,
                                                                        @TopicExistConstraint String topic) {
-        Map<String, Map<Integer, java.lang.Long>> result = new ConcurrentHashMap<>();
+        Map<String, Map<Integer, Long>> result = new ConcurrentHashMap<>();
 
         //Get Old Consumer commit time
         try {
-            Map<Integer, java.lang.Long> oldConsumerOffsetMap = new ConcurrentHashMap<>();
+            Map<Integer, Long> oldConsumerOffsetMap = new ConcurrentHashMap<>();
             if (zkClient.checkExists().forPath(CONSUMERPATHPREFIX + consumerGroup) != null
                     && zkClient.checkExists().forPath(CONSUMERPATHPREFIX + consumerGroup + OFFSETSPATHPREFIX + topic) != null) {
                 List<String> offsets = zkClient.getChildren().forPath(CONSUMERPATHPREFIX + consumerGroup + OFFSETSPATHPREFIX + topic);
@@ -833,9 +888,9 @@ public class KafkaAdminService{
                                     Collectors.toMap(
                                             s -> s.getKey().topicPartition().partition(),
                                             s -> {
-                                                if(s.getValue()!=null) {
+                                                if (s.getValue() != null) {
                                                     return s.getValue().commitTimestamp();
-                                                } else{
+                                                } else {
                                                     return -1l;
                                                 }
                                             }
@@ -848,14 +903,14 @@ public class KafkaAdminService{
         return result;
     }
 
-    public GeneralResponse deleteConsumerGroup(String consumerGroup){
-        if(!isOldConsumerGroup(consumerGroup)){
+    public GeneralResponse deleteConsumerGroup(String consumerGroup) {
+        if (!isOldConsumerGroup(consumerGroup)) {
             throw new RuntimeException(consumerGroup + " non-exist");
         }
         try {
-            if(zookeeperUtils.getCuratorClient().checkExists().forPath(CONSUMERPATHPREFIX+consumerGroup+"/ids")==null){
-                zookeeperUtils.getCuratorClient().delete().deletingChildrenIfNeeded().forPath(CONSUMERPATHPREFIX+consumerGroup);
-            } else{
+            if (zookeeperUtils.getCuratorClient().checkExists().forPath(CONSUMERPATHPREFIX + consumerGroup + "/ids") == null) {
+                zookeeperUtils.getCuratorClient().delete().deletingChildrenIfNeeded().forPath(CONSUMERPATHPREFIX + consumerGroup);
+            } else {
                 if (!AdminUtils.deleteConsumerGroupInZK(zkUtils, consumerGroup)) {
                     throw new ApiException(consumerGroup + " has not been deleted for some reason");
                 }
@@ -897,11 +952,8 @@ public class KafkaAdminService{
         }
 
         List<String> newCGList = null;
-        try {
-            newCGList = listNewConsumerGroupsByTopic(topic);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        newCGList = listNewConsumerGroupsByTopic(topic);
+
         if (newCGList.size() != 0) {
             result.put("new", newCGList);
         }
@@ -912,7 +964,7 @@ public class KafkaAdminService{
     private List<TopicAndPartition> getTopicPartitions(String t) {
         List<TopicAndPartition> tpList = new ArrayList<>();
         List<String> l = Arrays.asList(t);
-        java.util.Map<String, Seq<Object>> tpMap = JavaConverters.mapAsJavaMapConverter(zkUtils.getPartitionsForTopics(JavaConverters.asScalaIteratorConverter(l.iterator()).asScala().toSeq())).asJava();
+        Map<String, Seq<Object>> tpMap = JavaConverters.mapAsJavaMapConverter(zkUtils.getPartitionsForTopics(JavaConverters.asScalaIteratorConverter(l.iterator()).asScala().toSeq())).asJava();
         if (tpMap != null) {
             ArrayList<Object> partitionLists = new ArrayList<>(JavaConverters.seqAsJavaListConverter(tpMap.get(t)).asJava());
             tpList = partitionLists.stream().map(p -> new TopicAndPartition(t, (Integer) p)).collect(toList());
@@ -957,7 +1009,7 @@ public class KafkaAdminService{
         if (offsetResponse.hasError()) {
             short errorCode = offsetResponse.errorCode(topic, partitionId);
             log.warn(format("Offset response has error: %d", errorCode));
-            throw new ApiException("could not fetch data from Kafka, error code is '" + errorCode + "'");
+            throw new ApiException("could not fetch data from Kafka, error code is '" + errorCode + "'Exception Message:" + offsetResponse.toString());
         }
 
         long[] offsets = offsetResponse.offsets(topic, partitionId);

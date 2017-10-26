@@ -6,7 +6,10 @@
 Kafka/ZK REST API to perform some administration/metric monitor task in daily work.
 
 // tag::base-t[]
-.Following feature are provided:
+=== http://gnuhpc.vicp.io:8121/api[Demo URL for 0.10.x]
+
+// tag::base-t[]
+.Following features are provided:
 * Broker List
 * Topic create/delete/describe
 * Topic config create/update/delete/list
@@ -43,8 +46,14 @@ You will find zip/tar under directory: Kafka-zk-restapi/target
 You can get it running by unzip/untaring the distribution package and run bin/start.sh
 
 
+
+
 === Support Kafka Version Information
-Currently, this rest api only support kafka 0.11 brokers. 0.10.x will be supported later.
+Currently, this rest api supports both kafka 0.11.x and 0.10.x brokers.
+
+*For 0.10.x, please checkout the branch 0.10.x by calling the command:*
+
+git clone -b 0.10.x https://github.com/gnuhpc/Kafka-zk-restapi.git
 
 === URI scheme
 [%hardbreaks]
@@ -62,8 +71,9 @@ image::https://raw.githubusercontent.com/gnuhpc/Kafka-zk-restapi/0.10.x/pics/Sho
 * kafka-controller : Kafka Api
 * zookeeper-controller : Zookeeper Api
 
-=== https://github.com/gnuhpc/Kafka-zk-restapi/blob/master/docs/definitions.adoc[Data Model Definitions]
-=== https://github.com/gnuhpc/Kafka-zk-restapi/blob/0.10.x/docs/definitions.adoc[Data Model Definitions]
+
+=== https://github.com/gnuhpc/Kafka-zk-restapi/blob/0.10.x/docs/definitions.adoc[Data Model Definitions for 0.10.x]
+=== https://github.com/gnuhpc/Kafka-zk-restapi/blob/master/docs/definitions.adoc[Data Model Definitions for 0.11]
 
 
 === Version information

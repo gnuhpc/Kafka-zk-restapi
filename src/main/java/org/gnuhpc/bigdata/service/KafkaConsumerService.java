@@ -52,6 +52,7 @@ public class KafkaConsumerService implements ConsumerSeekAware {
         Map<GroupTopicPartition,OffsetAndMetadata> offsetMap;
         if (record.key() != null) {
             Object offsetKey = GroupMetadataManager.readMessageKey(record.key());
+
             log.debug(offsetKey);
             if (offsetKey instanceof OffsetKey) {
                 GroupTopicPartition groupTopicPartition = ((OffsetKey) offsetKey).key();

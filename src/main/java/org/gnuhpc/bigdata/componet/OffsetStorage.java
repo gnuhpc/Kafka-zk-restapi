@@ -33,6 +33,10 @@ public class OffsetStorage {
         return consumerOffsets.get(consumerGroup);
     }
 
+    public void remove(String consumerGroup){
+        consumerOffsets.remove(consumerGroup);
+    }
+
     @Override
     public String toString() {
         return consumerOffsets.toString();

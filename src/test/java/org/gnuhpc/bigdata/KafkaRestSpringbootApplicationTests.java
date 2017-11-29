@@ -1,8 +1,10 @@
 package org.gnuhpc.bigdata;
 
+import kafka.admin.AdminClient;
 import kafka.common.ErrorMapping;
 import kafka.common.OffsetMetadataAndError;
 import kafka.common.TopicAndPartition;
+import kafka.coordinator.GroupOverview;
 import kafka.javaapi.OffsetFetchRequest;
 import kafka.javaapi.OffsetFetchResponse;
 import kafka.network.BlockingChannel;
@@ -23,6 +25,7 @@ import org.springframework.test.context.web.WebAppConfiguration;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @SpringBootTest
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -57,5 +60,10 @@ public class KafkaRestSpringbootApplicationTests {
 	public void testListBrokers() throws Exception {
 		List<BrokerInfo> brokerInfoList = kafkaAdminService.listBrokers();
 		brokerInfoList.stream().forEach(log::info);
+		Map<Integer, Long> result = kafkaAdminService.countPartition("hpctest3");
+		AdminClient admin = AdminClient.createSimplePlaintext(kafkaUtils.getKafkaConfig().getBrokers());
+		List<GroupOverview> groupList = CollectionConvertor.listConvertJavaList(admin.listAllGroupsFlattened());
+		System.out.println("end testing");
+
 	}
 }

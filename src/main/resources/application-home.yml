@@ -25,3 +25,4 @@ spring:
       enabled: detect
   aop:
     auto: true
+

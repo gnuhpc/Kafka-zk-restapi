@@ -11,5 +11,6 @@ public class KafkaProducerService {
 
     public void send(String topic, String data) {
         kafkaTemplate.send(topic, data);
+        kafkaTemplate.flush();
     }
 }

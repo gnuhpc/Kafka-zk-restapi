@@ -10,5 +10,5 @@ import lombok.NoArgsConstructor;
 public class TopicBrief {
     private String topic;
     private int numPartition;
-    private long isrRate;
+    private double isrRate;
 }

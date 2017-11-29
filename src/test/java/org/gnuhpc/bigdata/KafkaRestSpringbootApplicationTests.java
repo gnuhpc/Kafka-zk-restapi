@@ -60,10 +60,5 @@ public class KafkaRestSpringbootApplicationTests {
 	public void testListBrokers() throws Exception {
 		List<BrokerInfo> brokerInfoList = kafkaAdminService.listBrokers();
 		brokerInfoList.stream().forEach(log::info);
-		Map<Integer, Long> result = kafkaAdminService.countPartition("hpctest3");
-		AdminClient admin = AdminClient.createSimplePlaintext(kafkaUtils.getKafkaConfig().getBrokers());
-		List<GroupOverview> groupList = CollectionConvertor.listConvertJavaList(admin.listAllGroupsFlattened());
-		System.out.println("end testing");
-
 	}
 }

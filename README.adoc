@@ -51,17 +51,13 @@ You can get it running by unzip/untaring the distribution package and run bin/st
 
 git clone -b 0.10.x https://github.com/gnuhpc/Kafka-zk-restapi.git
 
+=== For testing, You can access Swagger-UI by accessing http://127.0.0.1:8121/api
 
 
 === Support Kafka Version Information
 Currently, this rest api supports both kafka 0.11.x and 0.10.x brokers.
 
-=== URI scheme
-[%hardbreaks]
-__Host__ : localhost:8121
-__BasePath__ : /
 
-You can access Swagger-UI by accessing http://127.0.0.1:8121/api
 
 
 === https://github.com/gnuhpc/Kafka-zk-restapi/blob/master/docs/paths.adoc[API LIST for 0.11]

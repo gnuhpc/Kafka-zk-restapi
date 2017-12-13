@@ -20,6 +20,8 @@ Kafka/ZK REST API to perform administration/metric monitor tasks in daily work.
 // end::base-t[]
 
 
+=== !!!! Please use branch 0.10.x in that this branch is more active!!!! My wechat is gnuhpc. Feel free to contact with me.
+
 === Installation and run
 You can download the release package at
 https://github.com/gnuhpc/Kafka-zk-restapi/releases
@@ -39,7 +41,7 @@ Change the following settings of application-home.yml in src/main/resources to v
 kafka.brokers
 zookeeper.uris
 
-#mvn clean package +
+#mvn clean package -Dmaven.test.skip=true +
 
 You will find zip/tar under directory: Kafka-zk-restapi/target
 

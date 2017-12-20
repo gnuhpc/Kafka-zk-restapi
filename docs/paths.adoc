@@ -123,7 +123,7 @@ __required__|consumergroup|string
 [[_getlastcommittimestampusingget]]
 ==== getLastCommitTimestamp
 ....
-GET /kafka/consumergroup/{consumergroup}/{topic}/lastcommittime
+GET /kafka/consumergroup/{consumergroup}/{type}/topic/{topic}/lastcommittime
 ....
 
 
@@ -136,6 +136,8 @@ GET /kafka/consumergroup/{consumergroup}/{topic}/lastcommittime
 __required__|consumergroup|string
 |**Path**|**topic** +
 __required__|topic|string
+|**Path**|**type** +
+__required__|type|enum (NEW, OLD)
 |===
 
 
@@ -164,7 +166,7 @@ __required__|topic|string
 [[_resetoffsetusingput]]
 ==== Reset consumer group offset, earliest/latest can be used
 ....
-PUT /kafka/consumergroup/{consumergroup}/{type}/{topic}/{partition}/{offset}
+PUT /kafka/consumergroup/{consumergroup}/{type}/topic/{topic}/{partition}/{offset}
 ....
 
 
@@ -182,7 +184,7 @@ __required__|partition|integer(int32)
 |**Path**|**topic** +
 __required__|topic|string
 |**Path**|**type** +
-__required__|type|string
+__required__|type|enum (NEW, OLD)
 |===
 
 
@@ -210,7 +212,7 @@ __required__|type|string
 
 
 [[_listallconsumergroupsusingget]]
-==== List consumer groups from zk and kafka
+==== List all consumer groups from zk and kafka
 ....
 GET /kafka/consumergroups
 ....
@@ -223,6 +225,8 @@ GET /kafka/consumergroups
 |Type|Name|Description|Schema
 |**Query**|**topic** +
 __optional__|topic|string
+|**Query**|**type** +
+__optional__|type|enum (NEW, OLD)
 |===
 
 
@@ -249,7 +253,7 @@ __optional__|topic|string
 
 
 [[_describecgusingget]]
-==== Describe consumer groups, showing lag and offset
+==== Describe consumer groups, showing lag and offset, may be slow if multi topic are listened
 ....
 GET /kafka/consumergroups/{consumerGroup}/{type}
 ....
@@ -263,9 +267,7 @@ GET /kafka/consumergroups/{consumerGroup}/{type}
 |**Path**|**consumerGroup** +
 __required__|consumerGroup|string
 |**Path**|**type** +
-__required__|type|string
-|**Query**|**topic** +
-__optional__|topic|string
+__required__|type|enum (NEW, OLD)
 |===
 
 
@@ -275,6 +277,90 @@ __optional__|topic|string
 |===
 |HTTP Code|Description|Schema
 |**200**|OK|< string, < <<_consumergroupdesc,ConsumerGroupDesc>> > array > map
+|**401**|Unauthorized|No Content
+|**403**|Forbidden|No Content
+|**404**|Not Found|No Content
+|===
+
+
+===== Consumes
+
+* `application/json`
+
+
+===== Produces
+
+* `*/*`
+
+
+[[_listtopicbycgusingget]]
+==== Get the topics involved of the specify consumer group
+....
+GET /kafka/consumergroups/{consumerGroup}/{type}/topic
+....
+
+
+===== Parameters
+
+[options="header", cols=".^2,.^3,.^9,.^4"]
+|===
+|Type|Name|Description|Schema
+|**Path**|**consumerGroup** +
+__required__|consumerGroup|string
+|**Path**|**type** +
+__required__|type|enum (NEW, OLD)
+|===
+
+
+===== Responses
+
+[options="header", cols=".^2,.^14,.^4"]
+|===
+|HTTP Code|Description|Schema
+|**200**|OK|< string > array
+|**401**|Unauthorized|No Content
+|**403**|Forbidden|No Content
+|**404**|Not Found|No Content
+|===
+
+
+===== Consumes
+
+* `application/json`
+
+
+===== Produces
+
+* `*/*`
+
+
+[[_describecgbygroupusingget]]
+==== Describe consumer groups by topic, showing lag and offset
+....
+GET /kafka/consumergroups/{consumerGroup}/{type}/topic/{topic}
+....
+
+
+===== Parameters
+
+[options="header", cols=".^2,.^3,.^9,.^4"]
+|===
+|Type|Name|Description|Schema
+|**Path**|**consumerGroup** +
+__required__|consumerGroup|string
+|**Path**|**topic** +
+__required__|topic|string
+|**Path**|**type** +
+__required__|type|enum (NEW, OLD)
+|===
+
+
+===== Responses
+
+[options="header", cols=".^2,.^14,.^4"]
+|===
+|HTTP Code|Description|Schema
+|**200**|OK|< <<_consumergroupdesc,ConsumerGroupDesc>> > array
 |**401**|Unauthorized|No Content
 |**403**|Forbidden|No Content
 |**404**|Not Found|No Content

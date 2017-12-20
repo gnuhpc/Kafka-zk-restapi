@@ -129,7 +129,7 @@ __Type__ : object
 |===
 |Name|Schema
 |**isrRate** +
-__optional__|integer(int64)
+__optional__|number(double)
 |**numPartition** +
 __optional__|integer(int32)
 |**topic** +

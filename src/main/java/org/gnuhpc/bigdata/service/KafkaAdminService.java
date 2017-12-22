@@ -568,15 +568,6 @@ public class KafkaAdminService {
             return null;
         }
 
-        List<AdminClient.ConsumerSummary> consumerFilterList = consumerSummaryList.stream().filter(cs -> {
-            List<TopicPartition> assignment = CollectionConvertor.listConvertJavaList(cs.assignment());
-            if (assignment.stream().filter(tp -> tp.topic().equals(topic)).count() != 0) {
-                return true;
-            } else {
-                return false;
-            }
-        }).collect(toList());
-
         //Get the meta information of the topic
         TopicMeta topicMeta = describeTopic(topic);
         //Construct <PartitionID, End offset> Map
@@ -589,7 +580,7 @@ public class KafkaAdminService {
 
 
         ConsumerGroupDescFactory factory = new ConsumerGroupDescFactory(kafkaUtils);
-        for (AdminClient.ConsumerSummary cs : consumerFilterList) {
+        for (AdminClient.ConsumerSummary cs : consumerSummaryList) {
             List<TopicPartition> assignment = CollectionConvertor.listConvertJavaList(cs.assignment());
             //Second get the current offset of each partition in this topic
 

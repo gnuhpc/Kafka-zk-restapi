@@ -147,7 +147,7 @@ public class KafkaAdminService {
 
         try {
             //Wait for a second for metadata propergating
-            Thread.sleep(1000);
+            Thread.sleep(3000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -1042,7 +1042,7 @@ public class KafkaAdminService {
         Map<String, List<ConsumerGroupDesc>> result = new HashMap<>();
         List<String> topicList = listTopicsByCG(consumerGroup, type);
         if (topicList == null) {
-            storage.remove(consumerGroup);
+            //Return empty result
             return result;
         }
         if (type == ConsumerType.NEW) {
@@ -1050,9 +1050,6 @@ public class KafkaAdminService {
                 result.put(topic, describeNewCGByTopic(consumerGroup, topic));
             }
 
-            if (result.size() == 0) {
-                storage.remove(consumerGroup);
-            }
         } else if (type == ConsumerType.OLD) {
             for (String topic : topicList) {
                 result.put(topic, describeOldCGByTopic(consumerGroup, topic));

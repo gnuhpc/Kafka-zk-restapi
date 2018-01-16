@@ -648,14 +648,14 @@ public class KafkaAdminService {
         ConsumerGroupDescFactory factory = new ConsumerGroupDescFactory(kafkaUtils);
         cgdList.addAll(
                 topicStorage.entrySet().stream().map(
-                        storage-> factory.makeNewPendingConsumerGroupDesc(
+                        storage -> factory.makeNewPendingConsumerGroupDesc(
                                 consumerGroup,
                                 partitionEndOffsetMap,
                                 partitionCurrentOffsetMap,
                                 storage,
                                 topic)
                 )
-                .collect(toList()));
+                        .collect(toList()));
 
         return cgdList;
     }

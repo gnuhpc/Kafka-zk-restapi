@@ -10,11 +10,14 @@ import org.gnuhpc.bigdata.constant.ConsumerState;
 import org.gnuhpc.bigdata.constant.ConsumerType;
 import org.gnuhpc.bigdata.utils.KafkaUtils;
 
+import java.util.Arrays;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @AllArgsConstructor
 public class ConsumerGroupDescFactory {
     private KafkaUtils kafkaUtils;
+
     public ConsumerGroupDesc makeOldConsumerGroupDesc(
             Map.Entry<Integer, String> op,
             Map<Integer, Long> fetchOffSetFromZKResultList,
@@ -59,6 +62,7 @@ public class ConsumerGroupDescFactory {
                 .setType(ConsumerType.NEW);
 
         long currentOffset = -1L;
+
         org.apache.kafka.clients.consumer.OffsetAndMetadata offset = consumer.committed(new TopicPartition(tp.topic(), tp.partition()));
         if (offset != null) {
             currentOffset = offset.offset();
@@ -79,16 +83,17 @@ public class ConsumerGroupDescFactory {
     public ConsumerGroupDesc makeNewPendingConsumerGroupDesc(
             String consumerGroup,
             Map<Integer, Long> partitionEndOffsetMap,
-            Map<Integer, Long> partitionCurrentOffsetMap,
-            Map.Entry<GroupTopicPartition, OffsetAndMetadata> storage,
+            Map.Entry<GroupTopicPartition, OffsetAndMetadata> topicStorage,
             String topic) {
-        int partitionId = storage.getKey().topicPartition().partition();
+        Long partitionCurrentOffset = (topicStorage.getValue() == null) ? -1l: topicStorage.getValue().offset();
+
+        int partitionId = topicStorage.getKey().topicPartition().partition();
         ConsumerGroupDesc.Builder cgdBuilder = ConsumerGroupDesc.newBuilder()
                 .setGroupName(consumerGroup)
                 .setTopic(topic)
                 .setConsumerId("-")
                 .setPartitionId(partitionId)
-                .setCurrentOffset(partitionCurrentOffsetMap.get(storage.getKey().topicPartition().partition()))
+                .setCurrentOffset(partitionCurrentOffset)
                 .setHost("-")
                 .setState(ConsumerState.PENDING)
                 .setType(ConsumerType.NEW);

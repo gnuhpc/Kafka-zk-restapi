@@ -1,6 +1,9 @@
 package org.gnuhpc.bigdata.controller;
 
 import io.swagger.annotations.Api;
+import kafka.common.OffsetAndMetadata;
+import kafka.coordinator.GroupTopicPartition;
+import org.gnuhpc.bigdata.componet.OffsetStorage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,6 +26,9 @@ public class DebugController {
     @Autowired
     ApplicationContext appContext;
 
+    @Autowired
+    OffsetStorage offsetStorage;
+
     @RequestMapping("/beans")
     public Map<String, String[]> beans(@RequestParam(required = false) String q) {
         Map<String, String[]> retMap = new HashMap<>();
@@ -36,5 +42,10 @@ public class DebugController {
 
         retMap.put("beans", retArray);
         return retMap;
+    }
+
+    @RequestMapping("/offsets")
+    public Map<String, Map<GroupTopicPartition, OffsetAndMetadata>> offsets(){
+        return offsetStorage.getMap();
     }
 }

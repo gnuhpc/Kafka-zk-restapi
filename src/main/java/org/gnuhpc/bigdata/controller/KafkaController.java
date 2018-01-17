@@ -210,7 +210,7 @@ public class KafkaController {
 
     @GetMapping(value = "/consumergroups/{consumerGroup}/{type}/topic")
     @ApiOperation(value = "Get the topics involved of the specify consumer group")
-    public List<String> listTopicByCG(@PathVariable String consumerGroup,
+    public Set<String> listTopicByCG(@PathVariable String consumerGroup,
                                                  @PathVariable ConsumerType type){
         return kafkaAdminService.listTopicsByCG(consumerGroup,type);
 
@@ -218,9 +218,9 @@ public class KafkaController {
 
     @GetMapping(value = "/consumergroups/{consumerGroup}/{type}/topic/{topic}")
     @ApiOperation(value = "Describe consumer groups by topic, showing lag and offset")
-    public List<ConsumerGroupDesc> describeCGByGroup(@ConsumerGroupExistConstraint @PathVariable String consumerGroup,
-                                                           @PathVariable ConsumerType type,
-                                                           @PathVariable String topic) {
+    public List<ConsumerGroupDesc> describeCGByTopic(@ConsumerGroupExistConstraint @PathVariable String consumerGroup,
+                                                     @PathVariable ConsumerType type,
+                                                     @PathVariable String topic) {
         if (!Strings.isNullOrEmpty(topic)) {
             existTopic(topic);
         } else {

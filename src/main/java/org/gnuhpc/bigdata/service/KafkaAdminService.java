@@ -26,6 +26,7 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.Node;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
@@ -461,7 +462,7 @@ public class KafkaAdminService {
         return result;
     }
 
-    public List<ConsumerGroupDesc> describeOldCGByTopic(String consumerGroup, String topic) {
+    public List<ConsumerGroupDesc> describeOldCGByTopic(String consumerGroup, @TopicExistConstraint String topic) {
         if (!isOldConsumerGroup(consumerGroup)) {
             throw new RuntimeException(consumerGroup + " non-exist");
         }
@@ -545,17 +546,10 @@ public class KafkaAdminService {
             throw new RuntimeException(consumerGroup + " non-exist!");
         }
 
-        if (isConsumerGroupActive(consumerGroup, ConsumerType.NEW)) {
-            return setRunningNewCGD(consumerGroup, topic);
-        } else {
-            return setPendingNewCGD(consumerGroup, topic);
-        }
+        return setNewCGD(consumerGroup, topic);
     }
 
-    //Set consumergroupdescription for running new consumer group
-    private List<ConsumerGroupDesc> setRunningNewCGD(
-            String consumerGroup,
-            String topic) {
+    private List<ConsumerGroupDesc> setNewCGD(String consumerGroup, String topic) {
         List<ConsumerGroupDesc> cgdList = new ArrayList<>();
         AdminClient adminClient = kafkaUtils.createAdminClient();
 
@@ -564,101 +558,69 @@ public class KafkaAdminService {
         //Nothing about this consumer group obtained, return an empty map directly
         adminClient.close();
 
-        if (consumerSummaryList.size() == 0) {
-            return null;
-        }
+        List<AdminClient.ConsumerSummary> filteredCSList = consumerSummaryList.parallelStream()
+                .filter(cs ->
+                        CollectionConvertor.listConvertJavaList(cs.assignment()).parallelStream()
+                                .filter(tp -> tp.topic().equals(topic)).count() != 0)
+                .collect(toList());
 
-        //Get the meta information of the topic
+        //Prepare the common metrics no matter the cg is active or not.
+
+        //1. Get the meta information of the topic
         TopicMeta topicMeta = describeTopic(topic);
-        //Construct <PartitionID, End offset> Map
+
+        //2. Get the log end offset for every partition
         Map<Integer, Long> partitionEndOffsetMap = topicMeta.getTopicPartitionInfos().stream()
                 .collect(Collectors.toMap(
                         tpi -> tpi.getPartitionId(),
                         tpi -> tpi.getEndOffset()
                         )
                 );
+        if (filteredCSList.size() == 0) {//For Pending consumer group
 
+            //Even from the offsetstorage, nothing about this consumer group obtained
+            // In this case, return an empty map directly.
+            Map<GroupTopicPartition, OffsetAndMetadata> storageMap = storage.get(consumerGroup);
+            if (storageMap == null) {
+                return null;
+            }
 
-        ConsumerGroupDescFactory factory = new ConsumerGroupDescFactory(kafkaUtils);
-        for (AdminClient.ConsumerSummary cs : consumerSummaryList) {
-            List<TopicPartition> assignment = CollectionConvertor.listConvertJavaList(cs.assignment());
-            //Second get the current offset of each partition in this topic
+            //Get the current offset of each partition in this topic.
+            Map<GroupTopicPartition, OffsetAndMetadata> topicStorage = new HashMap<>();
+            for (Map.Entry<GroupTopicPartition, OffsetAndMetadata> e : storageMap.entrySet()) {
+                if (e.getKey().topicPartition().topic().equals(topic)) {
+                    topicStorage.put(e.getKey(), e.getValue());
+                }
+            }
 
-            cgdList.addAll(assignment.stream().map(tp ->
-                    factory.makeNewRunningConsumerGroupDesc(tp, consumerGroup, partitionEndOffsetMap, cs)
-            ).collect(toList()));
-        }
-        return cgdList;
+            //Build consumer group description
+            ConsumerGroupDescFactory factory = new ConsumerGroupDescFactory(kafkaUtils);
+            cgdList.addAll(
+                    topicStorage.entrySet().stream().map(
+                            storage -> factory.makeNewPendingConsumerGroupDesc(
+                                    consumerGroup,
+                                    partitionEndOffsetMap,
+                                    storage,
+                                    topic)
+                    ).collect(toList()));
 
-    }
+        } else { //For running consumer group
+            //Build consumer group description
+            ConsumerGroupDescFactory factory = new ConsumerGroupDescFactory(kafkaUtils);
+            for (AdminClient.ConsumerSummary cs : filteredCSList) {
+                List<TopicPartition> assignment = CollectionConvertor.listConvertJavaList(cs.assignment());
+                //Second get the current offset of each partition in this topic
 
-    //Set consumergroupdescription for pending new consumer group
-    private List<ConsumerGroupDesc> setPendingNewCGD(
-            String consumerGroup, String topic) {
-        Map<GroupTopicPartition, OffsetAndMetadata> storageMap = storage.get(consumerGroup);
-        List<ConsumerGroupDesc> cgdList;
-        ConsumerState state = ConsumerState.PENDING;
-        ConsumerType type = ConsumerType.NEW;
-        ConsumerGroupDesc cgd;
-        List<String> topicList;
-        Map<Integer, Long> partitionCurrentOffsetMap;
-
-        //Nothing about this consumer group obtained, return an empty map directly
-        if (storageMap == null) {
-            return null;
-        }
-
-        //Get the metadata of the topic
-        TopicMeta topicMeta = describeTopic(topic);
-
-        //Construct <PartitionID, EndOffset> Map
-        Map<Integer, Long> partitionEndOffsetMap = topicMeta.getTopicPartitionInfos().stream()
-                .collect(Collectors.toMap(
-                        tpi -> tpi.getPartitionId(),
-                        tpi -> tpi.getEndOffset()
-                        )
-                );
-
-        //First get the information of this topic
-        Map<GroupTopicPartition, OffsetAndMetadata> topicStorage = new HashMap<>();
-        cgdList = new ArrayList<>();
-        //Second get the current offset of each partition in this topic.
-        //Try to fetch it from in-memory storage map
-        for (Map.Entry<GroupTopicPartition, OffsetAndMetadata> e : storageMap.entrySet()) {
-            if (e.getKey().topicPartition().topic().equals(topic)) {
-                topicStorage.put(e.getKey(), e.getValue());
+                cgdList.addAll(assignment.parallelStream()
+                        .filter(tp->tp.topic().equals(topic))
+                        .map(tp -> factory.makeNewRunningConsumerGroupDesc(tp, consumerGroup, partitionEndOffsetMap, cs)
+                ).collect(toList()));
             }
         }
 
-        //Construct <PartitionID, current offset> Map
-        partitionCurrentOffsetMap = topicStorage.entrySet().stream()
-                .filter(e -> e.getKey().topicPartition().topic().equals(topic))
-                .collect(Collectors.toMap(
-                        e -> e.getKey().topicPartition().partition(),
-                        e -> {
-                            if (e.getValue() == null) {
-                                return -1l;
-                            } else {
-                                return e.getValue().offset();
-                            }
-                        }
-                ));
-
-
-        ConsumerGroupDescFactory factory = new ConsumerGroupDescFactory(kafkaUtils);
-        cgdList.addAll(
-                topicStorage.entrySet().stream().map(
-                        storage -> factory.makeNewPendingConsumerGroupDesc(
-                                consumerGroup,
-                                partitionEndOffsetMap,
-                                partitionCurrentOffsetMap,
-                                storage,
-                                topic)
-                )
-                        .collect(toList()));
-
         return cgdList;
     }
+
 
     public String getMessage(@TopicExistConstraint String topic, int partition, long offset, String decoder, String avroSchema) {
         KafkaConsumer consumer = kafkaUtils.createNewConsumer();
@@ -677,23 +639,20 @@ public class KafkaAdminService {
                     )
             );
         }
-        consumer.assign(Arrays.asList(tp));
+        consumer.assign(Collections.singletonList(tp));
         consumer.seek(tp, offset);
 
-        String last;
+        String last = null;
 
-        while (true) {
-            ConsumerRecords<String, String> crs = consumer.poll(channelRetryBackoffMs);
-            if (crs.count() != 0) {
-                Iterator<ConsumerRecord<String, String>> it = crs.iterator();
-
+        ConsumerRecords<String, String> crs = consumer.poll(channelRetryBackoffMs);
+        if (crs.count() != 0) {
+            Iterator<ConsumerRecord<String, String>> it = crs.iterator();
+            while (it.hasNext()) {
                 ConsumerRecord<String, String> initCr = it.next();
-                last = initCr.value() + String.valueOf(initCr.offset());
-                while (it.hasNext()) {
-                    ConsumerRecord<String, String> cr = it.next();
-                    last = cr.value() + String.valueOf(cr.offset());
+                last = "Value: " + initCr.value() + ", Offset: " + String.valueOf(initCr.offset());
+                if (last != null && initCr.offset() == offset) {
+                    break;
                 }
-                break;
             }
         }
 
@@ -984,8 +943,8 @@ public class KafkaAdminService {
     }
 
 
-    public List<String> listTopicsByCG(String consumerGroup, ConsumerType type) {
-        List<String> topicList = null;
+    public Set<String> listTopicsByCG(String consumerGroup, ConsumerType type) {
+        Set<String> topicList = new HashSet<>();
 
         if (type == null) {
             throw new ApiException("Unknown Type " + type);
@@ -996,39 +955,41 @@ public class KafkaAdminService {
                 throw new RuntimeException(consumerGroup + " non-exist");
             }
 
-            topicList = CollectionConvertor.seqConvertJavaList(zkUtils.getTopicsByConsumerGroup(consumerGroup));
+            topicList = new HashSet<>(
+                    CollectionConvertor.seqConvertJavaList(zkUtils.getTopicsByConsumerGroup(consumerGroup))
+            );
         } else if (type == ConsumerType.NEW) {
             if (!isNewConsumerGroup(consumerGroup)) {
                 throw new RuntimeException(consumerGroup + " non-exist!");
             }
 
-            if (isConsumerGroupActive(consumerGroup, ConsumerType.NEW)) {
-                AdminClient adminClient = kafkaUtils.createAdminClient();
+            AdminClient adminClient = kafkaUtils.createAdminClient();
 
-                List<AdminClient.ConsumerSummary> consumerSummaryList =
-                        CollectionConvertor.listConvertJavaList(adminClient.describeConsumerGroup(consumerGroup));
-                //Nothing about this consumer group obtained, return an empty map directly
-                adminClient.close();
+            List<AdminClient.ConsumerSummary> consumerSummaryList =
+                    CollectionConvertor.listConvertJavaList(adminClient.describeConsumerGroup(consumerGroup));
+            //Nothing about this consumer group obtained, return an empty map directly
+            adminClient.close();
 
-                if (consumerSummaryList.size() == 0) {
-                    return null;
-                } else {
-                    //Get topic list and filter if topic is set
-                    topicList = consumerSummaryList.stream().flatMap(
-                            cs -> CollectionConvertor.listConvertJavaList(cs.assignment()).stream())
-                            .map(tp -> tp.topic()).distinct()
-                            .collect(toList());
-                }
-            } else {
+            if (isConsumerGroupActive(consumerGroup, ConsumerType.NEW) &&
+                    consumerSummaryList.size() != 0) {
+
+                //Get topic list and filter if topic is set
+                topicList.addAll(consumerSummaryList.stream().flatMap(
+                        cs -> CollectionConvertor.listConvertJavaList(cs.assignment()).stream())
+                        .map(tp -> tp.topic()).distinct()
+                        .collect(toList()));
+            }
+
+            if (consumerSummaryList.size() == 0) {   //PENDING Consumer Group
                 Map<GroupTopicPartition, OffsetAndMetadata> storageMap = storage.get(consumerGroup);
                 if (storageMap == null) {
                     return null;
                 }
 
                 //Fetch the topics involved by consumer. And filter it by topic name
-                topicList = storageMap.entrySet().stream()
+                topicList.addAll(storageMap.entrySet().stream()
                         .map(e -> e.getKey().topicPartition().topic()).distinct()
-                        .collect(toList());
+                        .collect(toList()));
             }
         } else {
             throw new ApiException("Unknown Type " + type);
@@ -1040,7 +1001,7 @@ public class KafkaAdminService {
 
     public Map<String, List<ConsumerGroupDesc>> describeConsumerGroup(String consumerGroup, ConsumerType type) {
         Map<String, List<ConsumerGroupDesc>> result = new HashMap<>();
-        List<String> topicList = listTopicsByCG(consumerGroup, type);
+        Set<String> topicList = listTopicsByCG(consumerGroup, type);
         if (topicList == null) {
             //Return empty result
             return result;

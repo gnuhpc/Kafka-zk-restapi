@@ -334,7 +334,7 @@ __required__|type|enum (NEW, OLD)
 * `*/*`
 
 
-[[_describecgbygroupusingget]]
+[[_describecgbytopicusingget]]
 ==== Describe consumer groups by topic, showing lag and offset
 ....
 GET /kafka/consumergroups/{consumerGroup}/{type}/topic/{topic}

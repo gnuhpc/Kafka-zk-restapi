@@ -226,6 +226,11 @@
             <artifactId>curator-framework</artifactId>
             <version>2.11.0</version>
         </dependency>
+        <!-- convert Java 8 date and time classes to JSON representation using the @JsonFormat annotation-->
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
@@ -233,6 +238,7 @@
             <plugin>
                 <groupId>net.alchim31.maven</groupId>
                 <artifactId>scala-maven-plugin</artifactId>
+                <version>3.3.1</version>
                 <executions>
                     <execution>
                         <id>scala-compile</id>

@@ -1,0 +1,34 @@
+kafka:
+  brokers: localhost:9092,localhost:9093,localhost:9094
+  offset:
+    topic: "__consumer_offsets"
+    partitions: 50
+    reset: true
+
+zookeeper:
+  uris: localhost:2181
+
+jmx:
+  kafka:
+    jmxurl: localhost:19999,localhost:29999,localhost:39999
+  zookeeper:
+    jmxurl: localhost:49999
+
+server:
+  port: 8121
+  context-path: /
+  debug: true
+
+spring:
+  kafka:
+    bootstrap-servers: ${kafka.brokers}
+    consumer:
+      group-id: "kafka-zk-rest"
+  mvc:
+    throw-exception-if-no-handler-found: true
+  output:
+    ansi:
+      enabled: detect
+  aop:
+    auto: true
+

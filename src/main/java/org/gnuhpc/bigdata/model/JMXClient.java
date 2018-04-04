@@ -46,7 +46,6 @@ public class JMXClient {
   }
 
   public JMXConnector connect() throws CollectorException {
-    Long time1 = null;
     try {
       JMXServiceURL jmxServiceURL = new JMXServiceURL(this.jmxServiceURL);
       jmxConnector = JMXConnectorFactory.connect(jmxServiceURL, jmxEnv);

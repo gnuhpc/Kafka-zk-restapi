@@ -1,0 +1,103 @@
+filters:
+    - include:
+        domain: kafka.server
+        bean_regex: kafka.server:type=BrokerTopicMetrics,name=BytesInPerSec.*
+        attribute:
+            Count:
+                metric_type: KAFKA_BROKER_VOLUMN
+                alias: BytesIn
+            OneMinuteRate:
+                metric_type: KAFKA_BROKER_PERF
+                alias: BytesInPerSec
+    - include:
+        domain: kafka.server
+        bean_regex: kafka.server:type=BrokerTopicMetrics,name=BytesOutPerSec.*
+        attribute:
+            Count:
+                metric_type: KAFKA_BROKER_VOLUMN
+                alias: BytesOut
+            OneMinuteRate:
+                metric_type: KAFKA_BROKER_PERF
+                alias: BytesOutPerSec
+    - include:
+        domain: kafka.server
+        bean_regex: kafka.server:type=BrokerTopicMetrics,name=MessagesInPerSec.*
+        attribute:
+            Count:
+                metric_type: KAFKA_BROKER_VOLUMN
+                alias: MessagesIn
+            OneMinuteRate:
+                metric_type: KAFKA_BROKER_PERF
+                alias: MessagesInPerSec
+    - include:
+            domain: kafka.network
+            bean: kafka.network:type=RequestMetrics,name=RequestsPerSec,request=Produce
+            attribute:
+                OneMinuteRate:
+                    metric_type: KAFKA_BROKER_PERF
+                    alias: RequestsPerSec_Produce
+    - include:
+            domain: kafka.network
+            bean: kafka.network:type=RequestMetrics,name=RequestsPerSec,request=FetchConsumer
+            attribute:
+                OneMinuteRate:
+                    metric_type: KAFKA_BROKER_PERF
+                    alias: RequestsPerSec_FetchConsumer
+    - include:
+            domain: kafka.network
+            bean: kafka.network:type=RequestMetrics,name=RequestsPerSec,request=FetchFollower
+            attribute:
+                OneMinuteRate:
+                    metric_type: KAFKA_BROKER_PERF
+                    alias: RequestsPerSec_FetchFollower
+    - include:
+            domain: kafka.network
+            bean: kafka.network:type=RequestMetrics,name=TotalTimeMs,request=Produce
+            attribute:
+                Mean:
+                    metric_type: KAFKA_BROKER_PERF
+                    alias: TotalTimeMs_Produce_Mean
+                Count:
+                    metric_type: KAFKA_BROKER_PERF
+                    alias: TotalTimeMs_Produce_Count
+    - include:
+            domain: kafka.network
+            bean: kafka.network:type=RequestMetrics,name=TotalTimeMs,request=FetchConsumer
+            attribute:
+                Mean:
+                    metric_type: KAFKA_BROKER_PERF
+                    alias: TotalTimeMs_FetchConsumer_Mean
+                Count:
+                    metric_type: KAFKA_BROKER_PERF
+                    alias: TotalTimeMs_FetchConsumer_Count
+    - include:
+            domain: kafka.network
+            bean: kafka.network:type=RequestMetrics,name=TotalTimeMs,request=FetchFollower
+            attribute:
+                Mean:
+                    metric_type: KAFKA_BROKER_PERF
+                    alias: TotalTimeMs_FetchFollower_Mean
+                Count:
+                    metric_type: KAFKA_BROKER_PERF
+                    alias: TotalTimeMs_FetchFollower_Count
+    - include:
+            domain: kafka.network
+            bean: kafka.network:type=SocketServer,name=NetworkProcessorAvgIdlePercent
+            attribute:
+                Value:
+                    metric_type: KAFKA_BROKER_PERF
+                    alias: NetworkProcessorAvgIdlePercent
+    - include:
+            domain: kafka.server
+            bean: kafka.server:type=KafkaRequestHandlerPool,name=RequestHandlerAvgIdlePercent
+            attribute:
+                FiveMinuteRate:
+                    metric_type: KAFKA_BROKER_PERF
+                    alias: RequestHandlerAvgIdlePercent
+    - include:
+            domain: kafka.server
+            bean: kafka.server:type=ReplicaFetcherManager,name=MaxLag,clientId=Replica
+            attribute:
+                Value:
+                    metric_type: KAFKA_BROKER_PERF
+                    alias: MaxLagBtwFollowerLeader

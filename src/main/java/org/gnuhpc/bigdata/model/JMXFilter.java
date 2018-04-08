@@ -15,8 +15,8 @@ public class JMXFilter {
   HashMap<String, Object> filter;
   Pattern domainRegex;
   ArrayList<Pattern> beanRegexes = null;
-  ArrayList<String> excludeTags = null;
-  HashMap<String, String> additionalTags = null;
+  //ArrayList<String> excludeTags = null;
+  //HashMap<String, String> additionalTags = null;
 
   /**
    * A simple class to manipulate include/exclude filter elements more easily
@@ -112,6 +112,7 @@ public class JMXFilter {
     return this.beanRegexes;
   }
 
+  /*
   public ArrayList<String> getExcludeTags() {
     // Return excluded tags  as an ArrayList whether it's defined as a list or not
 
@@ -139,6 +140,7 @@ public class JMXFilter {
 
     return this.additionalTags;
   }
+  */
 
   public String getDomain() {
     return (String) filter.get("domain");

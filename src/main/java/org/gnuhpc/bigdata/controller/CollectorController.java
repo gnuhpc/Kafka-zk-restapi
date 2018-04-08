@@ -27,8 +27,8 @@ public class CollectorController {
   @Value("${jmx.kafka.jmxurl}")
   private String jmxKafkaURL;
 
-  @GetMapping("/jmx")
-  @ApiOperation(value = "Fetch JMX Metric Data")
+  @GetMapping("/jmx/v1")
+  @ApiOperation(value = "Fetch JMX metric data")
   public List<JMXMetricDataV1> collectJMXMetric(
           @Pattern(regexp = IP_AND_PORT_LIST_REGEX)@RequestParam @ApiParam(
                   value = "Parameter jmxurl should be a comma-separated list of {IP:Port} or set to \'default\'")String jmxurl) {
@@ -36,43 +36,27 @@ public class CollectorController {
       jmxurl = jmxKafkaURL;
     }
 
-    System.out.println("jmxurl=" + jmxurl);
-    /**
-     * 1. jmxurl传值为空，使用项目中配置的jmxurl -- ok
-     * 2. rmi超时连接时间设置问题，服务同步or异步
-     * 3. 异常处理--用RestErrorResponse, CustomErrorController里的error返回结果修改
-     * 4. swagger用法
-     * 5. 定时？
-     */
-    log.info("Collect JMX Metric Data Started.");
+    log.debug("Collect JMX Metric Data Started.");
     return collectorService.collectJMXData(jmxurl);
   }
 
   @PostMapping("/jmx/v2")
-  @ApiOperation(value = "Fetch JMX Metric Data with query.")
+  @ApiOperation(value = "Fetch JMX metric data with query filter. You can get the query filter template through the API /jmx/v2/filters.")
   public List<JMXMetricData> collectJMXMetric(@Pattern(regexp = IP_AND_PORT_LIST_REGEX)@RequestParam
                                                 @ApiParam(value = "Parameter jmxurl should be a comma-separated list of {IP:Port} or set to \'default\'")String jmxurl,
                                               @RequestBody JMXQuery jmxQuery) {
     if(jmxurl.equals("default")) {
       jmxurl = jmxKafkaURL;
     }
-    /*
-    System.out.println("jmxurl=" + jmxQuery.getHosts());
 
     log.debug("Collect JMX Metric Data Started.");
-    */
+
     return collectorService.collectJMXData(jmxurl, jmxQuery);
   }
 
-  @PostMapping("/jmx/v2/filters/list")
-  @ApiOperation(value = "List All the Query Filter Templates")
-  public HashMap<String, Object> listJMXFilterTemplate() {
-    return collectorService.listJMXFilterTemplate();
-  }
-
-  @PostMapping(value = "/jmx2/{var}/tmp")
-  public List<JMXMetricDataV1>  writeMessage(@Size(min=1, max=3)@PathVariable String var,
-                                             @Size(min=2, max=4)@RequestBody String testex) {
-    return collectorService.collectJMXData("localhost:29999");
+  @PostMapping("/jmx/v2/filters")
+  @ApiOperation(value = "List the query filter templates with the filterKey. If filterKey is set to empty, it will return all the templates.")
+  public HashMap<String, Object> listJMXFilterTemplate(@RequestParam String filterKey) {
+    return collectorService.listJMXFilterTemplate(filterKey);
   }
 }

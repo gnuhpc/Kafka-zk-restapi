@@ -1,4 +1,8 @@
 filters:
+    #
+    # Kafka volume metrics.
+    # Notice: BytesInPerSec, BytesOutPerSec and MessagesInPerSec are performance metrics.
+    #
     - include:
         domain: kafka.server
         bean_regex: kafka.server:type=BrokerTopicMetrics,name=BytesInPerSec.*
@@ -29,6 +33,10 @@ filters:
             OneMinuteRate:
                 metric_type: KAFKA_BROKER_PERF
                 alias: MessagesInPerSec
+
+    #
+    # Kafka performance metrics
+    #
     - include:
             domain: kafka.network
             bean: kafka.network:type=RequestMetrics,name=RequestsPerSec,request=Produce
@@ -101,3 +109,76 @@ filters:
                 Value:
                     metric_type: KAFKA_BROKER_PERF
                     alias: MaxLagBtwFollowerLeader
+    #
+    # Kafka availability metrics
+    #
+    - include:
+            domain: java.lang
+            bean: java.lang:type=Runtime
+            attribute:
+                Uptime:
+                    metric_type: KAFKA_BROKER_AVAIL
+                    alias: JVMUptime
+    - include:
+            domain: kafka.controller
+            bean: kafka.controller:type=KafkaController,name=OfflinePartitionsCount
+            attribute:
+                Value:
+                    metric_type: KAFKA_BROKER_AVAIL
+                    alias: OfflinePartitionsCount
+    - include:
+            domain: kafka.controller
+            bean: kafka.controller:type=KafkaController,name=ActiveControllerCount
+            attribute:
+                Value:
+                    metric_type: KAFKA_BROKER_AVAIL
+                    alias: ActiveControllerCount
+    - include:
+            domain: kafka.controller
+            bean: kafka.controller:type=ControllerStats,name=LeaderElectionRateAndTimeMs
+            attribute:
+                Count:
+                    metric_type: KAFKA_BROKER_AVAIL
+                    alias: LeaderElectionRateAndTimeMs
+    - include:
+            domain: kafka.controller
+            bean: kafka.controller:type=ControllerStats,name=UncleanLeaderElectionsPerSec
+            attribute:
+                Count:
+                    metric_type: KAFKA_BROKER_AVAIL
+                    alias: UncleanLeaderElectionsPerSec
+    - include:
+            domain: kafka.server
+            bean: kafka.server:type=ReplicaManager,name=UnderReplicatedPartitions
+            attribute:
+                Value:
+                    metric_type: KAFKA_BROKER_AVAIL
+                    alias: UnderReplicatedPartitions
+    - include:
+            domain: kafka.server
+            bean: kafka.server:type=ReplicaManager,name=PartitionCount
+            attribute:
+                Value:
+                    metric_type: KAFKA_BROKER_AVAIL
+                    alias: PartitionCount
+    - include:
+            domain: kafka.server
+            bean: kafka.server:type=ReplicaManager,name=IsrShrinksPerSec
+            attribute:
+                Count:
+                    metric_type: KAFKA_BROKER_AVAIL
+                    alias: IsrShrinksPerSec
+    - include:
+            domain: kafka.server
+            bean: kafka.server:type=ReplicaManager,name=IsrExpandsPerSec
+            attribute:
+                Count:
+                    metric_type: KAFKA_BROKER_AVAIL
+                    alias: IsrExpandsPerSec
+    - include:
+            domain: kafka.server
+            bean: kafka.server:type=ReplicaManager,name=LeaderCount
+            attribute:
+                Value:
+                    metric_type: KAFKA_BROKER_AVAIL
+                    alias: LeaderCount

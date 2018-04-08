@@ -15,6 +15,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import org.yaml.snakeyaml.Yaml;
 import org.springframework.core.io.ClassPathResource;
 @Service
@@ -42,7 +45,6 @@ public class CollectorService {
         MBeanServerConnection mBeanServerConnection = jmxClient.getJmxConnector().getMBeanServerConnection();
         Set<ObjectName> objectNames = mBeanServerConnection.queryNames(null, null);
         for (ObjectName objectName : objectNames) {
-          //if(objectName.toString().matches("^java.*")) continue;
           Map<String, String> attributeInfoMap = getAttributeInfoByObjectName(mBeanServerConnection, objectName);
           metricData.put(objectName.toString(), attributeInfoMap);
         }
@@ -83,13 +85,10 @@ public class CollectorService {
         jmxClient.connect();
         MBeanServerConnection mBeanServerConnection = jmxClient.getJmxConnector().getMBeanServerConnection();
         for (String scope : beanScopes) {
-          System.out.println("+++++beanScope:" + scope);
           ObjectName name = new ObjectName(scope);
           beans.addAll(mBeanServerConnection.queryNames(name, null));
         }
-        System.out.println("+++++before beans:" + beans.toString());
         beans = (beans.isEmpty()) ? mBeanServerConnection.queryNames(null, null) : beans;
-        System.out.println("+++++beans:" + beans.toString());
         getMatchingAttributes(mBeanServerConnection, beans, configurationList);
         jmxMetricData.setMetrics(getMetrics());
         jmxMetricData.setCollected(true);
@@ -147,14 +146,11 @@ public class CollectorService {
           continue;
         }
         for (JMXConfiguration conf: configurationList) {
-          //System.out.println("++++beanName:" + beanName.toString() + " //attribute:" +
-          //        attributeInfo.getName() + " //config:" + conf.toString() + " // match=" + jmxAttribute.match(conf));
           if (jmxAttribute.match(conf)) {
-            //System.out.println("++++beanName:"+beanName.toString()+" //attribute:" +
-            //                attributeInfo.getName() + " //config:" + conf.toString() + " // match=" + jmxAttribute.match(conf));
             jmxAttribute.setMatchingConf(conf);
             this.matchingAttributes.add(jmxAttribute);
-            System.out.println("       Matching: " + jmxAttribute.getAttributeName());
+            log.debug("       Matching Attribute: " + jmxAttribute.getAttributeName() +
+                      ", BeanName:" + beanName.getCanonicalName());
           }
         }
       }
@@ -210,25 +206,39 @@ public class CollectorService {
     return metrics;
   }
 
-  public HashMap<String, Object> listJMXFilterTemplate() {
+  public HashMap<String, Object> listJMXFilterTemplate(String filterKey) {
     HashMap<String, Object> filterTemplateMap = new HashMap<>();
     HashMap<Object, Object> yamlHash;
     try {
       File tempDir = new ClassPathResource("JMXFilterTemplate/").getFile();
       if (tempDir.isDirectory()) {
         for (File yamlFile:tempDir.listFiles()) {
-          String[] fileNames = yamlFile.getName().split("\\.");
-          System.out.println("fileName:" + yamlFile.getName());
-          String filterName = fileNames[0];
-          FileInputStream yamlInputStream = new FileInputStream(yamlFile);
-          yamlHash = (HashMap<Object, Object>) new Yaml().load(yamlInputStream);
-          filterTemplateMap.put(filterName, yamlHash);
+          String fileFullName = yamlFile.getName();
+          if (matchIgnoreCase(filterKey, fileFullName)) {
+            String[] fileNames = fileFullName.split("\\.");
+            FileInputStream yamlInputStream = new FileInputStream(yamlFile);
+            yamlHash = (HashMap<Object, Object>) new Yaml().load(yamlInputStream);
+            filterTemplateMap.put(fileNames[0], yamlHash);
+          }
         }
       }
-    } catch (Exception e) {
-      e.printStackTrace();
+    } catch (IOException e) {
+      CollectorException ce = new CollectorException(String.format("%s occurred. Reason:%s. Advice:"+
+                      "Create a directory named JMXFilterTemplate to include filter templates in the resources directory.",
+              e.getClass().getCanonicalName(), e.getLocalizedMessage()), e);
+      log.error("JMXFilterTemplate path does not exist.");
+      filterTemplateMap.put("error", ce.getLocalizedMessage());
     }
 
     return filterTemplateMap;
+  }
+
+  boolean matchIgnoreCase(String regex, String string) {
+    Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
+    Matcher matcher = pattern.matcher(string);
+
+    boolean match = matcher.find();
+
+    return match;
   }
 }

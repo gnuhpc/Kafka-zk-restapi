@@ -37,9 +37,6 @@ public class JMXSimpleAttribute extends JMXAttribute {
   }
 
   public boolean match(JMXConfiguration configuration) {
-    System.out.println("matchDomain:" + matchDomain(configuration) + ",matchBean:" + matchBean(configuration)
-            + ",matchAttribute:" + matchAttribute(configuration) + ", excludeMatchDomain:" + excludeMatchDomain(configuration)
-            + ",exludeMatchBean:" + excludeMatchBean(configuration) + ", excludeAttri:" + excludeMatchAttribute(configuration));
     return matchDomain(configuration)
             && matchBean(configuration)
             && matchAttribute(configuration)

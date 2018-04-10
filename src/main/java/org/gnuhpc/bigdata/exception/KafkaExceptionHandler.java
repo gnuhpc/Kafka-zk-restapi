@@ -45,7 +45,7 @@ public class KafkaExceptionHandler {
                 .build();
     }
 
-
+    /*
     @ExceptionHandler(ConstraintViolationException.class)
     public RestErrorResponse constraintViolationException(ConstraintViolationException ex){
         StringBuilder message = new StringBuilder();
@@ -62,7 +62,7 @@ public class KafkaExceptionHandler {
                 .setDeveloperMessage(ex.getMessage())
                 .build();
     }
-
+    */
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public RestErrorResponse serviceNotAvailableException(ServiceNotAvailableException ex){

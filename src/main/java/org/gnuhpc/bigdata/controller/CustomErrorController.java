@@ -1,10 +1,12 @@
 package org.gnuhpc.bigdata.controller;
 
 import org.gnuhpc.bigdata.exception.ErrorJson;
+import org.gnuhpc.bigdata.exception.RestErrorResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.web.ErrorAttributes;
 import org.springframework.boot.autoconfigure.web.ErrorController;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.RequestAttributes;
@@ -27,10 +29,14 @@ public class CustomErrorController implements ErrorController {
     private ErrorAttributes errorAttributes;
 
     @RequestMapping(value = PATH)
-    public ErrorJson error(HttpServletRequest request, HttpServletResponse response) {
+    public RestErrorResponse error(HttpServletRequest request, HttpServletResponse response) {
         // Appropriate HTTP response code (e.g. 404 or 500) is automatically set by Spring.
         // Here we just define response body.
-        return new ErrorJson(response.getStatus(), getErrorAttributes(request, debug));
+        //return new ErrorJson(response.getStatus(), getErrorAttributes(request, debug));
+      return new RestErrorResponse(HttpStatus.valueOf(response.getStatus()), response.getStatus(),
+              (String)getErrorAttributes(request, debug).get("message"),
+              (String)getErrorAttributes(request, debug).get("trace"),
+              "");
     }
 
     @Override

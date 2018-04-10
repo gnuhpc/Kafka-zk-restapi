@@ -28,7 +28,7 @@ public class CollectorController {
   private String jmxKafkaURL;
 
   @GetMapping("/jmx/v1")
-  @ApiOperation(value = "Fetch JMX metric data")
+  @ApiOperation(value = "Fetch all JMX metric data")
   public List<JMXMetricDataV1> collectJMXMetric(
           @Pattern(regexp = IP_AND_PORT_LIST_REGEX)@RequestParam @ApiParam(
                   value = "Parameter jmxurl should be a comma-separated list of {IP:Port} or set to \'default\'")String jmxurl) {

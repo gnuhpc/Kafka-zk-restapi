@@ -13,7 +13,7 @@ Kafka/ZK REST API is to provide the production-ready endpoints to perform some a
 * Consumer group(old zookeeper based/new kafka based) list/describe
 * Offset check/reset
 * Consumer Group Lag check
-* Collect JMX metrics from applications that expose JMX metrics +
+* Collect JMX metrics from brokers that expose JMX metrics +
   More details refer to https://github.com/gnuhpc/Kafka-zk-restapi/blob/master/docs/JMXCollector.adoc[JMXCollector API Specification]
 // end::base-t[]
 

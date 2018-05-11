@@ -2,6 +2,131 @@
 [[_paths]]
 == Resources
 
+[[_collector-controller_resource]]
+=== Collector-controller
+Rest API for Collecting JMX Metric Data
+
+
+[[_collectjmxmetricusingget]]
+==== Fetch all JMX metric data
+....
+GET /jmx/v1
+....
+
+
+===== Parameters
+
+[options="header", cols=".^2,.^3,.^9,.^4"]
+|===
+|Type|Name|Description|Schema
+|**Query**|**jmxurl** +
+__optional__|Parameter jmxurl should be a comma-separated list of {IP:Port} or set to 'default'|string
+|===
+
+
+===== Responses
+
+[options="header", cols=".^2,.^14,.^4"]
+|===
+|HTTP Code|Description|Schema
+|**200**|OK|< <<_jmxmetricdatav1,JMXMetricDataV1>> > array
+|**401**|Unauthorized|No Content
+|**403**|Forbidden|No Content
+|**404**|Not Found|No Content
+|===
+
+
+===== Consumes
+
+* `application/json`
+
+
+===== Produces
+
+* `*/*`
+
+
+[[_collectjmxmetricusingpost]]
+==== Fetch JMX metric data with query filter. You can get the query filter template through the API /jmx/v2/filters.
+....
+POST /jmx/v2
+....
+
+
+===== Parameters
+
+[options="header", cols=".^2,.^3,.^9,.^4"]
+|===
+|Type|Name|Description|Schema
+|**Query**|**jmxurl** +
+__optional__|Parameter jmxurl should be a comma-separated list of {IP:Port} or set to 'default'|string
+|**Body**|**jmxQuery** +
+__required__|jmxQuery|<<_jmxquery,JMXQuery>>
+|===
+
+
+===== Responses
+
+[options="header", cols=".^2,.^14,.^4"]
+|===
+|HTTP Code|Description|Schema
+|**200**|OK|< <<_jmxmetricdata,JMXMetricData>> > array
+|**201**|Created|No Content
+|**401**|Unauthorized|No Content
+|**403**|Forbidden|No Content
+|**404**|Not Found|No Content
+|===
+
+
+===== Consumes
+
+* `application/json`
+
+
+===== Produces
+
+* `*/*`
+
+
+[[_listjmxfiltertemplateusingget]]
+==== List the query filter templates with the filterKey. If filterKey is set to empty, it will return all the templates.
+....
+GET /jmx/v2/filters
+....
+
+
+===== Parameters
+
+[options="header", cols=".^2,.^3,.^9,.^4"]
+|===
+|Type|Name|Description|Schema
+|**Query**|**filterKey** +
+__required__|filterKey|string
+|===
+
+
+===== Responses
+
+[options="header", cols=".^2,.^14,.^4"]
+|===
+|HTTP Code|Description|Schema
+|**200**|OK|< string, object > map
+|**401**|Unauthorized|No Content
+|**403**|Forbidden|No Content
+|**404**|Not Found|No Content
+|===
+
+
+===== Consumes
+
+* `application/json`
+
+
+===== Produces
+
+* `*/*`
+
+
 [[_kafka-controller_resource]]
 === Kafka-controller
 Kafka Controller

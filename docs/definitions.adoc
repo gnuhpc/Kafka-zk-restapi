@@ -86,6 +86,11 @@ __optional__|enum (success, failure)
 |===
 
 
+[[_25ace99c7bfccf8d17a8f035a9b4bd2f]]
+=== HashMap«string,object»
+__Type__ : < string, object > map
+
+
 [[_hostandport]]
 === HostAndPort
 
@@ -99,9 +104,105 @@ __optional__|integer(int32)
 |===
 
 
+[[_jmxconfiguration]]
+=== JMXConfiguration
+
+[options="header", cols=".^3,.^4"]
+|===
+|Name|Schema
+|**exclude** +
+__optional__|<<_jmxfilter,JMXFilter>>
+|**include** +
+__optional__|<<_jmxfilter,JMXFilter>>
+|===
+
+
+[[_jmxfilter]]
+=== JMXFilter
+
+[options="header", cols=".^3,.^4"]
+|===
+|Name|Schema
+|**attribute** +
+__optional__|object
+|**beanNames** +
+__optional__|< string > array
+|**beanRegexes** +
+__optional__|< <<_pattern,Pattern>> > array
+|**domain** +
+__optional__|string
+|**domainRegex** +
+__optional__|<<_pattern,Pattern>>
+|**emptyBeanName** +
+__optional__|boolean
+|**filter** +
+__optional__|< string, object > map
+|===
+
+
+[[_jmxmetricdata]]
+=== JMXMetricData
+
+[options="header", cols=".^3,.^11,.^4"]
+|===
+|Name|Description|Schema
+|**collected** +
+__optional__||boolean
+|**host** +
+__optional__||string
+|**metrics** +
+__optional__||< <<_25ace99c7bfccf8d17a8f035a9b4bd2f,HashMap«string,object»>> > array
+|**msg** +
+__optional__||string
+|**timestamp** +
+__optional__|**Example** : `"yyyy-MM-dd HH:mm:ss"`|string
+|===
+
+
+[[_jmxmetricdatav1]]
+=== JMXMetricDataV1
+
+[options="header", cols=".^3,.^11,.^4"]
+|===
+|Name|Description|Schema
+|**collected** +
+__optional__||boolean
+|**host** +
+__optional__||string
+|**mbeanInfo** +
+__optional__||object
+|**msg** +
+__optional__||string
+|**timestamp** +
+__optional__|**Example** : `"yyyy-MM-dd HH:mm:ss"`|string
+|===
+
+
+[[_jmxquery]]
+=== JMXQuery
+
+[options="header", cols=".^3,.^4"]
+|===
+|Name|Schema
+|**filters** +
+__optional__|< <<_jmxconfiguration,JMXConfiguration>> > array
+|===
+
+
 [[_bbed2f02db402d6ae09a0dcf86682c45]]
 === Map«int,long»
 __Type__ : < string, integer(int64) > map
+
+
+[[_pattern]]
+=== Pattern
+
+[options="header", cols=".^3,.^4"]
+|===
+|Name|Schema
+|**cursor** +
+__optional__|integer(int32)
+|===
 
 
 [[_reassignwrapper]]

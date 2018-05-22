@@ -1,0 +1,2 @@
+admin:admin1234:admin
+tina:tina1234:user

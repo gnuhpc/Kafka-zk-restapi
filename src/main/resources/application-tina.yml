@@ -19,6 +19,7 @@ server:
   port: 8121
   context-path: /
   debug: true
+  security: false
 
 spring:
   kafka:

@@ -1,19 +1,19 @@
 package org.gnuhpc.bigdata.service;
 
 import lombok.extern.log4j.Log4j;
+import org.gnuhpc.bigdata.config.JMXConfig;
 import org.gnuhpc.bigdata.exception.CollectorException;
 import org.gnuhpc.bigdata.model.*;
+import org.gnuhpc.bigdata.utils.CommonUtils;
 import org.json.JSONObject;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
-import org.yaml.snakeyaml.Yaml;
 
 import javax.management.MBeanAttributeInfo;
 import javax.management.MBeanInfo;
 import javax.management.MBeanServerConnection;
 import javax.management.ObjectName;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -210,10 +210,7 @@ public class CollectorService {
     HashMap<Object, Object> yamlHash;
     String projectRootPath = "";
     try {
-      File tempFile = new File("");
-      projectRootPath = tempFile.getCanonicalPath();
-      log.info("Project Root Path is " + projectRootPath);
-      File jmxFilterDir = new File(projectRootPath +"/JMXFilterTemplate");
+      File jmxFilterDir = new File(JMXConfig.JMX_FILTER_DIR);
       if (!jmxFilterDir.exists() || !jmxFilterDir.isDirectory()) {
         throw new IOException();
       }
@@ -222,8 +219,7 @@ public class CollectorService {
         log.info("Found JMXFilterTemplate filename=" + fileFullName);
         if (matchIgnoreCase(filterKey, fileFullName)) {
           String[] fileNames = fileFullName.split("\\.");
-          FileInputStream yamlInputStream = new FileInputStream(yamlFile);
-          yamlHash = (HashMap<Object, Object>) new Yaml().load(yamlInputStream);
+          yamlHash = CommonUtils.yamlParse(yamlFile);
           filterTemplateMap.put(fileNames[0], yamlHash);
         }
       }

@@ -1,0 +1,22 @@
+---
+test4:
+  password: "$2a$10$M9g/YgjQUuEH05RZklnm3u1JWoyRApv/Bfxwe0EiOFMKl2ghQvDK2"
+  role: "user"
+test2:
+  password: "$2a$10$xUisqGbg1lC.F62bwAZ0KuIJ/ltIg.0erANK1rz/gi1qVbRzkb.KC"
+  role: "user"
+test3:
+  password: "$2a$10$5L.EQBqNKBPLsbflg3mYUuZGmH7jh6IUjB6nyecLPo1rGKLu5LXAW"
+  role: "user"
+test:
+  password: "$2a$10$tXq/tF9d5COfuRbS0eyfdOrsgv2mn.xhKT3TdWY8007dsIEhDpItS"
+  role: "user"
+admin:
+  password: "$2a$10$cwkLeAFbPSNWEvjnL.w2FeoEPIv.MMEb0Pk541TiuqGRHP.x8ReoK"
+  role: "admin"
+test1:
+  password: "$2a$10$knZ1h7KIDJeJuJdpmspt9utL.UajESzTlox7X/DFA4YcINbb3TFdC"
+  role: "user"
+tina:
+  password: "$2a$10$e6UbRpWtOP43A/QCOmNCGuJ3BN9OoToiF0HAiZgMW3ktnzvQkjQfC"
+  role: "string"

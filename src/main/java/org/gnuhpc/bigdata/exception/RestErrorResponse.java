@@ -30,6 +30,7 @@ public class RestErrorResponse {
     private List<RestSubError> subErrorList;
 
     public RestErrorResponse() {
+        //this.timestamp = new Date();
         this.timestamp = LocalDateTime.now();
     }
 

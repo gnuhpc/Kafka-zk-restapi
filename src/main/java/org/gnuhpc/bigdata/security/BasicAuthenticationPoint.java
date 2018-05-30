@@ -1,9 +1,13 @@
-package org.gnuhpc.bigdata.config;
+package org.gnuhpc.bigdata.security;
 
-import net.sf.json.JSONObject;
-import net.sf.json.JsonConfig;
-import net.sf.json.processors.JsonValueProcessor;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import lombok.NoArgsConstructor;
 import org.gnuhpc.bigdata.exception.RestErrorResponse;
+import org.springframework.boot.jackson.JsonComponent;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.www.BasicAuthenticationEntryPoint;
@@ -25,29 +29,25 @@ public class BasicAuthenticationPoint extends BasicAuthenticationEntryPoint {
     response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
     String error = "Authenciation Error:" + authEx.getClass().getCanonicalName();
     RestErrorResponse restAuthenticationError = new RestErrorResponse(HttpStatus.UNAUTHORIZED, error, authEx);
-    /**
-     * Translate field LocalDateTime to uniform the response format.
-     */
-    JsonConfig jsonConfig = new JsonConfig();
-    jsonConfig.registerJsonValueProcessor(LocalDateTime.class, new JsonValueProcessor() {
-      DateTimeFormatter df = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-      @Override
-      public Object processObjectValue(String propertyName, Object date,JsonConfig config) {
-        return df.format((LocalDateTime)date);
-      }
-
-      @Override
-      public Object processArrayValue(Object date, JsonConfig config) {
-        return df.format((LocalDateTime)date);
-      }
-    });
-
-    response.getWriter().print(JSONObject.fromObject(restAuthenticationError, jsonConfig).toString());
+    ObjectMapper mapper = new ObjectMapper();
+    JavaTimeModule javaTimeModule = new JavaTimeModule();
+    javaTimeModule.addSerializer(LocalDateTime.class, new LocalDateTimeSerializer());
+    mapper.registerModule(javaTimeModule);
+    response.getWriter().print(mapper.writeValueAsString(restAuthenticationError));
   }
 
   @Override
   public void afterPropertiesSet() throws Exception {
     setRealmName("Contact Big Data Infrastructure Team to get available accounts.");
     super.afterPropertiesSet();
+  }
+
+  @JsonComponent
+  @NoArgsConstructor
+  private class LocalDateTimeSerializer extends JsonSerializer<LocalDateTime> {
+    @Override
+    public void serialize(LocalDateTime value, JsonGenerator gen, SerializerProvider sp) throws IOException{
+      gen.writeString(value.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+    }
   }
 }

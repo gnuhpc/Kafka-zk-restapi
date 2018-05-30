@@ -54,7 +54,7 @@ public class CollectorController {
     return collectorService.collectJMXData(jmxurl, jmxQuery);
   }
 
-  @PostMapping("/jmx/v2/filters")
+  @GetMapping("/jmx/v2/filters")
   @ApiOperation(value = "List the query filter templates with the filterKey. If filterKey is set to empty, it will return all the templates.")
   public HashMap<String, Object> listJMXFilterTemplate(@RequestParam String filterKey) {
     return collectorService.listJMXFilterTemplate(filterKey);

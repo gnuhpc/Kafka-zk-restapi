@@ -1,8 +1,10 @@
 package org.gnuhpc.bigdata.service;
 
 import lombok.extern.log4j.Log4j;
+import org.gnuhpc.bigdata.config.JMXConfig;
 import org.gnuhpc.bigdata.exception.CollectorException;
 import org.gnuhpc.bigdata.model.*;
+import org.gnuhpc.bigdata.utils.CommonUtils;
 import org.json.JSONObject;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
@@ -12,14 +14,11 @@ import javax.management.MBeanInfo;
 import javax.management.MBeanServerConnection;
 import javax.management.ObjectName;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.yaml.snakeyaml.Yaml;
-import org.springframework.core.io.ClassPathResource;
 @Service
 @Log4j
 @Validated
@@ -209,23 +208,25 @@ public class CollectorService {
   public HashMap<String, Object> listJMXFilterTemplate(String filterKey) {
     HashMap<String, Object> filterTemplateMap = new HashMap<>();
     HashMap<Object, Object> yamlHash;
+    String projectRootPath = "";
     try {
-      File tempDir = new ClassPathResource("JMXFilterTemplate/").getFile();
-      if (tempDir.isDirectory()) {
-        for (File yamlFile:tempDir.listFiles()) {
-          String fileFullName = yamlFile.getName();
-          if (matchIgnoreCase(filterKey, fileFullName)) {
-            String[] fileNames = fileFullName.split("\\.");
-            FileInputStream yamlInputStream = new FileInputStream(yamlFile);
-            yamlHash = (HashMap<Object, Object>) new Yaml().load(yamlInputStream);
-            filterTemplateMap.put(fileNames[0], yamlHash);
-          }
+      File jmxFilterDir = new File(JMXConfig.JMX_FILTER_DIR);
+      if (!jmxFilterDir.exists() || !jmxFilterDir.isDirectory()) {
+        throw new IOException();
+      }
+      for (File yamlFile:jmxFilterDir.listFiles()) {
+        String fileFullName = yamlFile.getName();
+        log.info("Found JMXFilterTemplate filename=" + fileFullName);
+        if (matchIgnoreCase(filterKey, fileFullName)) {
+          String[] fileNames = fileFullName.split("\\.");
+          yamlHash = CommonUtils.yamlParse(yamlFile);
+          filterTemplateMap.put(fileNames[0], yamlHash);
         }
       }
     } catch (IOException e) {
       CollectorException ce = new CollectorException(String.format("%s occurred. Reason:%s. Advice:"+
-                      "Create a directory named JMXFilterTemplate to include filter templates in the resources directory.",
-              e.getClass().getCanonicalName(), e.getLocalizedMessage()), e);
+                      "Create a directory named JMXFilterTemplate to include filter templates in the project root path:%s.",
+              e.getClass().getCanonicalName(), e.getLocalizedMessage(), projectRootPath), e);
       log.error("JMXFilterTemplate path does not exist.");
       filterTemplateMap.put("error", ce.getLocalizedMessage());
     }

@@ -15,6 +15,7 @@ Kafka/ZK REST API is to provide the production-ready endpoints to perform some a
 * Consumer Group Lag check
 * Collect JMX metrics from brokers that expose JMX metrics +
   More details refer to https://github.com/gnuhpc/Kafka-zk-restapi/blob/master/docs/JMXCollector.adoc[JMXCollector API Specification]
+* Secure the REST API with Spring Security
 // end::base-t[]
 
 image::https://raw.githubusercontent.com/gnuhpc/Kafka-zk-restapi/master/pics/ShowApi.png[API]
@@ -38,11 +39,45 @@ Change the following settings of application-home.yml in src/main/resources to v
 kafka.brokers
 zookeeper.uris
 
+Change security related parameters in application config file:
+See below: <<_security,'How to config security'>>
+
+server.security.check
+server.security.checkInitDelay
+server.security.checkSecurityInterval
+
+If you want to use JMX Query Filter function, you can add your own custom filter files to JMXFilterTemplate directory in project root folder.
+More details refer to https://github.com/gnuhpc/Kafka-zk-restapi/blob/master/docs/JMXCollector.adoc[JMXCollector API Specification]
+
 #mvn clean package -Dmaven.test.skip=true+
 
 You will find zip/tar under directory: Kafka-zk-restapi/target
 
 You can get it running by unzip/untaring the distribution package and run bin/start.sh
+
+[[_security]]
+=== Security
+Public REST services without access control make the sensitive data under risk.Then we provide a simple authentication mechanism using Spring Security.
+In order to make the project lighter, we use yml file to store user information, not using database.
+
+Follow the steps to enable security feature：
+
+Step 1：Modify the application config file and set server.security.check to true. +
+
+* server.security.check:
+  ** True: Add security for the API. Clients can access the API with valid username and password stored in security.yml, or the Swagger UI(http://127.0.0.1:8121/api) is only
+                        allowed to access.
+  ** False: All the endpoints can be accessed without authentication.
+* server.security.checkInitDelay: The number of seconds of init delay for the timing thread to check the security file.
+* server.security.checkSecurityInterval: The number of seconds of check interval for the timing thread to check the security file.
+
+Step 2: Make sure security/security.yml exist in application root folder.
+
+Step 3: Use user controller API to add user to security file security/security.yml. +
+**Notice**:
+
+* The first user should be added manually. Password need to be encoded using bcrypt before saving to the yml file.For convenience, we provide CommonUtils to encode the password.
+* No need to restart server after adding new user or update user info. Timing thread introduced in Step 1 will refresh the user list according to your settings.
 
 === Support Kafka Version Information
 Currently, this rest api (master branch) supports Kafka 0.10.x brokers. The master branch is the most active branch.
@@ -66,6 +101,7 @@ You can access Swagger-UI by accessing http://127.0.0.1:8121/api
 * kafka-controller : Kafka Api
 * zookeeper-controller : Zookeeper Api
 * collector-controller : JMX Metric Collector Api
+* user-controller : User management Api
 
 
 === https://github.com/gnuhpc/Kafka-zk-restapi/blob/master/docs/definitions.adoc[Data Model Definitions for 0.10]

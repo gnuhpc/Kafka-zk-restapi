@@ -1,0 +1,4 @@
+---
+admin:
+  password: "$2a$10$cwkLeAFbPSNWEvjnL.w2FeoEPIv.MMEb0Pk541TiuqGRHP.x8ReoK"
+  role: "admin"

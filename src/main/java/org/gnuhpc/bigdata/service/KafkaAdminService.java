@@ -811,7 +811,7 @@ public class KafkaAdminService {
                 zookeeperUtils.getCuratorClient().delete().deletingChildrenIfNeeded().forPath(CONSUMERPATHPREFIX + consumerGroup);
             } else {
                 if (!AdminUtils.deleteConsumerGroupInZK(zkUtils, consumerGroup)) {
-                    throw new ApiException(consumerGroup + " has not been deleted for some reason");
+                    throw new ApiException("The consumer " + consumerGroup + " is still active.Please stop it first");
                 }
             }
         } catch (Exception e) {

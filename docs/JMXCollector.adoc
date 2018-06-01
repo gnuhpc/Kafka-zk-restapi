@@ -302,7 +302,7 @@ The response is as follows:
 ----
 
 ==== How to add filter template
-You can add filter template yml file in the resources/JMXFilterTempalte directory. The fields of the file are the same with the query filter that noticed above.
+You can add filter template yml files to JMXFilterTemplate directory in project root folder. The fields of the file are the same with the query filter that noticed above.
 
 Sample filter template is as follows:
 [source, yml]

@@ -68,13 +68,11 @@ public class UserDetailsServiceImp implements UserDetailsService {
     String securityFilePath = WebSecurityConfig.SECURITY_FILE_PATH;
     try {
       HashMap<Object, Object> accounts = CommonUtils.yamlParse(securityFilePath);
-      Iterator iter = accounts.entrySet().iterator();
-      while (iter.hasNext()) {
-        HashMap.Entry entry = (HashMap.Entry) iter.next();
-        String username = (String)entry.getKey();
-        Map<String, String> userInfo = (Map)entry.getValue();
+      accounts.forEach((key, value)->{
+        String username = (String)key;
+        Map<String, String> userInfo = (Map)value;
         userList.add(new User(username, userInfo.get("password"), userInfo.get("role")));
-      }
+      });
     } catch (IOException ioException) {
       log.error("Security file process exception.", ioException);
     }

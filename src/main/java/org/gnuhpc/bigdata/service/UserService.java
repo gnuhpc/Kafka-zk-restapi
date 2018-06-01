@@ -24,12 +24,9 @@ public class UserService {
     List<String> userList = new ArrayList<>();
     try {
       accounts = CommonUtils.yamlParse(WebSecurityConfig.SECURITY_FILE_PATH);
-      Iterator iterator = accounts.entrySet().iterator();
-      while (iterator.hasNext()) {
-        Map.Entry entry = (Map.Entry) iterator.next();
-        String username = (String)entry.getKey();
-        userList.add(username);
-      }
+      accounts.forEach((username, value)->{
+        userList.add((String)username);
+      });
     } catch (IOException ioException) {
       log.error("Failed to get user list. Reason : " + ioException.getLocalizedMessage());
     }

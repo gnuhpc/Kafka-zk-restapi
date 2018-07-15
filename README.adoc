@@ -1,5 +1,7 @@
 = Kafka REST API
 
+[![Build Status](https://travis-ci.org/gnuhpc/Kafka-zk-restapi.svg?branch=master)](https://travis-ci.org/gnuhpc/Kafka-zk-restapi)
+
 [[_overview]]
 == Overview
 Kafka/ZK REST API is to provide the production-ready endpoints to perform some administration/metric task for Kafka and Zookeeper.

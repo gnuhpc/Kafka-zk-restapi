@@ -3,5 +3,7 @@ jdk: oraclejdk8
 install:
   - mvn -N io.takari:maven:wrapper
   - ./mvnw install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
+script:
+- echo "skipping tests"
 before_install:
   - chmod +x mvnw

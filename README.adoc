@@ -1,6 +1,6 @@
 = Kafka REST API
 
-[![Build Status](https://travis-ci.org/gnuhpc/Kafka-zk-restapi.svg?branch=master)](https://travis-ci.org/gnuhpc/Kafka-zk-restapi)
+image:https://travis-ci.org/gnuhpc/Kafka-zk-restapi.svg?branch=master["Build Status", link="https://travis-ci.org/gnuhpc/Kafka-zk-restapi"]
 
 [[_overview]]
 == Overview

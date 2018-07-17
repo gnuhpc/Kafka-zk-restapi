@@ -82,7 +82,7 @@ Step 3: Use user controller API to add user to security file security/security.y
 * No need to restart server after adding new user or update user info. Timing thread introduced in Step 1 will refresh the user list according to your settings.
 
 === Support Kafka Version Information
-Currently, this rest api (master branch) supports Kafka 0.10.x brokers. The master branch is the most active branch.
+Currently, this rest api (master branch) supports Kafka 0.10.x brokers. The master branch is the most active branch. We're going to get down to the work of supporting the Kafka 1.x version.
 
 *For 0.11.x, please checkout the branch 0.11.x by calling the command:*
 

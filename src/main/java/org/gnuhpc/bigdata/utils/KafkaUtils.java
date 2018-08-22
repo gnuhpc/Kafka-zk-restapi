@@ -9,6 +9,7 @@ import lombok.extern.log4j.Log4j;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.Node;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.errors.ApiException;
@@ -20,6 +21,7 @@ import org.gnuhpc.bigdata.constant.ConsumerType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 
@@ -45,10 +47,10 @@ public class KafkaUtils {
 
     public void init(){
         prop = new Properties();
-        prop.setProperty("bootstrap.servers",kafkaConfig.getBrokers());
-        prop.setProperty("key.serializer",
+        prop.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaConfig.getBrokers());
+        prop.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG,
                 "org.apache.kafka.common.serialization.StringSerializer");
-        prop.setProperty("value.serializer",
+        prop.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
                 "org.apache.kafka.common.serialization.StringSerializer");
         producer = new KafkaProducer(prop);
         log.info("Kafka initing...");
@@ -78,6 +80,34 @@ public class KafkaUtils {
                 StringDeserializer.class.getCanonicalName());
 
         return new KafkaConsumer(properties);
+    }
+
+    public KafkaConsumer createNewConsumerByTopic(String topic){
+        Properties properties = new Properties();
+        properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, getKafkaConfig().getBrokers());
+        properties.put(ConsumerConfig.GROUP_ID_CONFIG, DEFAULTCP);
+        properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
+                StringDeserializer.class.getCanonicalName());
+        properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
+                StringDeserializer.class.getCanonicalName());
+        KafkaConsumer kafkaConsumer = new KafkaConsumer(properties);
+        kafkaConsumer.subscribe(Collections.singletonList(topic));
+
+        return kafkaConsumer;
+    }
+
+    public KafkaProducer createProducer() {
+        Properties prop = new Properties();
+        prop.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaConfig.getBrokers());
+        prop.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG,
+                "org.apache.kafka.common.serialization.StringSerializer");
+        prop.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
+                "org.apache.kafka.common.serialization.StringSerializer");
+        prop.setProperty(ProducerConfig.RETRIES_CONFIG, "3");
+        prop.setProperty(ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG, "10000");
+        producer = new KafkaProducer(prop);
+
+        return producer;
     }
 
     public Node getLeader(String topic, int partitionId) {

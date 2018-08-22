@@ -271,4 +271,10 @@ public class KafkaController {
             throw new InvalidTopicException("Topic " + topic + " non-exist!");
         }
     }
+
+    @GetMapping(value = "/health")
+    @ApiOperation(value = "Check the cluster health.")
+    public HealthCheckResult healthCheck() {
+        return kafkaAdminService.healthCheck();
+    }
 }

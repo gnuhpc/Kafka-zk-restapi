@@ -22,21 +22,21 @@ import kafka.utils.ZkUtils;
 import lombok.extern.log4j.Log4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.curator.framework.CuratorFramework;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.common.KafkaException;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.Node;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.ApiException;
 import org.apache.kafka.common.errors.InvalidTopicException;
 import org.apache.kafka.common.requests.MetadataResponse;
-import org.apache.kafka.common.serialization.StringDeserializer;
 import org.gnuhpc.bigdata.CollectionConvertor;
 import org.gnuhpc.bigdata.componet.OffsetStorage;
-import org.gnuhpc.bigdata.constant.ConsumerState;
+import org.gnuhpc.bigdata.config.KafkaConfig;
 import org.gnuhpc.bigdata.constant.ConsumerType;
 import org.gnuhpc.bigdata.constant.GeneralResponseState;
 import org.gnuhpc.bigdata.model.*;
@@ -83,6 +83,9 @@ public class KafkaAdminService {
 
     @Autowired
     private KafkaUtils kafkaUtils;
+
+    @Autowired
+    private KafkaConfig kafkaConfig;
 
     @Autowired
     private OffsetStorage storage;
@@ -1045,5 +1048,64 @@ public class KafkaAdminService {
         } else {
             throw new ApiException("Unknown type " + type);
         }
+    }
+
+    public HealthCheckResult healthCheck() {
+        String healthCheckTopic = kafkaConfig.getHealthCheckTopic();
+        HealthCheckResult healthCheckResult = new HealthCheckResult();
+        KafkaProducer producer = kafkaUtils.createProducer();
+        KafkaConsumer consumer = kafkaUtils.createNewConsumerByTopic(healthCheckTopic);
+
+        boolean healthCheckTopicExist = existTopic(healthCheckTopic);
+        log.info("HealthCheckTopic:" + healthCheckTopic + " existed:" + healthCheckTopicExist);
+        if (!healthCheckTopicExist) {
+            healthCheckResult.setStatus("unknown");
+            healthCheckResult.setMsg("HealthCheckTopic: " + healthCheckTopic + " Non-Exist. Please create it before doing health check.");
+            return healthCheckResult;
+        }
+
+        String message = "healthcheck_" + System.currentTimeMillis();
+        ProducerRecord<String, String> record = new ProducerRecord(healthCheckTopic, null, message);
+        log.info("Generate message:" + message);
+        try {
+            RecordMetadata recordMetadata = (RecordMetadata) producer.send(record).get();
+            log.info("Message:" + message + " has been sent to Partition:" + recordMetadata.partition());
+        } catch (Exception e){
+            healthCheckResult.setStatus("error");
+            healthCheckResult.setMsg("Health Check: Produce Message Failure. Exception: " + e.getMessage());
+            log.error("Health Check: Produce Message Failure.", e);
+            return healthCheckResult;
+        } finally {
+            producer.close();
+        }
+
+        int retries = 30;
+        int noRecordsCount = 0;
+        while (true) {
+            final ConsumerRecords<Long, String> consumerRecords =
+                    consumer.poll(1000);
+            if (consumerRecords.count() == 0) {
+                noRecordsCount++;
+                if (noRecordsCount > retries) break;
+                else continue;
+            }
+
+            consumerRecords.forEach(msg -> {
+                log.info("Health Check: Fetch Message " + msg.value() + ", offset:" + msg.offset());
+                if(msg.value().equals(message)) {
+                    healthCheckResult.setStatus("ok");
+                    healthCheckResult.setMsg(message);
+                }
+            });
+
+            consumer.commitAsync();
+        }
+        consumer.close();
+
+        if(healthCheckResult.getStatus() == null) {
+            healthCheckResult.setStatus("error");
+            healthCheckResult.setMsg("Health Check: Consume Message Failure. Consumer can't fetch the message.");
+        }
+        return healthCheckResult;
     }
 }

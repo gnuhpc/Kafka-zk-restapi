@@ -4,6 +4,8 @@ kafka:
     topic: "__consumer_offsets"
     partitions: 50
     reset: true
+  healthcheck:
+    topic: "health"
 
 zookeeper:
   uris: localhost:2181

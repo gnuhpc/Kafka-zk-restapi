@@ -1089,15 +1089,16 @@ public class KafkaAdminService {
                 if (noRecordsCount > retries) break;
                 else continue;
             }
-
-            consumerRecords.forEach(msg -> {
+            Iterator<ConsumerRecord<Long, String>> iterator = consumerRecords.iterator();
+            while(iterator.hasNext()) {
+                ConsumerRecord msg = iterator.next();
                 log.info("Health Check: Fetch Message " + msg.value() + ", offset:" + msg.offset());
                 if(msg.value().equals(message)) {
                     healthCheckResult.setStatus("ok");
                     healthCheckResult.setMsg(message);
+                    return healthCheckResult;
                 }
-            });
-
+            }
             consumer.commitAsync();
         }
         consumer.close();

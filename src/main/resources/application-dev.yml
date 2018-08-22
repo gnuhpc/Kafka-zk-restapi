@@ -4,6 +4,8 @@ kafka:
     topic: "__consumer_offsets"
     partitions: 50
     reset: true
+  healthcheck:
+    topic: "health"
 
 zookeeper:
   uris: DPFTMP06:2181,DPFTMP07:2181,DPFTMP08:2181,DPFTMP09:2181,DPFTMP10:2181

@@ -28,7 +28,7 @@ public class JMXComplexAttribute extends JMXAttribute {
       }
       if (metric.get(METRIC_TYPE) == null) {
         metric.put("domain", getBeanName().getDomain());
-        metric.put("beanName", getBeanName().getCanonicalName());
+        metric.put("beanName", getBeanName().toString());
         metric.put("attributeName", subAttribute);
         metric.put(METRIC_TYPE, getMetricType(subAttribute));
       }

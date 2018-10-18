@@ -1,6 +1,8 @@
 package org.gnuhpc.bigdata.controller;
 
-import io.swagger.annotations.*;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 import lombok.extern.log4j.Log4j;
 import org.gnuhpc.bigdata.model.JMXMetricData;
 import org.gnuhpc.bigdata.model.JMXMetricDataV1;
@@ -12,7 +14,6 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.constraints.Pattern;
-import javax.validation.constraints.Size;
 import java.util.HashMap;
 import java.util.List;
 

@@ -77,7 +77,7 @@ public class CollectorService {
     for (String host : hostList) {
       JMXClient jmxClient = new JMXClient(host);
       Set<ObjectName> beans = new HashSet<>();
-      this.matchingAttributes = new LinkedList<JMXAttribute>();
+      this.matchingAttributes = new LinkedList<>();
       LinkedList<HashMap<String, Object>> metrics = new LinkedList<>();
       JMXMetricData jmxMetricData = new JMXMetricData(host, metrics);
       try {

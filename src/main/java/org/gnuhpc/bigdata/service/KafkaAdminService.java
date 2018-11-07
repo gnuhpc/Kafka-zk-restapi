@@ -626,7 +626,7 @@ public class KafkaAdminService {
 
 
     public String getMessage(@TopicExistConstraint String topic, int partition, long offset, String decoder, String avroSchema) {
-        KafkaConsumer consumer = kafkaUtils.createNewConsumer();
+        KafkaConsumer consumer = kafkaUtils.createNewConsumer(String.valueOf(System.currentTimeMillis()));
         TopicPartition tp = new TopicPartition(topic, partition);
         long beginningOffset = getBeginningOffset(topic, partition);
         long endOffset = getEndOffset(topic, partition);
@@ -647,18 +647,21 @@ public class KafkaAdminService {
 
         String last = null;
 
-        ConsumerRecords<String, String> crs = consumer.poll(channelRetryBackoffMs);
+        //ConsumerRecords<String, String> crs = consumer.poll(channelRetryBackoffMs);
+        ConsumerRecords<String, String> crs = consumer.poll(3000);
+        log.info("Seek to offset:" + offset + ", topic:" + topic + ", partition:" + partition + ", crs.count:" + crs.count());
         if (crs.count() != 0) {
             Iterator<ConsumerRecord<String, String>> it = crs.iterator();
             while (it.hasNext()) {
                 ConsumerRecord<String, String> initCr = it.next();
                 last = "Value: " + initCr.value() + ", Offset: " + String.valueOf(initCr.offset());
+                log.info("Value: " + initCr.value() + ", initCr.Offset: " + String.valueOf(initCr.offset()));
                 if (last != null && initCr.offset() == offset) {
                     break;
                 }
             }
         }
-
+        log.info("last:" + last);
         consumer.close();
         return last;
     }

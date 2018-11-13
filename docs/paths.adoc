@@ -1501,10 +1501,10 @@ GET /zk/env
 * `*/*`
 
 
-[[_lsusingget]]
-==== List a zookeeper path
+[[_getusingget]]
+==== Get data of a zookeeper path
 ....
-GET /zk/ls/{path}
+GET /zk/get/path
 ....
 
 
@@ -1513,7 +1513,46 @@ GET /zk/ls/{path}
 [options="header", cols=".^2,.^3,.^9,.^4"]
 |===
 |Type|Name|Description|Schema
-|**Path**|**path** +
+|**Query**|**path** +
+__required__|path|string
+|===
+
+
+===== Responses
+
+[options="header", cols=".^2,.^14,.^4"]
+|===
+|HTTP Code|Description|Schema
+|**200**|OK|< string, string > map
+|**401**|Unauthorized|No Content
+|**403**|Forbidden|No Content
+|**404**|Not Found|No Content
+|===
+
+
+===== Consumes
+
+* `application/json`
+
+
+===== Produces
+
+* `*/*`
+
+
+[[_lsusingget]]
+==== List a zookeeper path
+....
+GET /zk/ls/path
+....
+
+
+===== Parameters
+
+[options="header", cols=".^2,.^3,.^9,.^4"]
+|===
+|Type|Name|Description|Schema
+|**Query**|**path** +
 __required__|path|string
 |===
 

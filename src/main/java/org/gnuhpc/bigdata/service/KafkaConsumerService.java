@@ -1,9 +1,9 @@
 package org.gnuhpc.bigdata.service;
 
 import kafka.common.OffsetAndMetadata;
-import kafka.coordinator.GroupMetadataManager;
-import kafka.coordinator.GroupTopicPartition;
-import kafka.coordinator.OffsetKey;
+import kafka.coordinator.group.GroupMetadataManager;
+import kafka.coordinator.group.GroupTopicPartition;
+import kafka.coordinator.group.OffsetKey;
 import lombok.extern.log4j.Log4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.TopicPartition;

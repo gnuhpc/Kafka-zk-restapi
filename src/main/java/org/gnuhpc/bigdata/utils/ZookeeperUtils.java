@@ -3,6 +3,7 @@ package org.gnuhpc.bigdata.utils;
 import com.google.common.base.Charsets;
 import kafka.utils.ZKStringSerializer$;
 import kafka.utils.ZkUtils;
+import kafka.zk.KafkaZkClient;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.log4j.Log4j;
@@ -16,6 +17,7 @@ import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.api.GetDataBuilder;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.curator.utils.ZKPaths;
+import org.apache.kafka.common.utils.Time;
 import org.apache.zookeeper.data.Stat;
 import org.gnuhpc.bigdata.config.ZookeeperConfig;
 import org.gnuhpc.bigdata.constant.ZkServerMode;
@@ -72,6 +74,7 @@ public class ZookeeperUtils {
     private CuratorFramework curatorClient;
     private ZkClient zkClient;
     private ZkUtils zkUtils;
+    private KafkaZkClient kafkaZkClient;
 
     public void init() {
 
@@ -97,11 +100,15 @@ public class ZookeeperUtils {
             e.printStackTrace();
             log.error("Exception:", e);
         }
+        kafkaZkClient = KafkaZkClient.apply(zookeeperConfig.getUris(), false, SESSION_TIMEOUT,
+                CONNECTION_TIMEOUT, Integer.MAX_VALUE, Time.SYSTEM, "testMetricGroup",
+                "testMetricType");
     }
 
     public void destroy() {
         curatorClient.close();
         zkClient.close();
+        kafkaZkClient.close();
         log.info("zookeeper closed.");
     }
 

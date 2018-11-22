@@ -166,7 +166,7 @@
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka-clients</artifactId>
-            <version>0.10.0.1</version>
+            <version>1.1.1</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/org.springframework.kafka/spring-kafka -->
@@ -179,7 +179,7 @@
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka_2.11</artifactId>
-            <version>0.10.0.1</version>
+            <version>1.1.1</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.101tec</groupId>
@@ -444,6 +444,7 @@
                 <configuration>
                     <descriptor>src/main/resources/distribution/kafka-zk-springboot-distribution.xml</descriptor>
                     <finalName>kafka-zk-api-${project.version}-dist</finalName>
+                    <appendAssemblyId>false</appendAssemblyId>
                 </configuration>
                 <executions>
                     <execution>

@@ -5,8 +5,10 @@ import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import joptsimple.internal.Strings;
+import kafka.cluster.Broker;
 import kafka.common.TopicAndPartition;
 import lombok.extern.log4j.Log4j;
+import org.apache.kafka.clients.admin.ConfigEntry;
 import org.apache.kafka.common.errors.ApiException;
 import org.apache.kafka.common.errors.InvalidTopicException;
 import org.gnuhpc.bigdata.constant.ConsumerType;
@@ -19,10 +21,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Created by gnuhpc on 2017/7/16.
@@ -39,13 +39,13 @@ public class KafkaController {
 
     @GetMapping("/topics")
     @ApiOperation(value = "List topics")
-    public List<String> listTopics() {
+    public List<String> listTopics() throws InterruptedException, ExecutionException {
         return kafkaAdminService.listTopics();
     }
 
     @GetMapping("/topicsbrief")
     @ApiOperation(value = "List topics Brief")
-    public List<TopicBrief> listTopicBrief() {
+    public List<TopicBrief> listTopicBrief() throws InterruptedException, ExecutionException {
         return kafkaAdminService.listTopicBrief();
     }
 
@@ -53,13 +53,14 @@ public class KafkaController {
     @ResponseStatus(HttpStatus.CREATED)
     @ApiOperation(value = "Create a topic")
     @ApiParam(value = "if reassignStr set, partitions and repli-factor will be ignored.")
-    public TopicMeta createTopic(@RequestBody TopicDetail topic, @RequestParam(required = false) String reassignStr) {
+    public TopicMeta createTopic(@RequestBody TopicDetail topic, @RequestParam(required = false) String reassignStr)
+            throws InterruptedException, ExecutionException {
         return kafkaAdminService.createTopic(topic, reassignStr);
     }
 
     @ApiOperation(value = "Tell if a topic exists")
     @GetMapping(value = "/topics/{topic}/exist")
-    public boolean existTopic(@PathVariable String topic) {
+    public boolean existTopic(@PathVariable String topic) throws InterruptedException, ExecutionException {
         return kafkaAdminService.existTopic(topic);
     }
 
@@ -67,7 +68,7 @@ public class KafkaController {
     @ResponseStatus(HttpStatus.CREATED)
     @ApiOperation(value = "Write a message to the topic, for testing purpose")
     public GeneralResponse writeMessage(@PathVariable String topic, @RequestBody String message) {
-        kafkaProducerService.send(topic, message);
+//        kafkaProducerService.send(topic, message);
         return new GeneralResponse(GeneralResponseState.success, message + " has been sent");
     }
 
@@ -82,7 +83,7 @@ public class KafkaController {
 
     @GetMapping(value = "/topics/{topic}")
     @ApiOperation(value = "Describe a topic by fetching the metadata and config")
-    public TopicMeta describeTopic(@PathVariable String topic) {
+    public TopicMeta describeTopic(@PathVariable String topic) throws InterruptedException, ExecutionException {
         return kafkaAdminService.describeTopic(topic);
     }
 
@@ -94,67 +95,40 @@ public class KafkaController {
 
     @DeleteMapping(value = "/topics/{topic}")
     @ApiOperation(value = "Delete a topic (you should enable topic deletion")
-    public GeneralResponse deleteTopic(@PathVariable String topic) {
+    public GeneralResponse deleteTopic(@PathVariable String topic) throws InterruptedException, ExecutionException {
         return kafkaAdminService.deleteTopic(topic);
-    }
-
-    @PostMapping(value = "/topics/{topic}/conf")
-    @ApiOperation(value = "Create topic configs")
-    public Properties createTopicConfig(@PathVariable String topic,
-                                        @RequestBody Properties prop) {
-        return kafkaAdminService.createTopicConf(topic, prop);
     }
 
     @PutMapping(value = "/topics/{topic}/conf")
     @ApiOperation(value = "Update topic configs")
-    public Properties updateTopicConfig(@PathVariable String topic,
-                                        @RequestBody Properties prop) {
-        return kafkaAdminService.updateTopicConf(topic, prop);
-    }
-
-    @DeleteMapping(value = "/topics/{topic}/conf")
-    @ApiOperation(value = "Delete topic configs")
-    public Properties deleteTopicConfig(@PathVariable String topic,
-                                        @RequestBody List<String> delProps) {
-        return kafkaAdminService.deleteTopicConf(topic, delProps);
+    public Collection<ConfigEntry> updateTopicConfig(@PathVariable String topic,
+                                                     @RequestBody Properties props)
+            throws InterruptedException, ExecutionException {
+        return kafkaAdminService.updateTopicConf(topic, props);
     }
 
     @GetMapping(value = "/topics/{topic}/conf")
     @ApiOperation(value = "Get topic configs")
-    public Properties getTopicConfig(@PathVariable String topic) {
+    public Collection<ConfigEntry> getTopicConfig(@PathVariable String topic) throws InterruptedException, ExecutionException {
         return kafkaAdminService.getTopicConf(topic);
     }
 
     @GetMapping(value = "/topics/{topic}/conf/{key}")
     @ApiOperation(value = "Get topic config by key")
     public Properties getTopicConfigByKey(@PathVariable String topic,
-                                          @PathVariable String key) {
+                                          @PathVariable String key) throws InterruptedException, ExecutionException {
         return kafkaAdminService.getTopicConfByKey(topic, key);
-    }
-
-    @PostMapping(value = "/topics/{topic}/conf/{key}={value}")
-    @ApiOperation(value = "Create a topic config by key")
-    public Properties createTopicConfigByKey(@PathVariable String topic,
-                                             @PathVariable String key,
-                                             @PathVariable String value) {
-        return kafkaAdminService.createTopicConfByKey(topic, key, value);
     }
 
     @PutMapping(value = "/topics/{topic}/conf/{key}={value}")
     @ApiOperation(value = "Update a topic config by key")
-    public Properties updateTopicConfigByKey(@PathVariable String topic,
-                                             @PathVariable String key,
-                                             @PathVariable String value) {
+    public Collection<ConfigEntry> updateTopicConfigByKey(@PathVariable String topic,
+                                                          @PathVariable String key,
+                                                          @PathVariable String value) throws InterruptedException, ExecutionException {
         return kafkaAdminService.updateTopicConfByKey(topic, key, value);
     }
 
-    @DeleteMapping(value = "/topics/{topic}/conf/{key}")
-    @ApiOperation(value = "Delete a topic config by key")
-    public boolean deleteTopicConfigByKey(@PathVariable String topic,
-                                          @PathVariable String key) {
-        return kafkaAdminService.deleteTopicConfByKey(topic, key);
-    }
-
+    /*
     @PostMapping(value = "/partitions/add")
     @ApiOperation(value = "Add a partition to the topic")
     public TopicMeta addPartition(@RequestBody AddPartition addPartition) {
@@ -220,7 +194,7 @@ public class KafkaController {
     @ApiOperation(value = "Describe consumer groups by topic, showing lag and offset")
     public List<ConsumerGroupDesc> describeCGByTopic(@ConsumerGroupExistConstraint @PathVariable String consumerGroup,
                                                      @PathVariable ConsumerType type,
-                                                     @PathVariable String topic) {
+                                                     @PathVariable String topic) throws InterruptedException, ExecutionException {
         if (!Strings.isNullOrEmpty(topic)) {
             existTopic(topic);
         } else {
@@ -265,8 +239,8 @@ public class KafkaController {
     public GeneralResponse deleteOldConsumerGroup(@PathVariable String consumergroup) {
         return kafkaAdminService.deleteConsumerGroup(consumergroup);
     }
-
-    private void isTopicExist(String topic) throws InvalidTopicException {
+    */
+    private void isTopicExist(String topic) throws InvalidTopicException, InterruptedException, ExecutionException {
         if (!kafkaAdminService.existTopic(topic)) {
             throw new InvalidTopicException("Topic " + topic + " non-exist!");
         }

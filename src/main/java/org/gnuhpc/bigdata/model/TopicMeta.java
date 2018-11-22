@@ -17,12 +17,9 @@ public class TopicMeta {
     private String topicName;
     private int partitionCount;
     private int replicationFactor;
-    private List<TopicPartitionInfo> topicPartitionInfos;
-    private Properties topicCustomConfigs;
+    private List<CustomTopicPartitionInfo> topicPartitionInfos;
 
     public TopicMeta(String topicName){
         this.topicName = topicName;
     }
-
-
 }

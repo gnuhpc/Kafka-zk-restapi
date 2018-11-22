@@ -2,10 +2,11 @@ package org.gnuhpc.bigdata.utils;
 
 import kafka.admin.AdminClient;
 import kafka.admin.AdminUtils;
-import kafka.coordinator.GroupOverview;
+import kafka.coordinator.group.GroupOverview;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.log4j.Log4j;
+import org.apache.kafka.clients.admin.*;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -21,10 +22,9 @@ import org.gnuhpc.bigdata.constant.ConsumerType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Properties;
-
+import java.util.*;
+import java.util.concurrent.ExecutionException;
+import org.apache.kafka.clients.admin.KafkaAdminClient;
 /**
  * Created by gnuhpc on 2017/7/12.
  */
@@ -38,7 +38,7 @@ public class KafkaUtils {
     @Autowired
     private ZookeeperConfig zookeeperConfig;
 
-    private AdminClient kafkaAdminClient;
+    private AdminClient adminClient;
 
     private KafkaProducer producer;
     private Properties prop;
@@ -55,7 +55,7 @@ public class KafkaUtils {
         producer = new KafkaProducer(prop);
         log.info("Kafka initing...");
 
-        kafkaAdminClient = AdminClient.create(prop);
+        adminClient = AdminClient.create(prop);
     }
 
   

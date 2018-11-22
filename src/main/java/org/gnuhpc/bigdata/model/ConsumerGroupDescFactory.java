@@ -2,7 +2,7 @@ package org.gnuhpc.bigdata.model;
 
 import kafka.admin.AdminClient;
 import kafka.common.OffsetAndMetadata;
-import kafka.coordinator.GroupTopicPartition;
+import kafka.coordinator.group.GroupTopicPartition;
 import lombok.AllArgsConstructor;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
@@ -30,7 +30,7 @@ public class ConsumerGroupDescFactory {
                 .setCurrentOffset(fetchOffSetFromZKResultList.get(op.getKey()))
                 .setLogEndOffset(
                         topicMeta.getTopicPartitionInfos().stream()
-                                .filter(tpi -> tpi.getPartitionId() == op.getKey()).findFirst().get().getEndOffset());
+                                .filter(tpi -> tpi.getTopicPartitionInfo().partition() == op.getKey()).findFirst().get().getEndOffset());
 
 
         if (op.getValue().equals("none")) {
@@ -57,7 +57,7 @@ public class ConsumerGroupDescFactory {
                 .setTopic(tp.topic())
                 .setPartitionId(tp.partition())
                 .setConsumerId(cs.clientId())
-                .setHost(cs.clientHost())
+                .setHost(cs.host())
                 .setState(ConsumerState.RUNNING)
                 .setType(ConsumerType.NEW);
 

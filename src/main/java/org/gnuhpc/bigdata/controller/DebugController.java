@@ -2,7 +2,7 @@ package org.gnuhpc.bigdata.controller;
 
 import io.swagger.annotations.Api;
 import kafka.common.OffsetAndMetadata;
-import kafka.coordinator.GroupTopicPartition;
+import kafka.coordinator.group.GroupTopicPartition;
 import org.gnuhpc.bigdata.componet.OffsetStorage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;

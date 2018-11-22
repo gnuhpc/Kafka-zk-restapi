@@ -4,7 +4,7 @@ import kafka.admin.AdminClient;
 import kafka.common.ErrorMapping;
 import kafka.common.OffsetMetadataAndError;
 import kafka.common.TopicAndPartition;
-import kafka.coordinator.GroupOverview;
+import kafka.coordinator.group.GroupOverview;
 import kafka.javaapi.OffsetFetchRequest;
 import kafka.javaapi.OffsetFetchResponse;
 import kafka.network.BlockingChannel;
@@ -58,7 +58,7 @@ public class KafkaRestSpringbootApplicationTests {
 
 	@Test
 	public void testListBrokers() throws Exception {
-		List<BrokerInfo> brokerInfoList = kafkaAdminService.listBrokers();
-		brokerInfoList.stream().forEach(log::info);
+		//List<BrokerInfo> brokerInfoList = kafkaAdminService.listBrokers();
+		//brokerInfoList.stream().forEach(log::info);
 	}
 }

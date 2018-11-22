@@ -1,7 +1,7 @@
 package org.gnuhpc.bigdata.componet;
 
 import kafka.common.OffsetAndMetadata;
-import kafka.coordinator.GroupTopicPartition;
+import kafka.coordinator.group.GroupTopicPartition;
 import lombok.Data;
 import org.springframework.stereotype.Component;
 

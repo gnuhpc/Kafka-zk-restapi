@@ -491,9 +491,8 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <ul class="sectlevel3">
 <li><a href="#_zkconnstateusingget">4.4.1. Get the connection state of zookeeper</a></li>
 <li><a href="#_getenvusingget">4.4.2. Get the environment information of zookeeper</a></li>
-<li><a href="#_getusingget">4.4.3. Get data of a zookeeper path</a></li>
-<li><a href="#_lsusingget">4.4.4. List a zookeeper path</a></li>
-<li><a href="#_getstatusingget">4.4.5. Get the service state of zookeeper</a></li>
+<li><a href="#_lsusingget">4.4.3. List a zookeeper path</a></li>
+<li><a href="#_getstatusingget">4.4.4. Get the service state of zookeeper</a></li>
 </ul>
 </li>
 </ul>
@@ -4297,10 +4296,10 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect3">
-<h4 id="_getusingget"><a class="anchor" href="#_getusingget"></a>4.4.3. Get data of a zookeeper path</h4>
+<h4 id="_lsusingget"><a class="anchor" href="#_lsusingget"></a>4.4.3. List a zookeeper path</h4>
 <div class="literalblock">
 <div class="content">
-<pre>GET /zk/get/path</pre>
+<pre>GET /zk/ls/{path}</pre>
 </div>
 </div>
 <div class="sect4">
@@ -4322,7 +4321,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </thead>
 <tbody>
 <tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Query</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Path</strong></p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>path</strong><br>
 <em>required</em></p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock">path</p></td>
@@ -4350,7 +4349,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <tr>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>200</strong></p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock">OK</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; string, string &gt; map</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; string &gt; array</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
@@ -4392,109 +4391,14 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect3">
-<h4 id="_lsusingget"><a class="anchor" href="#_lsusingget"></a>4.4.4. List a zookeeper path</h4>
-<div class="literalblock">
-<div class="content">
-<pre>GET /zk/ls/path</pre>
-</div>
-</div>
-<div class="sect4">
-<h5 id="_parameters_33"><a class="anchor" href="#_parameters_33"></a>Parameters</h5>
-<table class="tableblock frame-all grid-all spread">
-<colgroup>
-<col style="width: 11%;">
-<col style="width: 16%;">
-<col style="width: 50%;">
-<col style="width: 22%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-middle">Type</th>
-<th class="tableblock halign-left valign-middle">Name</th>
-<th class="tableblock halign-left valign-middle">Description</th>
-<th class="tableblock halign-left valign-middle">Schema</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Query</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>path</strong><br>
-<em>required</em></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">path</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="sect4">
-<h5 id="_responses_40"><a class="anchor" href="#_responses_40"></a>Responses</h5>
-<table class="tableblock frame-all grid-all spread">
-<colgroup>
-<col style="width: 10%;">
-<col style="width: 70%;">
-<col style="width: 20%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-middle">HTTP Code</th>
-<th class="tableblock halign-left valign-middle">Description</th>
-<th class="tableblock halign-left valign-middle">Schema</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>200</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">OK</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; string &gt; array</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">Unauthorized</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>403</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">Forbidden</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>404</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">Not Found</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="sect4">
-<h5 id="_consumes_40"><a class="anchor" href="#_consumes_40"></a>Consumes</h5>
-<div class="ulist">
-<ul>
-<li>
-<p><code>application/json</code></p>
-</li>
-</ul>
-</div>
-</div>
-<div class="sect4">
-<h5 id="_produces_40"><a class="anchor" href="#_produces_40"></a>Produces</h5>
-<div class="ulist">
-<ul>
-<li>
-<p><code><strong>/</strong></code></p>
-</li>
-</ul>
-</div>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_getstatusingget"><a class="anchor" href="#_getstatusingget"></a>4.4.5. Get the service state of zookeeper</h4>
+<h4 id="_getstatusingget"><a class="anchor" href="#_getstatusingget"></a>4.4.4. Get the service state of zookeeper</h4>
 <div class="literalblock">
 <div class="content">
 <pre>GET /zk/stat</pre>
 </div>
 </div>
 <div class="sect4">
-<h5 id="_responses_41"><a class="anchor" href="#_responses_41"></a>Responses</h5>
+<h5 id="_responses_40"><a class="anchor" href="#_responses_40"></a>Responses</h5>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 10%;">
@@ -4533,7 +4437,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </table>
 </div>
 <div class="sect4">
-<h5 id="_consumes_41"><a class="anchor" href="#_consumes_41"></a>Consumes</h5>
+<h5 id="_consumes_40"><a class="anchor" href="#_consumes_40"></a>Consumes</h5>
 <div class="ulist">
 <ul>
 <li>
@@ -4543,7 +4447,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect4">
-<h5 id="_produces_41"><a class="anchor" href="#_produces_41"></a>Produces</h5>
+<h5 id="_produces_40"><a class="anchor" href="#_produces_40"></a>Produces</h5>
 <div class="ulist">
 <ul>
 <li>
@@ -5433,7 +5337,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2018-02-10 00:44:08 CST
+Last updated 2018-11-13 00:36:04 +08:00
 </div>
 </div>
 </body>

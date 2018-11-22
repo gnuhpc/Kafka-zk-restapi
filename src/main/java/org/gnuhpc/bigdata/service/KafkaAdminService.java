@@ -1,27 +1,33 @@
 package org.gnuhpc.bigdata.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonDeserializer;
-import kafka.admin.*;
+import io.swagger.models.auth.In;
+import kafka.admin.AdminClient;
+import kafka.admin.AdminUtils;
+import kafka.admin.RackAwareMode;
+import kafka.admin.TopicCommand;
 import kafka.api.PartitionOffsetRequestInfo;
 import kafka.cluster.Broker;
 import kafka.common.OffsetAndMetadata;
-import kafka.common.Topic;
 import kafka.common.TopicAndPartition;
-import kafka.coordinator.GroupOverview;
-import kafka.coordinator.GroupTopicPartition;
+import kafka.coordinator.group.GroupOverview;
+import kafka.coordinator.group.GroupTopicPartition;
 import kafka.javaapi.OffsetRequest;
 import kafka.javaapi.OffsetResponse;
 import kafka.javaapi.consumer.SimpleConsumer;
 import kafka.server.ConfigType;
 import kafka.utils.ZKGroupTopicDirs;
 import kafka.utils.ZkUtils;
+import kafka.zk.KafkaZkClient;
 import lombok.extern.log4j.Log4j;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.curator.framework.CuratorFramework;
+import org.apache.kafka.clients.admin.*;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -31,9 +37,11 @@ import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.Node;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.TopicPartitionInfo;
+import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.errors.ApiException;
 import org.apache.kafka.common.errors.InvalidTopicException;
-import org.apache.kafka.common.requests.MetadataResponse;
+import org.apache.kafka.common.internals.Topic;
 import org.gnuhpc.bigdata.CollectionConvertor;
 import org.gnuhpc.bigdata.componet.OffsetStorage;
 import org.gnuhpc.bigdata.config.KafkaConfig;
@@ -51,7 +59,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 import scala.Option;
-import scala.Tuple2;
 import scala.collection.JavaConverters;
 import scala.collection.Seq;
 
@@ -96,28 +103,31 @@ public class KafkaAdminService {
     //For zookeeper connection
     private CuratorFramework zkClient;
 
+    private KafkaZkClient kafkaZkClient;
+
+    private org.apache.kafka.clients.admin.AdminClient kafkaAdminClient;
     //For Json serialized
     private Gson gson;
 
     private scala.Option<String> NONE = scala.Option.apply(null);
-
     @PostConstruct
     private void init() {
         this.zkUtils = zookeeperUtils.getZkUtils();
         this.zkClient = zookeeperUtils.getCuratorClient();
+        this.kafkaZkClient = zookeeperUtils.getKafkaZkClient();
+        Properties adminClientProp = new Properties();
+        adminClientProp.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaConfig.getBrokers());
+        //TODO eliminate the init connection
+        kafkaAdminClient = KafkaAdminClient.create(adminClientProp);
         GsonBuilder builder = new GsonBuilder();
         builder.registerTypeAdapter(DateTime.class, (JsonDeserializer<DateTime>) (jsonElement, type, jsonDeserializationContext) -> new DateTime(jsonElement.getAsJsonPrimitive().getAsLong()));
 
         this.gson = builder.create();
     }
 
-    public TopicMeta createTopic(TopicDetail topic, String reassignStr) {
-        if (StringUtils.isEmpty(topic.getName())) {
-            throw new InvalidTopicException("Empty topic name");
-        }
-
+    public TopicMeta createTopic(TopicDetail topic, String reassignStr) throws InterruptedException, ExecutionException {
         if (Topic.hasCollisionChars(topic.getName())) {
-            throw new InvalidTopicException("Invalid topic name");
+            throw new InvalidTopicException("Invalid topic name, it contains '.' or '_'.");
         }
 
         if (Strings.isNullOrEmpty(reassignStr) && topic.getPartitions() <= 0) {
@@ -145,7 +155,7 @@ public class KafkaAdminService {
             argsList.add("--replica-assignment");
             argsList.add(reassignStr);
 
-            TopicCommand.createTopic(zkUtils, new TopicCommand.TopicCommandOptions(argsList.stream().toArray(String[]::new)));
+            TopicCommand.createTopic(kafkaZkClient, new TopicCommand.TopicCommandOptions(argsList.stream().toArray(String[]::new)));
         }
 
 
@@ -158,40 +168,60 @@ public class KafkaAdminService {
         return describeTopic(topic.getName());
     }
 
-    public List<String> listTopics() {
-        return CollectionConvertor.seqConvertJavaList(zkUtils.getAllTopics());
+    public List<String> listTopics() throws InterruptedException, ExecutionException {
+        List<String> topicNamesList = new ArrayList<String>();
+        topicNamesList.addAll(getAllTopics());
+
+        return topicNamesList;
     }
 
-    public List<TopicBrief> listTopicBrief() {
-        KafkaConsumer consumer = kafkaUtils.createNewConsumer();
-        Map<String, List<PartitionInfo>> topicMap = consumer.listTopics();
-        List<TopicBrief> result = topicMap.entrySet().parallelStream().map(e -> {
-                    String topic = e.getKey();
-                    long replicateCount = e.getValue().parallelStream().flatMap(pi -> Arrays.stream(pi.replicas())).count();
-                    long isrCount = e.getValue().parallelStream().flatMap(pi -> Arrays.stream(pi.inSyncReplicas())).count();
-                    if (replicateCount == 0) {
-                        return new TopicBrief(topic, e.getValue().size(), 0);
-                    } else {
-                        return new TopicBrief(topic, e.getValue().size(), ((double) isrCount / replicateCount));
-                    }
-                }
-        ).collect(toList());
+    public Set<String> getAllTopics() throws InterruptedException, ExecutionException {
+        ListTopicsOptions options = new ListTopicsOptions();
+        // includes internal topics such as __consumer_offsets
+        options.listInternal(true);
 
-        consumer.close();
+        ListTopicsResult topics = kafkaAdminClient.listTopics(options);
+        Set<String> topicNames = topics.names().get();
+        log.info("Current topics in this cluster: " + topicNames);
+
+        return topicNames;
+    }
+
+    public List<TopicBrief> listTopicBrief() throws InterruptedException, ExecutionException {
+        DescribeTopicsResult describeTopicsResult = kafkaAdminClient.describeTopics(listTopics());
+        Map<String, TopicDescription> topicMap = describeTopicsResult.all().get();
+        List<TopicBrief> result = topicMap.entrySet().parallelStream().map(e -> {
+            String topic = e.getKey();
+            TopicDescription topicDescription = e.getValue();
+            List<org.apache.kafka.common.TopicPartitionInfo> topicPartitionInfoList = topicDescription.partitions();
+            int replicateCount = 0;
+            int isrCount = 0;
+            for (org.apache.kafka.common.TopicPartitionInfo topicPartitionInfo: topicPartitionInfoList) {
+                replicateCount += topicPartitionInfo.replicas().size();
+                isrCount += topicPartitionInfo.isr().size();
+            }
+            if (replicateCount == 0) {
+                return new TopicBrief(topic, topicDescription.partitions().size(), 0);
+            } else {
+                return new TopicBrief(topic, topicDescription.partitions().size(), ((double) isrCount / replicateCount));
+            }
+        }).collect(toList());
 
         return result;
     }
 
     public boolean existTopic(String topicName) {
-        return AdminUtils.topicExists(zkUtils, topicName);
+        return kafkaZkClient.topicExists(topicName);
     }
 
     public List<BrokerInfo> listBrokers() {
-        List<Broker> brokerList = CollectionConvertor.seqConvertJavaList(zkUtils.getAllBrokersInCluster());
+        List<Broker> brokerList = CollectionConvertor.seqConvertJavaList(kafkaZkClient.getAllBrokersInCluster());
+
         return brokerList.parallelStream().collect(Collectors.toMap(Broker::id, Broker::rack)).entrySet().parallelStream()
                 .map(entry -> {
                     String brokerInfoStr = null;
                     try {
+                        //TODO replace zkClient with kafkaZKClient
                         brokerInfoStr = new String(
                                 zkClient.getData().forPath(ZkUtils.BrokerIdsPath() + "/" + entry.getKey())
                         );
@@ -209,109 +239,94 @@ public class KafkaAdminService {
                 }).collect(toList());
     }
 
-    public TopicMeta describeTopic(@TopicExistConstraint String topicName) {
-        KafkaConsumer consumer = kafkaUtils.createNewConsumer();
+    public TopicMeta describeTopic(@TopicExistConstraint String topicName) throws InterruptedException, ExecutionException {
+        DescribeTopicsResult describeTopicsResult = kafkaAdminClient.describeTopics(Collections.singletonList(topicName));
+        Map<String, TopicDescription> topicMap = describeTopicsResult.all().get();
         TopicMeta topicMeta = new TopicMeta(topicName);
-        List<PartitionInfo> tmList = consumer.partitionsFor(topicName);
-        topicMeta.setPartitionCount(tmList.size());
-        topicMeta.setReplicationFactor(tmList.get(0).replicas().length);
-        topicMeta.setTopicCustomConfigs(getTopicPropsFromZk(topicName));
-        topicMeta.setTopicPartitionInfos(tmList.parallelStream().map(
-                tm -> {
-                    TopicPartitionInfo topicPartitionInfo = new TopicPartitionInfo();
-                    topicPartitionInfo.setLeader(tm.leader().host());
-                    topicPartitionInfo.setIsr(Arrays.stream(tm.inSyncReplicas()).map(node -> node.host()).collect(toList()));
-                    topicPartitionInfo.setPartitionId(tm.partition());
-                    topicPartitionInfo.setReplicas(Arrays.stream(tm.replicas()).map(node -> node.host()).collect(toList()));
-                    topicPartitionInfo.setIn_sync();
-                    topicPartitionInfo.setStartOffset(getBeginningOffset(tm.leader(), tm.topic(), tm.partition()));
-                    topicPartitionInfo.setEndOffset(getEndOffset(tm.leader(), tm.topic(), tm.partition()));
-                    topicPartitionInfo.setMessageAvailable();
-                    return topicPartitionInfo;
+        if (topicMap.containsKey(topicName)) {
+            TopicDescription topicDescription = topicMap.get(topicName);
+            List<TopicPartitionInfo> tmList = topicDescription.partitions();
+            topicMeta.setPartitionCount(topicDescription.partitions().size());
+            topicMeta.setReplicationFactor(tmList.get(0).replicas().size());
+            topicMeta.setTopicPartitionInfos(tmList.parallelStream().map(
+                    tm -> {
+                        CustomTopicPartitionInfo customTopicPartitionInfo = new CustomTopicPartitionInfo();
+                        customTopicPartitionInfo.setTopicPartitionInfo(tm);
+                        customTopicPartitionInfo.setIn_sync();
+                        customTopicPartitionInfo.setStartOffset(getBeginningOffset(tm.leader(), topicName, tm.partition()));
+                        customTopicPartitionInfo.setEndOffset(getEndOffset(tm.leader(), topicName, tm.partition()));
+                        customTopicPartitionInfo.setMessageAvailable();
+                        return customTopicPartitionInfo;
 
-                }).collect(toList())
-        );
-
-        Collections.sort(topicMeta.getTopicPartitionInfos());
-
-        consumer.close();
+                    }).collect(toList())
+            );
+            Collections.sort(topicMeta.getTopicPartitionInfos());
+        }
 
         return topicMeta;
     }
 
-    public GeneralResponse deleteTopic(@TopicExistConstraint String topic) {
+    public GeneralResponse deleteTopic(@TopicExistConstraint String topic)
+            throws InterruptedException, ExecutionException {
         log.warn("Delete topic " + topic);
-        AdminUtils.deleteTopic(zkUtils, topic);
+        kafkaAdminClient.deleteTopics(Collections.singletonList(topic)).all().get();
 
         return new GeneralResponse(GeneralResponseState.success, topic + " has been deleted.");
     }
 
-    public Properties createTopicConf(@TopicExistConstraint String topic, Properties prop) {
-        Properties configs = getTopicPropsFromZk(topic);
-        configs.putAll(prop);
-        AdminUtils.changeTopicConfig(zkUtils, topic, configs);
-        log.info("Create config for topic: " + topic + "Configs:" + configs);
-        return getTopicPropsFromZk(topic);
+    public Collection<ConfigEntry> describeConfig(ConfigResource.Type type, String name) throws ExecutionException, InterruptedException {
+        DescribeConfigsResult ret = kafkaAdminClient.describeConfigs(Collections.singleton(new ConfigResource(type, name)));
+        Map<ConfigResource, Config> configs = ret.all().get();
+        Collection<ConfigEntry> configEntries = null;
+
+        for (Map.Entry<ConfigResource, Config> entry : configs.entrySet()) {
+            Config value = entry.getValue();
+            configEntries = value.entries();
+        }
+
+        return configEntries;
     }
 
-    public Properties deleteTopicConf(@TopicExistConstraint String topic, List<String> deleteProps) {
-        // compile the final set of configs
-        Properties configs = getTopicPropsFromZk(topic);
-        deleteProps.stream().forEach(config -> configs.remove(config));
-        AdminUtils.changeTopicConfig(zkUtils, topic, configs);
-        log.info("Delete config for topic: " + topic);
-        return getTopicPropsFromZk(topic);
+    public void alterConfig(ConfigResource.Type type, String name, Collection<ConfigEntry> configEntries)
+            throws InterruptedException, ExecutionException{
+        Config config = new Config(configEntries);
+        kafkaAdminClient.alterConfigs(Collections.singletonMap(new ConfigResource(type, name), config)).all().get();
     }
 
-    public Properties updateTopicConf(@TopicExistConstraint String topic, Properties prop) {
-        AdminUtils.changeTopicConfig(zkUtils, topic, prop);
-        return getTopicPropsFromZk(topic);
+    public Collection<ConfigEntry> updateTopicConf(@TopicExistConstraint String topic, Properties props)
+            throws InterruptedException, ExecutionException {
+        Collection<ConfigEntry> configEntries = props.entrySet().stream().map(
+                e -> new ConfigEntry(e.getKey().toString(), e.getValue().toString())).collect(Collectors.toList());
+        alterConfig(ConfigResource.Type.TOPIC, topic, configEntries);
+
+        return describeConfig(ConfigResource.Type.TOPIC, topic);
     }
 
-    public Properties getTopicConf(@TopicExistConstraint String topic) {
-        return getTopicPropsFromZk(topic);
+    public Collection<ConfigEntry> getTopicConf(@TopicExistConstraint String topic)
+            throws InterruptedException, ExecutionException {
+        return describeConfig(ConfigResource.Type.TOPIC, topic);
     }
 
-    public Properties getTopicConfByKey(@TopicExistConstraint String topic, String key) {
-        String value = String.valueOf(AdminUtils.fetchEntityConfig(zkUtils, ConfigType.Topic(), topic).get(key));
+    public Properties getTopicConfByKey(@TopicExistConstraint String topic, String key)
+            throws InterruptedException, ExecutionException{
+        Collection<ConfigEntry> configEntries = describeConfig(ConfigResource.Type.TOPIC, topic);
         Properties returnProps = new Properties();
-        if (!value.equals("null")) {
-            returnProps.setProperty(key, value);
-            return returnProps;
-        } else
-            return null;
+        for (ConfigEntry entry : configEntries)
+            if (entry.name().equals(key)) {
+                returnProps.put(key, entry.value());
+                return returnProps;
+            }
+
+        return null;
     }
 
-    public boolean deleteTopicConfByKey(@TopicExistConstraint String topic, String key) {
-        Properties configs = getTopicPropsFromZk(topic);
-        configs.remove(key);
-        AdminUtils.changeTopicConfig(zkUtils, topic, configs);
-        return getTopicPropsFromZk(topic).get(key) == null;
+    public Collection<ConfigEntry> updateTopicConfByKey(@TopicExistConstraint String topic, String key, String value) throws InterruptedException, ExecutionException{
+        alterConfig(ConfigResource.Type.TOPIC, topic, Collections.singletonList(new ConfigEntry(key, value)));
+
+        return describeConfig(ConfigResource.Type.TOPIC, topic);
     }
 
-    public Properties updateTopicConfByKey(@TopicExistConstraint String topic, String key, String value) {
-        Properties props = getTopicConf(topic);
-        props.setProperty(key, value);
-        String validValue = String.valueOf(updateTopicConf(topic, props).get(key));
-        if (!validValue.equals("null") && validValue.equals(value)) {
-            return props;
-        } else {
-            throw new ApiException("Update Topic Config failed: " + key + ":" + value);
-        }
-    }
-
-    public Properties createTopicConfByKey(@TopicExistConstraint String topic, String key, String value) {
-        Properties props = new Properties();
-        props.setProperty(key, value);
-        String validValue = String.valueOf(createTopicConf(topic, props).get(key));
-        if (!validValue.equals("null") && validValue.equals(value)) {
-            return props;
-        } else {
-            throw new ApiException("Update Topic Config failed: " + key + ":" + value);
-        }
-
-    }
-
+    /*
     public TopicMeta addPartition(@TopicExistConstraint String topic, AddPartition addPartition) {
         List<MetadataResponse.PartitionMetadata> partitionMataData = AdminUtils.fetchTopicMetadataFromZk(topic, zkUtils).partitionMetadata();
         int numPartitions = partitionMataData.size();
@@ -400,7 +415,7 @@ public class KafkaAdminService {
                 r -> r.getValue().status()
         ));
     }
-
+    */
     private Set<String> listAllOldConsumerGroups() {
         log.info("Finish getting old consumers");
         return CollectionConvertor.seqConvertJavaList(zkUtils.getConsumerGroups()).stream().collect(toSet());
@@ -444,6 +459,7 @@ public class KafkaAdminService {
         return activeGroups;
     }
 
+    /*
     private Set<String> listNewConsumerGroupsByTopic(@TopicExistConstraint String topic) {
         Set<String> result = new HashSet();
         Set<String> consumersList = listAllNewConsumerGroups();
@@ -463,9 +479,9 @@ public class KafkaAdminService {
             adminClient.close();
         }
         return result;
-    }
+    }*/
 
-    public List<ConsumerGroupDesc> describeOldCGByTopic(String consumerGroup, @TopicExistConstraint String topic) {
+    public List<ConsumerGroupDesc> describeOldCGByTopic(String consumerGroup, @TopicExistConstraint String topic) throws InterruptedException, ExecutionException{
         if (!isOldConsumerGroup(consumerGroup)) {
             throw new RuntimeException(consumerGroup + " non-exist");
         }
@@ -542,7 +558,7 @@ public class KafkaAdminService {
         )
                 .collect(toList());
     }
-
+/*
     public List<ConsumerGroupDesc> describeNewCGByTopic(String consumerGroup,
                                                         String topic) {
         if (!isNewConsumerGroup(consumerGroup)) {
@@ -551,6 +567,7 @@ public class KafkaAdminService {
 
         return setNewCGD(consumerGroup, topic);
     }
+
 
     private List<ConsumerGroupDesc> setNewCGD(String consumerGroup, String topic) {
         List<ConsumerGroupDesc> cgdList = new ArrayList<>();
@@ -623,7 +640,7 @@ public class KafkaAdminService {
 
         return cgdList;
     }
-
+*/
 
     public String getMessage(@TopicExistConstraint String topic, int partition, long offset, String decoder, String avroSchema) {
         KafkaConsumer consumer = kafkaUtils.createNewConsumer(String.valueOf(System.currentTimeMillis()));
@@ -847,7 +864,7 @@ public class KafkaAdminService {
 
         return result;
     }
-
+    /*
     public Map<String, Set<String>> listConsumerGroupsByTopic(
             @TopicExistConstraint String topic,
             ConsumerType type) {
@@ -875,7 +892,7 @@ public class KafkaAdminService {
 
         return result;
     }
-
+    */
     private List<TopicAndPartition> getTopicPartitions(String t) {
         List<TopicAndPartition> tpList = new ArrayList<>();
         List<String> l = Arrays.asList(t);
@@ -887,9 +904,6 @@ public class KafkaAdminService {
         return tpList;
     }
 
-    private Properties getTopicPropsFromZk(String topic) {
-        return AdminUtils.fetchEntityConfig(zkUtils, ConfigType.Topic(), topic);
-    }
 
 
     private long getOffsets(Node leader, String topic, int partitionId, long time) {
@@ -948,7 +962,7 @@ public class KafkaAdminService {
         return (listAllNewConsumerGroups().contains(consumerGroup));
     }
 
-
+    /*
     public Set<String> listTopicsByCG(String consumerGroup, ConsumerType type) {
         Set<String> topicList = new HashSet<>();
 
@@ -1025,7 +1039,7 @@ public class KafkaAdminService {
 
         return result;
     }
-
+*/
     public Map<Integer, Long> countPartition(String topic) {
         KafkaConsumer consumer = kafkaUtils.createNewConsumer();
         List<PartitionInfo> piList = consumer.partitionsFor(topic);
@@ -1111,5 +1125,15 @@ public class KafkaAdminService {
             healthCheckResult.setMsg("Health Check: Consume Message Failure. Consumer can't fetch the message.");
         }
         return healthCheckResult;
+    }
+
+    public void printObjectInJson(Object object) {
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            //objectMapper.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
+            System.out.println("object:" + objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(object));
+        } catch (JsonProcessingException jsonProcessingException) {
+            jsonProcessingException.printStackTrace();
+        }
     }
 }

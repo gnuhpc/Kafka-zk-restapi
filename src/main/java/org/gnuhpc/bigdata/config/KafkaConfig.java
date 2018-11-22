@@ -1,5 +1,9 @@
 package org.gnuhpc.bigdata.config;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import lombok.Data;
 import lombok.Getter;
 import lombok.extern.log4j.Log4j;
@@ -14,6 +18,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.config.KafkaListenerContainerFactory;
@@ -60,10 +65,10 @@ public class KafkaConfig {
         return new OffsetStorage();
     }
 
-    @Bean
-    public KafkaConsumerService kafkaConsumerService() {
-        return new KafkaConsumerService(internalTopicPartitions);
-    }
+//    @Bean
+//    public KafkaConsumerService kafkaConsumerService() {
+//        return new KafkaConsumerService(internalTopicPartitions);
+//    }
 
     @Bean
     public KafkaListenerContainerFactory<ConcurrentMessageListenerContainer<ByteBuffer, ByteBuffer>>
@@ -93,4 +98,15 @@ public class KafkaConfig {
         return props;
     }
 
+    @Bean
+    public Jackson2ObjectMapperBuilder objectMapperBuilder() {
+        return new Jackson2ObjectMapperBuilder() {
+            @Override
+            public void configure(ObjectMapper objectMapper) {
+                super.configure(objectMapper);
+                objectMapper.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
+                objectMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+            }
+        };
+    }
 }

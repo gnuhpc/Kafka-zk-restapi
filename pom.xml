@@ -34,6 +34,7 @@
 
         <swagger.input>${swagger.output.dir}/swagger.json</swagger.input>
         <jackson.version>2.9.1</jackson.version>
+        <jackson.module.scala.version>2.9.5</jackson.module.scala.version>
         <snakeyaml.version>1.19</snakeyaml.version>
     </properties>
     <pluginRepositories>
@@ -219,6 +220,11 @@
             <groupId>com.fasterxml.jackson.dataformat</groupId>
             <artifactId>jackson-dataformat-yaml</artifactId>
             <version>${jackson.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.module</groupId>
+            <artifactId>jackson-module-scala_2.11</artifactId>
+            <version>${jackson.module.scala.version}</version>
         </dependency>
 
         <dependency>

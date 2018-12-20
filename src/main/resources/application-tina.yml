@@ -1,5 +1,5 @@
 kafka:
-  brokers: localhost:19092,localhost:19093,localhost:9094
+  brokers: localhost:19092,localhost:19093,localhost:19095
   offset:
     topic: "__consumer_offsets"
     partitions: 50

@@ -31,7 +31,7 @@ public class UserController {
   @ApiOperation(value = "Add user.")
   public GeneralResponse addUser(@RequestBody@Valid User user, BindingResult results) {
     if (results.hasErrors()) {
-      return new GeneralResponse(GeneralResponseState.failure, results.getFieldError().getDefaultMessage());
+      return GeneralResponse.builder().state(GeneralResponseState.failure).msg(results.getFieldError().getDefaultMessage()).build();
     }
     log.info("Receive add user request: username:" + user.getUsername());
     return userService.addUser(user);
@@ -41,7 +41,7 @@ public class UserController {
   @ApiOperation(value = "Modify user information.")
   public GeneralResponse modifyUser(@RequestBody@Valid User user, BindingResult results) {
     if (results.hasErrors()) {
-      return new GeneralResponse(GeneralResponseState.failure, results.getFieldError().getDefaultMessage());
+      return GeneralResponse.builder().state(GeneralResponseState.failure).msg(results.getFieldError().getDefaultMessage()).build();
     }
     log.info("Receive modify user request: username:" + user.getUsername());
     return userService.modifyUser(user);

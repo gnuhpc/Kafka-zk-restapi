@@ -42,12 +42,11 @@ public class UserService {
         return saveUserInfo(user);
       } else {
         log.info("Failed to add user. Reason : User " + username + " already exists.");
-        return new GeneralResponse(GeneralResponseState.failure, "Failed to add user. Reason : User " + username + " already exists.");
+        return GeneralResponse.builder().state(GeneralResponseState.failure).msg("Failed to add user. Reason : User " + username + " already exists.").build();
       }
     } catch (IOException ioException) {
       log.error("Failed to add user " + username + ". Reason : " + ioException.getLocalizedMessage());
-      return new GeneralResponse(GeneralResponseState.failure,
-              "Failed to add user " + username + ". Reason : " + ioException.getLocalizedMessage());
+      return GeneralResponse.builder().state(GeneralResponseState.failure).msg("Failed to add user " + username + ". Reason : " + ioException.getLocalizedMessage()).build();
     }
   }
 
@@ -59,12 +58,11 @@ public class UserService {
         return saveUserInfo(user);
       } else {
         log.info("Failed to modify user. Reason : User " + username + " does not exist.");
-        return new GeneralResponse(GeneralResponseState.failure, "Failed to modify user. Reason : User " + username + " does not exist.");
+        return GeneralResponse.builder().state(GeneralResponseState.failure).msg("Failed to modify user. Reason : User " + username + " does not exist.").build();
       }
     } catch (IOException ioException) {
       log.error("Failed to modify user " + username + ". Reason : " + ioException.getLocalizedMessage());
-      return new GeneralResponse(GeneralResponseState.failure,
-              "Failed to modify user " + username + ". Reason : " + ioException.getLocalizedMessage());
+      return GeneralResponse.builder().state(GeneralResponseState.failure).msg("Failed to modify user " + username + ". Reason : " + ioException.getLocalizedMessage()).build();
     }
   }
 
@@ -74,15 +72,14 @@ public class UserService {
       if (exist) {
         accounts.remove(username);
         CommonUtils.yamlWrite(WebSecurityConfig.SECURITY_FILE_PATH, accounts);
-        return new GeneralResponse(GeneralResponseState.success, "Delete user " + username + " successfully.");
+        return GeneralResponse.builder().state(GeneralResponseState.success).msg("Delete user " + username + " successfully.").build();
       } else {
         log.info("Failed to delete user. Reason : User " + username + " does not exist.");
-        return new GeneralResponse(GeneralResponseState.failure, "Failed to delete user. Reason : User " + username + " does not exist.");
+        return GeneralResponse.builder().state(GeneralResponseState.failure).msg("Failed to delete user. Reason : User " + username + " does not exist.").build();
       }
     } catch (IOException ioException) {
       log.error("Failed to delete user " + username + ". Reason : " + ioException.getLocalizedMessage());
-      return new GeneralResponse(GeneralResponseState.failure,
-              "Failed to delete user " + username + ". Reason : " + ioException.getLocalizedMessage());
+      return GeneralResponse.builder().state(GeneralResponseState.failure).msg("Failed to delete user " + username + ". Reason : " + ioException.getLocalizedMessage()).build();
     }
   }
 
@@ -103,6 +100,6 @@ public class UserService {
     userInfo.put("role", user.getRole());
     accounts.put(username, userInfo);
     CommonUtils.yamlWrite(WebSecurityConfig.SECURITY_FILE_PATH, accounts);
-    return new GeneralResponse(GeneralResponseState.success, "Save user " + username + " info successfully.");
+    return GeneralResponse.builder().state(GeneralResponseState.success).msg("Save user " + username + " info successfully.").build();
   }
 }

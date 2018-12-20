@@ -15,6 +15,7 @@ import java.util.Properties;
 @Setter
 public class TopicMeta {
     private String topicName;
+    private boolean internal;
     private int partitionCount;
     private int replicationFactor;
     private List<CustomTopicPartitionInfo> topicPartitionInfos;

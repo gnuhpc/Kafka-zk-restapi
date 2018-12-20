@@ -25,6 +25,7 @@ import org.springframework.context.annotation.Configuration;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import org.apache.kafka.clients.admin.KafkaAdminClient;
+
 /**
  * Created by gnuhpc on 2017/7/12.
  */
@@ -33,94 +34,119 @@ import org.apache.kafka.clients.admin.KafkaAdminClient;
 @Setter
 @Configuration
 public class KafkaUtils {
-    @Autowired
-    private KafkaConfig kafkaConfig;
-    @Autowired
-    private ZookeeperConfig zookeeperConfig;
 
-    private AdminClient adminClient;
+  @Autowired
+  private KafkaConfig kafkaConfig;
+  @Autowired
+  private ZookeeperConfig zookeeperConfig;
 
-    private KafkaProducer producer;
-    private Properties prop;
+  private AdminClient adminClient;
 
-    private static final String DEFAULTCP = "kafka-rest-consumergroup";
+  private KafkaProducer producer;
+  private Properties prop;
 
-    public void init(){
-        prop = new Properties();
-        prop.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaConfig.getBrokers());
-        prop.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG,
-                "org.apache.kafka.common.serialization.StringSerializer");
-        prop.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
-                "org.apache.kafka.common.serialization.StringSerializer");
-        producer = new KafkaProducer(prop);
-        log.info("Kafka initing...");
+  public static final String DEFAULTCP = "kafka-rest-consumergroup";
 
-        adminClient = AdminClient.create(prop);
+  public void init() {
+    prop = new Properties();
+    prop.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaConfig.getBrokers());
+    prop.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG,
+        "org.apache.kafka.common.serialization.StringSerializer");
+    prop.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
+        "org.apache.kafka.common.serialization.StringSerializer");
+    producer = new KafkaProducer(prop);
+    log.info("Kafka initing...");
+
+    adminClient = AdminClient.create(prop);
+  }
+
+
+  public void destroy() {
+    log.info("Kafka destorying...");
+  }
+
+  public KafkaConsumer createNewConsumer() {
+    return createNewConsumer(DEFAULTCP);
+  }
+
+  public KafkaConsumer createNewConsumer(String consumerGroup) {
+    Properties properties = new Properties();
+    properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, getKafkaConfig().getBrokers());
+    properties.put(ConsumerConfig.GROUP_ID_CONFIG, consumerGroup);
+    properties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
+    properties.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, "30000");
+    properties.put(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, "100000000");
+    properties.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, "5");
+    properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
+        StringDeserializer.class.getCanonicalName());
+    properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
+        StringDeserializer.class.getCanonicalName());
+
+    return new KafkaConsumer(properties);
+  }
+
+  public KafkaConsumer createNewConsumer(String consumerGroup, String decoder)
+      throws ClassNotFoundException {
+    Properties properties = new Properties();
+    properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, getKafkaConfig().getBrokers());
+    properties.put(ConsumerConfig.GROUP_ID_CONFIG, consumerGroup);
+    properties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
+    properties.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, "30000");
+    properties.put(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, "100000000");
+    properties.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, "5");
+    if (decoder == null || decoder.isEmpty()) {
+      properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
+          StringDeserializer.class.getCanonicalName());
+      properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
+          StringDeserializer.class.getCanonicalName());
+    } else {
+      properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
+          Class.forName(decoder).getCanonicalName());
+      properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
+          Class.forName(decoder).getCanonicalName());
     }
+    return new KafkaConsumer(properties);
+  }
 
-  
-    public void destroy(){
-        log.info("Kafka destorying...");
-    }
+  public KafkaConsumer createNewConsumerByTopic(String topic) {
+    Properties properties = new Properties();
+    properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, getKafkaConfig().getBrokers());
+    properties.put(ConsumerConfig.GROUP_ID_CONFIG, DEFAULTCP);
+    properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
+        StringDeserializer.class.getCanonicalName());
+    properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
+        StringDeserializer.class.getCanonicalName());
+    KafkaConsumer kafkaConsumer = new KafkaConsumer(properties);
+    kafkaConsumer.subscribe(Collections.singletonList(topic));
 
-    public KafkaConsumer createNewConsumer(){
-        return createNewConsumer(DEFAULTCP);
-    }
+    return kafkaConsumer;
+  }
 
-    public KafkaConsumer createNewConsumer(String consumerGroup) {
-        Properties properties = new Properties();
-        properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, getKafkaConfig().getBrokers());
-        properties.put(ConsumerConfig.GROUP_ID_CONFIG, consumerGroup);
-        properties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
-        properties.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, "30000");
-        properties.put(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, "100000000");
-        properties.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, "500");
-        properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
-                StringDeserializer.class.getCanonicalName());
-        properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
-                StringDeserializer.class.getCanonicalName());
+  public KafkaProducer createProducer() {
+    Properties prop = new Properties();
+    prop.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaConfig.getBrokers());
+    prop.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG,
+        "org.apache.kafka.common.serialization.StringSerializer");
+    prop.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
+        "org.apache.kafka.common.serialization.StringSerializer");
+    prop.setProperty(ProducerConfig.RETRIES_CONFIG, "3");
+    prop.setProperty(ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG, "10000");
+    producer = new KafkaProducer(prop);
 
-        return new KafkaConsumer(properties);
-    }
+    return producer;
+  }
 
-    public KafkaConsumer createNewConsumerByTopic(String topic){
-        Properties properties = new Properties();
-        properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, getKafkaConfig().getBrokers());
-        properties.put(ConsumerConfig.GROUP_ID_CONFIG, DEFAULTCP);
-        properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
-                StringDeserializer.class.getCanonicalName());
-        properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
-                StringDeserializer.class.getCanonicalName());
-        KafkaConsumer kafkaConsumer = new KafkaConsumer(properties);
-        kafkaConsumer.subscribe(Collections.singletonList(topic));
+  public Node getLeader(String topic, int partitionId) {
+    KafkaConsumer consumer = createNewConsumer(DEFAULTCP);
+    List<PartitionInfo> tmList = consumer.partitionsFor(topic);
 
-        return kafkaConsumer;
-    }
+    PartitionInfo partitionInfo = tmList.stream().filter(pi -> pi.partition() == partitionId)
+        .findFirst().get();
+    consumer.close();
+    return partitionInfo.leader();
+  }
 
-    public KafkaProducer createProducer() {
-        Properties prop = new Properties();
-        prop.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaConfig.getBrokers());
-        prop.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG,
-                "org.apache.kafka.common.serialization.StringSerializer");
-        prop.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
-                "org.apache.kafka.common.serialization.StringSerializer");
-        prop.setProperty(ProducerConfig.RETRIES_CONFIG, "3");
-        prop.setProperty(ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG, "10000");
-        producer = new KafkaProducer(prop);
-
-        return producer;
-    }
-
-    public Node getLeader(String topic, int partitionId) {
-        KafkaConsumer consumer = createNewConsumer(DEFAULTCP);
-        List<PartitionInfo> tmList = consumer.partitionsFor(topic);
-
-        PartitionInfo partitionInfo = tmList.stream().filter(pi -> pi.partition() == partitionId).findFirst().get();
-        consumer.close();
-        return partitionInfo.leader();
-    }
-
-    public AdminClient createAdminClient() {
-        return AdminClient.createSimplePlaintext(getKafkaConfig().getBrokers());
-    }
+  public AdminClient createAdminClient() {
+    return AdminClient.createSimplePlaintext(getKafkaConfig().getBrokers());
+  }
 }

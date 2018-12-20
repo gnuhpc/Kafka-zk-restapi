@@ -74,7 +74,7 @@ public class KafkaUtils {
         properties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
         properties.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, "30000");
         properties.put(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, "100000000");
-        properties.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, "500");
+        properties.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, "5");
         properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
                 StringDeserializer.class.getCanonicalName());
         properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,

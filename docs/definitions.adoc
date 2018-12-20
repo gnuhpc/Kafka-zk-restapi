@@ -380,7 +380,7 @@ __optional__|integer(int32)
 |**minLatency** +
 __optional__|integer(int32)
 |**mode** +
-__optional__|enum (Leader, Follower, Observer)
+__optional__|enum (Leader, Follower, Observer, Standalone)
 |**nodes** +
 __optional__|integer(int32)
 |**outstanding** +

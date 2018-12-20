@@ -22,14 +22,10 @@ import java.util.concurrent.TimeUnit;
 @Log4j
 public class UserDetailsServiceImp implements UserDetailsService {
   private ScheduledExecutorService securityFileChecker;
-  private int checkInitDelay;
-  private int checkSecurityInterval;
-  private ArrayList<User> userList = null;
+  private ArrayList<User> userList = new ArrayList<>();
 
   public UserDetailsServiceImp(boolean checkSecurity, int checkInitDelay, int checkSecurityInterval) {
     if (checkSecurity) {
-      this.checkInitDelay = checkSecurityInterval;
-      this.checkSecurityInterval = checkSecurityInterval;
       securityFileChecker = Executors.newSingleThreadScheduledExecutor(
               new ThreadFactoryBuilder().setNameFormat("securityFileChecker").build());
       securityFileChecker.scheduleWithFixedDelay(new SecurityFileCheckerRunnable(),
@@ -42,7 +38,7 @@ public class UserDetailsServiceImp implements UserDetailsService {
   public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
     User user = findUserByUsername(username);
 
-    UserBuilder builder = null;
+    UserBuilder builder;
     if (user != null) {
       builder = org.springframework.security.core.userdetails.User.withUsername(username);
       builder.password(user.getPassword());
@@ -64,10 +60,10 @@ public class UserDetailsServiceImp implements UserDetailsService {
   }
 
   private ArrayList<User> fetchUserListFromSecurtiyFile() {
-    ArrayList userList = new ArrayList();
     String securityFilePath = WebSecurityConfig.SECURITY_FILE_PATH;
     try {
       HashMap<Object, Object> accounts = CommonUtils.yamlParse(securityFilePath);
+      userList.clear();
       accounts.forEach((key, value)->{
         String username = (String)key;
         Map<String, String> userInfo = (Map)value;

@@ -56,9 +56,11 @@ public class CommonUtils {
   }
 
   public static void main(String[] args) throws IOException {
+    /*
     String rawPassword = "admin";
     String encodedPassword = CommonUtils.encode(rawPassword);
     System.out.println("rawPassword:" + rawPassword + ", encodedPassword:" + encodedPassword);
     System.out.println("workingDir:" + CommonUtils.PROJECT_ROOT_FOLDER);
+    */
   }
 }

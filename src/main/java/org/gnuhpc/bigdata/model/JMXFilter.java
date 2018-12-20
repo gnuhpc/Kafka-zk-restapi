@@ -4,9 +4,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Pattern;
 
 @Getter
@@ -58,13 +56,12 @@ public class JMXFilter {
     // ### OR
     // object: singleValue
     // ###
-    try{
-      return (ArrayList<String>) toCast;
-    } catch (ClassCastException e){
-      return new ArrayList<String>() {{
-        add(((String) toCast));
-      }};
+    if (toCast instanceof String) {
+      ArrayList<String> toCastList = new ArrayList<>();
+      toCastList.add(toCast.toString());
+      return toCastList;
     }
+    return (ArrayList<String>) toCast;
   }
 
 

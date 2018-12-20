@@ -7,8 +7,12 @@ import org.gnuhpc.bigdata.model.ZkServerEnvironment;
 import org.gnuhpc.bigdata.model.ZkServerStat;
 import org.gnuhpc.bigdata.service.ZookeeperService;
 import org.gnuhpc.bigdata.utils.ZookeeperUtils;
+import org.gnuhpc.bigdata.validator.ZKNodePathExistConstraint;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 import java.util.Map;
@@ -26,16 +30,25 @@ public class ZookeeperController {
     @Autowired
     private ZookeeperService zookeeperService;
 
-    @GetMapping("/ls/{path}")
+    @GetMapping("/ls/path")
     @ApiOperation(value = "List a zookeeper path")
-    public List<String> ls(@PathVariable("path") String path){
+    public List<String> ls(@RequestParam String path){
+        return zookeeperUtils.lsPath(path);
+        /*
         try {
-            return zookeeperUtils.getCuratorClient().getChildren().forPath("/"+path);
+            return zookeeperUtils.getCuratorClient().getChildren().forPath(path);
         } catch (Exception e) {
             e.printStackTrace();
         }
 
         return null;
+        */
+    }
+
+    @GetMapping("/get/path")
+    @ApiOperation(value = "Get data of a zookeeper path")
+    public Map<String, String> get(@RequestParam String path){
+        return zookeeperUtils.getNodeData(path);
     }
 
     @GetMapping("/connstate")

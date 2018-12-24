@@ -29,7 +29,6 @@ public class CollectorService {
           "java.lang.Object", "java.lang.Boolean", "boolean", "java.lang.Number");
   private final static List<String> COMPOSED_TYPES = Arrays.asList("javax.management.openmbean.CompositeData", "java.util.HashMap", "java.util.Map");
   private final static List<String> MULTI_TYPES = Arrays.asList("javax.management.openmbean.TabularData");
-  private LinkedList<JMXAttribute> matchingAttributes;
 
   public List<JMXMetricDataV1> collectJMXData(String jmxurl) {
     LinkedList<JMXMetricDataV1> jmxMetricDataList = new LinkedList<>();
@@ -40,7 +39,7 @@ public class CollectorService {
       JMXMetricDataV1 jmxMetricData = new JMXMetricDataV1(host, metricData);
       try {
         log.info("Start to collect JMXServiceURL:" + jmxClient.getJmxServiceURL());
-        jmxClient.connect();
+        jmxClient.connectWithTimeout();
         MBeanServerConnection mBeanServerConnection = jmxClient.getJmxConnector().getMBeanServerConnection();
         Set<ObjectName> objectNames = mBeanServerConnection.queryNames(null, null);
         for (ObjectName objectName : objectNames) {
@@ -73,23 +72,28 @@ public class CollectorService {
     List<JMXMetricData> jmxMetricDataList = new ArrayList<>();
     LinkedList<JMXConfiguration> configurationList = jmxQuery.getFilters();
     LinkedList<String> beanScopes = JMXConfiguration.getGreatestCommonScopes(configurationList);
+    Set<ObjectName> beans = new HashSet<>();
+    LinkedList<JMXAttribute> matchingAttributes = new LinkedList<>();
+    LinkedList<HashMap<String, Object>> metrics = new LinkedList<>();
+
     String[] hostList = jmxurl.split(",");
+
     for (String host : hostList) {
       JMXClient jmxClient = new JMXClient(host);
-      Set<ObjectName> beans = new HashSet<>();
-      this.matchingAttributes = new LinkedList<JMXAttribute>();
-      LinkedList<HashMap<String, Object>> metrics = new LinkedList<>();
+      beans.clear();
+      matchingAttributes.clear();
+      metrics.clear();
       JMXMetricData jmxMetricData = new JMXMetricData(host, metrics);
       try {
-        jmxClient.connect();
+        jmxClient.connectWithTimeout();
         MBeanServerConnection mBeanServerConnection = jmxClient.getJmxConnector().getMBeanServerConnection();
         for (String scope : beanScopes) {
           ObjectName name = new ObjectName(scope);
           beans.addAll(mBeanServerConnection.queryNames(name, null));
         }
         beans = (beans.isEmpty()) ? mBeanServerConnection.queryNames(null, null) : beans;
-        getMatchingAttributes(mBeanServerConnection, beans, configurationList);
-        jmxMetricData.setMetrics(getMetrics());
+        getMatchingAttributes(matchingAttributes, mBeanServerConnection, beans, configurationList);
+        jmxMetricData.setMetrics(getMetrics(matchingAttributes));
         jmxMetricData.setCollected(true);
       } catch (Exception e) {
         jmxMetricData.setCollected(false);
@@ -99,19 +103,19 @@ public class CollectorService {
         log.error("Failed to connect to " + jmxClient.getJmxServiceURL(), ce);
       } finally {
         jmxMetricDataList.add(jmxMetricData);
-        if (jmxClient.getJmxConnector() != null) {
-          try {
+        try {
+          if (jmxClient.getJmxConnector() != null) {
             jmxClient.close();
-          } catch (Throwable t) {
-            log.error("Connection close error occurred. ", t);
           }
+        } catch (Throwable t) {
+          log.error("Connection close error occurred. ", t);
         }
       }
     }
     return jmxMetricDataList;
   }
 
-  private void getMatchingAttributes(MBeanServerConnection mBeanServerConnection, Set<ObjectName> beans,
+  private void getMatchingAttributes(LinkedList<JMXAttribute> matchingAttributes, MBeanServerConnection mBeanServerConnection, Set<ObjectName> beans,
                                      LinkedList<JMXConfiguration> configurationList) {
     for (ObjectName beanName : beans) {
       MBeanAttributeInfo[] attributeInfos;
@@ -147,7 +151,7 @@ public class CollectorService {
         for (JMXConfiguration conf: configurationList) {
           if (jmxAttribute.match(conf)) {
             jmxAttribute.setMatchingConf(conf);
-            this.matchingAttributes.add(jmxAttribute);
+            matchingAttributes.add(jmxAttribute);
             log.debug("       Matching Attribute: " + jmxAttribute.getAttributeName() +
                       ", BeanName:" + beanName.getCanonicalName());
           }
@@ -181,7 +185,7 @@ public class CollectorService {
     return attributeInfoMap;
   }
 
-  public LinkedList<HashMap<String, Object>> getMetrics() throws IOException {
+  public LinkedList<HashMap<String, Object>> getMetrics(LinkedList<JMXAttribute> matchingAttributes) throws IOException {
     LinkedList<HashMap<String, Object>> metrics = new LinkedList<HashMap<String, Object>>();
     Iterator<JMXAttribute> it = matchingAttributes.iterator();
 
@@ -193,7 +197,6 @@ public class CollectorService {
           //m.put("check_name", this.checkName);
           metrics.add(m);
           JSONObject metricJson = new JSONObject(m);
-          System.out.println("metric: " + metricJson.toString());
         }
       } catch (IOException e) {
         throw e;

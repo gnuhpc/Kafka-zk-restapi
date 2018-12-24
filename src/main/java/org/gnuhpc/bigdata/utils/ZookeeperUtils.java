@@ -1,5 +1,6 @@
 package org.gnuhpc.bigdata.utils;
 
+import com.google.common.base.Charsets;
 import kafka.utils.ZKStringSerializer$;
 import kafka.utils.ZkUtils;
 import lombok.Getter;
@@ -12,23 +13,24 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.framework.api.GetDataBuilder;
 import org.apache.curator.retry.ExponentialBackoffRetry;
+import org.apache.curator.utils.ZKPaths;
+import org.apache.zookeeper.data.Stat;
 import org.gnuhpc.bigdata.config.ZookeeperConfig;
 import org.gnuhpc.bigdata.constant.ZkServerMode;
 import org.gnuhpc.bigdata.exception.ServiceNotAvailableException;
 import org.gnuhpc.bigdata.model.ZkServerClient;
 import org.gnuhpc.bigdata.model.ZkServerEnvironment;
 import org.gnuhpc.bigdata.model.ZkServerStat;
+import org.gnuhpc.bigdata.validator.ZKNodePathExistConstraint;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.validation.annotation.Validated;
 
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.net.UnknownHostException;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -39,6 +41,7 @@ import java.util.regex.Pattern;
 @Log4j
 @Setter
 @Getter
+@Validated
 public class ZookeeperUtils {
 
     //For Stat Command parse
@@ -233,5 +236,47 @@ public class ZookeeperUtils {
         return environment;
     }
 
+    public List<String> lsPath(@ZKNodePathExistConstraint String path) {
+        try {
+            return curatorClient.getChildren().forPath(path);
+        } catch (Exception e) {
+            log.error("ls path fail! path: " + path + ", error: {}" + e);
+            return null;
+        }
+    }
+
+    public Map<String, String> getNodeData(@ZKNodePathExistConstraint String path) {
+        Map<String, String> map = new HashMap<>();
+
+        try {
+            List<String> childrens = curatorClient.getChildren().forPath(path);
+            GetDataBuilder dataBuilder = curatorClient.getData();
+            if (childrens != null && childrens.size() > 0) {
+                for (int i = 0; i < childrens.size(); i++) {
+                    String child = childrens.get(i);
+                    String childPath = ZKPaths.makePath(path, child);
+                    byte[] bytes = dataBuilder.forPath(childPath);
+                    map.put(childPath, (bytes!=null)?(new String(bytes, Charsets.UTF_8)):(null));
+                }
+            } else {
+                byte[] bytes = dataBuilder.forPath(path);
+                map.put(path, (bytes!=null)?(new String(bytes, Charsets.UTF_8)):(null));
+            }
+
+        } catch (Exception e) {
+            log.error("get node data fail! path: " + path + ", error: {}" + e);
+        }
+
+        return map;
+    }
+
+    public Stat getNodePathStat(String path) {
+        try {
+            return curatorClient.checkExists().forPath(path);
+        } catch (Exception e) {
+            log.error("get node data fail! path: " + path + ", error: {}" + e);
+        }
+        return null;
+    }
 }
 

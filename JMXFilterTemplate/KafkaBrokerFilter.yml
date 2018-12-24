@@ -5,7 +5,7 @@ filters:
     #
     - include:
         domain: kafka.server
-        bean_regex: kafka.server:type=BrokerTopicMetrics,name=BytesInPerSec.*
+        bean: kafka.server:type=BrokerTopicMetrics,name=BytesInPerSec
         attribute:
             Count:
                 metric_type: KAFKA_BROKER_VOLUMN
@@ -15,7 +15,7 @@ filters:
                 alias: BytesInPerSec
     - include:
         domain: kafka.server
-        bean_regex: kafka.server:type=BrokerTopicMetrics,name=BytesOutPerSec.*
+        bean: kafka.server:type=BrokerTopicMetrics,name=BytesOutPerSec
         attribute:
             Count:
                 metric_type: KAFKA_BROKER_VOLUMN
@@ -25,7 +25,7 @@ filters:
                 alias: BytesOutPerSec
     - include:
         domain: kafka.server
-        bean_regex: kafka.server:type=BrokerTopicMetrics,name=MessagesInPerSec.*
+        bean: kafka.server:type=BrokerTopicMetrics,name=MessagesInPerSec
         attribute:
             Count:
                 metric_type: KAFKA_BROKER_VOLUMN

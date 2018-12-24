@@ -37,7 +37,7 @@ public class JMXTabularAttribute extends JMXAttribute {
 
         HashMap<String, Object> metric = subSub.get(metricKey);
         metric.put("domain", getBeanName().getDomain());
-        metric.put("beanName", getBeanName().getCanonicalName());
+        metric.put("beanName", getBeanName().toString());
         metric.put("attributeName", fullMetricKey);
         if (metric.get(ALIAS) == null) {
           metric.put(ALIAS, convertMetricName(getAlias(metricKey)));

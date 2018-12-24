@@ -10,7 +10,7 @@ public class JMXComplexAttribute extends JMXAttribute {
 
   public JMXComplexAttribute(MBeanAttributeInfo attribute, ObjectName beanName, MBeanServerConnection connection) {
     super(attribute, beanName, connection);
-    this.subAttributeList = new HashMap<String, HashMap<String, Object>>();
+    this.subAttributeList = new HashMap<>();
   }
 
   @Override
@@ -28,7 +28,7 @@ public class JMXComplexAttribute extends JMXAttribute {
       }
       if (metric.get(METRIC_TYPE) == null) {
         metric.put("domain", getBeanName().getDomain());
-        metric.put("beanName", getBeanName().getCanonicalName());
+        metric.put("beanName", getBeanName().toString());
         metric.put("attributeName", subAttribute);
         metric.put(METRIC_TYPE, getMetricType(subAttribute));
       }
@@ -118,6 +118,7 @@ public class JMXComplexAttribute extends JMXAttribute {
 
   private boolean excludeMatchAttribute(JMXConfiguration configuration) {
     JMXFilter exclude = configuration.getExclude();
+    if (exclude == null) return false;
     if (exclude.getAttribute() != null && matchSubAttribute(exclude, getAttributeName(), false)) {
       return true;
     }

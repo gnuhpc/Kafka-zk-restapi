@@ -25,7 +25,7 @@ public class JMXSimpleAttribute extends JMXAttribute {
     HashMap<String, Object> metric = new HashMap<String, Object>();
 
     metric.put("domain", getBeanName().getDomain());
-    metric.put("beanName", getBeanName().getCanonicalName());
+    metric.put("beanName", getBeanName().toString());
     metric.put("attributeName", getAttributeName());
     metric.put("alias", getAlias());
     metric.put("value", castToDouble(getValue(), null));

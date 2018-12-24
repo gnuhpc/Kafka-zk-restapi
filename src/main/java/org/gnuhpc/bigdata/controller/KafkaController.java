@@ -200,7 +200,7 @@ public class KafkaController {
     public Map<String, Set<String>> listAllConsumerGroups(
             @RequestParam(required = false) ConsumerType type,
             @RequestParam(required = false) String topic
-    ) throws Exception {
+    ) {
         if(topic!=null){
             return kafkaAdminService.listConsumerGroupsByTopic(topic,type);
         } else{

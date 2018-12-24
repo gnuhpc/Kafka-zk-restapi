@@ -91,6 +91,21 @@ __optional__|enum (success, failure)
 __Type__ : < string, object > map
 
 
+[[_healthcheckresult]]
+=== HealthCheckResult
+
+[options="header", cols=".^3,.^11,.^4"]
+|===
+|Name|Description|Schema
+|**msg** +
+__optional__||string
+|**status** +
+__optional__||string
+|**timestamp** +
+__optional__|**Example** : `"yyyy-MM-dd HH:mm:ss"`|string
+|===
+
+
 [[_hostandport]]
 === HostAndPort
 
@@ -299,6 +314,21 @@ __optional__|integer(int64)
 |===
 
 
+[[_user]]
+=== User
+
+[options="header", cols=".^3,.^4"]
+|===
+|Name|Schema
+|**password** +
+__optional__|string
+|**role** +
+__optional__|string
+|**username** +
+__optional__|string
+|===
+
+
 [[_zkserverclient]]
 === ZkServerClient
 
@@ -350,7 +380,7 @@ __optional__|integer(int32)
 |**minLatency** +
 __optional__|integer(int32)
 |**mode** +
-__optional__|enum (Leader, Follower, Observer)
+__optional__|enum (Leader, Follower, Observer, Standalone)
 |**nodes** +
 __optional__|integer(int32)
 |**outstanding** +

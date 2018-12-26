@@ -57,13 +57,13 @@ public class KafkaController {
 
   @GetMapping("/topics")
   @ApiOperation(value = "List topics")
-  public List<String> listTopics() throws InterruptedException, ExecutionException {
+  public List<String> listTopics() {
     return kafkaAdminService.listTopics();
   }
 
   @GetMapping("/topicsbrief")
   @ApiOperation(value = "List topics Brief")
-  public List<TopicBrief> listTopicBrief() throws InterruptedException, ExecutionException {
+  public List<TopicBrief> listTopicBrief() {
     return kafkaAdminService.listTopicBrief();
   }
 
@@ -115,22 +115,21 @@ public class KafkaController {
   @PutMapping(value = "/topics/{topic}/conf")
   @ApiOperation(value = "Update topic configs")
   public Collection<ConfigEntry> updateTopicConfig(@PathVariable String topic,
-      @RequestBody Properties props)
-      throws InterruptedException, ExecutionException {
+      @RequestBody Properties props) {
     return kafkaAdminService.updateTopicConf(topic, props);
   }
 
   @GetMapping(value = "/topics/{topic}/conf")
   @ApiOperation(value = "Get topic configs")
-  public Collection<ConfigEntry> getTopicConfig(@PathVariable String topic)
-      throws InterruptedException, ExecutionException {
+  public Collection<ConfigEntry> getTopicConfig(@PathVariable String topic) {
+    //Todo KIP-226 - Dynamic Broker Configuration  dynamic confs are stored in zk /config/
     return kafkaAdminService.getTopicConf(topic);
   }
 
   @GetMapping(value = "/topics/{topic}/conf/{key}")
   @ApiOperation(value = "Get topic config by key")
   public Properties getTopicConfigByKey(@PathVariable String topic,
-      @PathVariable String key) throws InterruptedException, ExecutionException {
+      @PathVariable String key) {
     return kafkaAdminService.getTopicConfByKey(topic, key);
   }
 
@@ -138,7 +137,7 @@ public class KafkaController {
   @ApiOperation(value = "Update a topic config by key")
   public Collection<ConfigEntry> updateTopicConfigByKey(@PathVariable String topic,
       @PathVariable String key,
-      @PathVariable String value) throws InterruptedException, ExecutionException {
+      @PathVariable String value) {
     return kafkaAdminService.updateTopicConfByKey(topic, key, value);
   }
 
@@ -146,6 +145,20 @@ public class KafkaController {
   @ApiOperation(value = "Add partitions to the topics")
   public Map<String, GeneralResponse> addPartition(@RequestBody List<AddPartition> addPartitions) {
     return kafkaAdminService.addPartitions(addPartitions);
+  }
+
+  @PostMapping(value = "/partitions/reassign/generate")
+  @ApiOperation(value = "Generate plan for the partition reassignment")
+  public List<String> generateReassignPartitions(@RequestBody ReassignWrapper reassignWrapper) {
+    return kafkaAdminService.generateReassignPartition(reassignWrapper);
+
+  }
+
+  @PutMapping(value = "/partitions/reassign/execute")
+  @ApiOperation(value = "Execute the partition reassignment")
+  public Map<TopicAndPartition, Integer> executeReassignPartitions(
+      @RequestBody String reassignStr) {
+    return kafkaAdminService.executeReassignPartition(reassignStr, -1l, -1l, 10000l);
   }
 
   /*

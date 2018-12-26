@@ -11,6 +11,7 @@ import kafka.cluster.Broker;
 import kafka.common.OffsetAndMetadata;
 import kafka.common.Topic;
 import kafka.common.TopicAndPartition;
+import kafka.common.TopicExistsException;
 import kafka.coordinator.GroupOverview;
 import kafka.coordinator.GroupTopicPartition;
 import kafka.javaapi.OffsetRequest;
@@ -112,6 +113,9 @@ public class KafkaAdminService {
     }
 
     public TopicMeta createTopic(TopicDetail topic, String reassignStr) {
+        if (existTopic(topic.getName())) {
+            throw new InvalidTopicException("Topic:" + topic.getName() + " already exist.");
+        }
         if (StringUtils.isEmpty(topic.getName())) {
             throw new InvalidTopicException("Empty topic name");
         }

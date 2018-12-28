@@ -100,7 +100,7 @@ public class ZookeeperUtils {
             e.printStackTrace();
             log.error("Exception:", e);
         }
-        kafkaZkClient = KafkaZkClient.apply(zookeeperConfig.getUris(), false, SESSION_TIMEOUT,
+        kafkaZkClient = KafkaZkClient.apply(zookeeperConfig.getUris(), false, 10 * SESSION_TIMEOUT,
                 CONNECTION_TIMEOUT, Integer.MAX_VALUE, Time.SYSTEM, "testMetricGroup",
                 "testMetricType");
     }

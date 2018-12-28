@@ -4,30 +4,47 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
-import java.util.concurrent.TimeoutException;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import joptsimple.internal.Strings;
-import kafka.admin.AdminClient.ConsumerGroupSummary;
-import kafka.admin.AdminClient.ConsumerSummary;
-import kafka.cluster.Broker;
-import kafka.common.TopicAndPartition;
 import lombok.extern.log4j.Log4j;
-import org.apache.kafka.clients.admin.ConfigEntry;
-import org.apache.kafka.clients.admin.NewPartitions;
-import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.clients.admin.DescribeReplicaLogDirsResult.ReplicaLogDirInfo;
+import org.apache.kafka.common.TopicPartitionReplica;
+import org.apache.kafka.common.config.ConfigResource.Type;
 import org.apache.kafka.common.errors.ApiException;
-import org.apache.kafka.common.errors.InvalidTopicException;
+import org.apache.kafka.common.requests.DescribeLogDirsResponse.LogDirInfo;
 import org.gnuhpc.bigdata.constant.ConsumerType;
 import org.gnuhpc.bigdata.constant.GeneralResponseState;
-import org.gnuhpc.bigdata.model.*;
+import org.gnuhpc.bigdata.model.AddPartition;
+import org.gnuhpc.bigdata.model.BrokerInfo;
+import org.gnuhpc.bigdata.model.ConsumerGroupDesc;
+import org.gnuhpc.bigdata.model.ConsumerGroupMeta;
+import org.gnuhpc.bigdata.model.CustomConfigEntry;
+import org.gnuhpc.bigdata.model.GeneralResponse;
+import org.gnuhpc.bigdata.model.HealthCheckResult;
+import org.gnuhpc.bigdata.model.ReassignWrapper;
+import org.gnuhpc.bigdata.model.TopicBrief;
+import org.gnuhpc.bigdata.model.TopicDetail;
+import org.gnuhpc.bigdata.model.TopicMeta;
 import org.gnuhpc.bigdata.service.KafkaAdminService;
 import org.gnuhpc.bigdata.service.KafkaProducerService;
 import org.gnuhpc.bigdata.validator.ConsumerGroupExistConstraint;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.*;
-import java.util.concurrent.ExecutionException;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Created by gnuhpc on 2017/7/16.
@@ -43,6 +60,12 @@ public class KafkaController {
   @Autowired
   private KafkaProducerService kafkaProducerService;
 
+  @GetMapping(value = "/cluster")
+  @ApiOperation(value = "Describe cluster, nodes, controller info.")
+  public Map<String, Object> describeCluster() {
+    return kafkaAdminService.describeCluster();
+  }
+
   @GetMapping(value = "/brokers")
   @ApiOperation(value = "List brokers in this cluster")
   public List<BrokerInfo> listBrokers() {
@@ -53,6 +76,53 @@ public class KafkaController {
   @ApiOperation(value = "Get controller id in this cluster")
   public int getControllerId() {
     return kafkaAdminService.getControllerId();
+  }
+
+  @GetMapping(value = "/brokers/logdirs")
+  @ApiOperation(value = "List log dirs by broker list")
+  public Map<Integer, List<String>> listLogDirs(
+      @RequestParam(required = false) List<Integer> brokerList) {
+    return kafkaAdminService.listLogDirsByBroker(brokerList);
+  }
+
+  @GetMapping(value = "/brokers/logdirs/detail")
+  @ApiOperation(value = "Describe log dirs by broker list and topic list")
+  public Map<Integer, Map<String, LogDirInfo>> describeLogDirs(
+      @RequestParam(required = false) List<Integer> brokerList,
+      @RequestParam(required = false) List<String> topicList) {
+    return kafkaAdminService.describeLogDirsByBrokerAndTopic(brokerList, topicList);
+  }
+
+  @GetMapping(value = "/brokers/replicalogdirs")
+  @ApiOperation(value = "Describe replicat log dirs.")
+  public Map<TopicPartitionReplica, ReplicaLogDirInfo> describeReplicaLogDirs(
+      @RequestParam List<TopicPartitionReplica> replicas) {
+    return kafkaAdminService.describeReplicaLogDirs(replicas);
+  }
+
+  @GetMapping(value = "/brokers/{brokerId}/conf")
+  @ApiOperation(value = "Get broker configs, including dynamic configs")
+  public Collection<CustomConfigEntry> getBrokerConfig(@PathVariable int brokerId) {
+    return kafkaAdminService.getBrokerConf(brokerId);
+  }
+
+  @GetMapping(value = "/brokers/{brokerId}/dynconf")
+  @ApiOperation(value = "Get broker dynamic configs")
+  public Properties getBrokerDynConfig(@PathVariable int brokerId) {
+    return kafkaAdminService.getConfigInZk(Type.BROKER, String.valueOf(brokerId));
+  }
+
+  @PutMapping(value = "/brokers/{brokerId}/dynconf")
+  @ApiOperation(value = "Update broker configs")
+  public Properties updateBrokerDynConfig(@PathVariable int brokerId,
+      @RequestBody Properties props) {
+    return kafkaAdminService.updateBrokerDynConf(brokerId, props);
+  }
+
+  @DeleteMapping(value = "/brokers/{brokerId}/dynconf")
+  @ApiOperation(value = "Remove broker dynamic configs")
+  public void removeBrokerDynConfig(@PathVariable int brokerId, @RequestParam List<String> configKeysToBeRemoved) {
+    kafkaAdminService.removeConfigInZk(Type.BROKER, String.valueOf(brokerId), configKeysToBeRemoved);
   }
 
   @GetMapping("/topics")
@@ -86,7 +156,7 @@ public class KafkaController {
   @ResponseStatus(HttpStatus.CREATED)
   @ApiOperation(value = "Write a message to the topic, for testing purpose")
   public GeneralResponse writeMessage(@PathVariable String topic, @RequestBody String message) {
-//        kafkaProducerService.send(topic, message);
+    kafkaProducerService.send(topic, message);
     return GeneralResponse.builder().state(GeneralResponseState.success)
         .msg(message + " has been sent").build();
   }
@@ -114,16 +184,21 @@ public class KafkaController {
 
   @PutMapping(value = "/topics/{topic}/conf")
   @ApiOperation(value = "Update topic configs")
-  public Collection<ConfigEntry> updateTopicConfig(@PathVariable String topic,
+  public Collection<CustomConfigEntry> updateTopicConfig(@PathVariable String topic,
       @RequestBody Properties props) {
     return kafkaAdminService.updateTopicConf(topic, props);
   }
 
   @GetMapping(value = "/topics/{topic}/conf")
   @ApiOperation(value = "Get topic configs")
-  public Collection<ConfigEntry> getTopicConfig(@PathVariable String topic) {
-    //Todo KIP-226 - Dynamic Broker Configuration  dynamic confs are stored in zk /config/
+  public Collection<CustomConfigEntry> getTopicConfig(@PathVariable String topic) {
     return kafkaAdminService.getTopicConf(topic);
+  }
+
+  @GetMapping(value = "/topics/{topic}/dynconf")
+  @ApiOperation(value = "Get topic dyn configs")
+  public Properties getTopicDynConfig(@PathVariable String topic) {
+    return kafkaAdminService.getConfigInZk(Type.TOPIC, topic);
   }
 
   @GetMapping(value = "/topics/{topic}/conf/{key}")
@@ -135,7 +210,7 @@ public class KafkaController {
 
   @PutMapping(value = "/topics/{topic}/conf/{key}={value}")
   @ApiOperation(value = "Update a topic config by key")
-  public Collection<ConfigEntry> updateTopicConfigByKey(@PathVariable String topic,
+  public Collection<CustomConfigEntry> updateTopicConfigByKey(@PathVariable String topic,
       @PathVariable String key,
       @PathVariable String value) {
     return kafkaAdminService.updateTopicConfByKey(topic, key, value);
@@ -156,52 +231,23 @@ public class KafkaController {
 
   @PutMapping(value = "/partitions/reassign/execute")
   @ApiOperation(value = "Execute the partition reassignment")
-  public Map<TopicAndPartition, Integer> executeReassignPartitions(
-      @RequestBody String reassignStr) {
-    return kafkaAdminService.executeReassignPartition(reassignStr, -1l, -1l, 10000l);
-  }
-
-  /*
-  @PostMapping(value = "/partitions/add")
-  @ApiOperation(value = "Add a partition to the topic")
-  public TopicMeta addPartition(@RequestBody AddPartition addPartition) {
-      String topic = addPartition.getTopic();
-      isTopicExist(topic);
-
-      if (addPartition.getReplicaAssignment() != null && !addPartition.getReplicaAssignment().equals("") && addPartition.getReplicaAssignment().split(",").length
-              != addPartition.getNumPartitionsAdded()) {
-          throw new InvalidTopicException("Topic " + topic + ": num of partitions added not equal to manual reassignment str!");
-      }
-
-      if (addPartition.getNumPartitionsAdded() == 0) {
-          throw new InvalidTopicException("Num of paritions added must be specified and should not be 0");
-      }
-      return kafkaAdminService.addPartition(topic, addPartition);
-  }
-
-  @PostMapping(value = "/partitions/reassign/generate")
-  @ApiOperation(value = "Generate plan for the partition reassignment")
-  public List<String> generateReassignPartitions(@RequestBody ReassignWrapper reassignWrapper) {
-      return kafkaAdminService.generateReassignPartition(reassignWrapper);
-
-  }
-
-  @PutMapping(value = "/partitions/reassign/execute")
-  @ApiOperation(value = "Execute the partition reassignment")
-  public Map<TopicAndPartition, Integer> executeReassignPartitions(
-          @RequestBody String reassignStr) {
-      return kafkaAdminService.executeReassignPartition(reassignStr);
+  public Map<String, Object> executeReassignPartitions(
+      @RequestBody String reassignStr, long interBrokerThrottle, long replicaAlterLogDirsThrottle,
+      long timeoutMs) {
+    return kafkaAdminService
+        .executeReassignPartition(reassignStr, interBrokerThrottle, replicaAlterLogDirsThrottle,
+            timeoutMs);
   }
 
   @PutMapping(value = "/partitions/reassign/check")
   @ApiOperation(value = "Check the partition reassignment process")
   @ApiResponses(value = {@ApiResponse(code = 1, message = "Reassignment Completed"),
-          @ApiResponse(code = 0, message = "Reassignment In Progress"),
-          @ApiResponse(code = -1, message = "Reassignment Failed")})
-  public Map<TopicAndPartition, Integer> checkReassignPartitions(@RequestBody String reassignStr) {
-      return kafkaAdminService.checkReassignStatus(reassignStr);
+      @ApiResponse(code = 0, message = "Reassignment In Progress"),
+      @ApiResponse(code = -1, message = "Reassignment Failed")})
+  public Map<String, Object> checkReassignPartitions(@RequestBody String reassignStr) {
+    return kafkaAdminService.checkReassignStatusByStr(reassignStr);
   }
-  */
+
   @GetMapping(value = "/consumergroups")
   @ApiOperation(value = "List all consumer groups from zk and kafka")
   public Map<String, Set<String>> listAllConsumerGroups(
@@ -268,10 +314,9 @@ public class KafkaController {
       @PathVariable String consumergroup,
       @PathVariable @ApiParam(
           value = "[earliest/latest/{long}/yyyy-MM-dd HH:mm:ss] can be supported. The date type is only valid for new consumer group.") String offset,
-      @PathVariable ConsumerType type) throws InterruptedException, ExecutionException {
+      @PathVariable ConsumerType type) {
     return kafkaAdminService.resetOffset(topic, partition, consumergroup, type, offset);
   }
-
 
   @GetMapping(value = "/consumergroup/{consumergroup}/{type}/topic/{topic}/lastcommittime")
   public Map<String, Map<Integer, Long>> getLastCommitTimestamp(

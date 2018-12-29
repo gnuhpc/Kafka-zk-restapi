@@ -1,43 +1,43 @@
 filters:
-    - include:
-        domain: kafka.consumer
-        bean_regex: kafka.consumer:type=ConsumerFetcherManager,name=MaxLag,clientId=([-.\w]+)
-        attribute:
-            Value:
-                metric_type: KAFKA_CONSUMER_OLD_HIGH
-                alias: MaxLag
-    - include:
-        domain: kafka.consumer
-        bean_regex: kafka.consumer:type=ConsumerFetcherManager,name=MinFetchRate,clientId=([-.\w]+)
-        attribute:
-            Value:
-                metric_type: KAFKA_CONSUMER_OLD_HIGH
-                alias: MinFetchRate
-    - include:
-        domain: kafka.consumer
-        bean_regex: kafka.consumer:type=ConsumerTopicMetrics,name=MessagesPerSec,clientId=([-.\w]+)
-        attribute:
-            Count:
-                metric_type: KAFKA_CONSUMER_OLD_HIGH
-                alias: MessagesPerSec
-    - include:
-            domain: kafka.consumer
-            bean_regex: kafka.consumer:type=ConsumerTopicMetrics,name=BytesPerSec,clientId=([-.\w]+)
-            attribute:
-                Count:
-                    metric_type: KAFKA_CONSUMER_OLD_HIGH
-                    alias: BytesPerSec
-    - include:
-            domain: kafka.consumer
-            bean_regex: kafka.consumer:type=ZookeeperConsumerConnector,name=KafkaCommitsPerSec,clientId=([-.\w]+)
-            attribute:
-                Count:
-                    metric_type: KAFKA_CONSUMER_OLD_HIGH
-                    alias: KafkaCommitsPerSec
-    - include:
-            domain: kafka.consumer
-            bean_regex: kafka.consumer:type=ZookeeperConsumerConnector,name=OwnedPartitionsCount,clientId=([-.\w]+),groupId=([-.\w]+)
-            attribute:
-                Value:
-                    metric_type: KAFKA_CONSUMER_OLD_HIGH
-                    alias: OwnedPartitionsCount
+- include:
+    domain: kafka.consumer
+    bean_regex: kafka.consumer:type=ConsumerFetcherManager,name=MaxLag,clientId=([-.\w]+)
+    attribute:
+      Value:
+        metric_type: KAFKA_CONSUMER_OLD_HIGH
+        alias: MaxLag
+- include:
+    domain: kafka.consumer
+    bean_regex: kafka.consumer:type=ConsumerFetcherManager,name=MinFetchRate,clientId=([-.\w]+)
+    attribute:
+      Value:
+        metric_type: KAFKA_CONSUMER_OLD_HIGH
+        alias: MinFetchRate
+- include:
+    domain: kafka.consumer
+    bean_regex: kafka.consumer:type=ConsumerTopicMetrics,name=MessagesPerSec,clientId=([-.\w]+)
+    attribute:
+      Count:
+        metric_type: KAFKA_CONSUMER_OLD_HIGH
+        alias: MessagesPerSec
+- include:
+    domain: kafka.consumer
+    bean_regex: kafka.consumer:type=ConsumerTopicMetrics,name=BytesPerSec,clientId=([-.\w]+)
+    attribute:
+      Count:
+        metric_type: KAFKA_CONSUMER_OLD_HIGH
+        alias: BytesPerSec
+- include:
+    domain: kafka.consumer
+    bean_regex: kafka.consumer:type=ZookeeperConsumerConnector,name=KafkaCommitsPerSec,clientId=([-.\w]+)
+    attribute:
+      Count:
+        metric_type: KAFKA_CONSUMER_OLD_HIGH
+        alias: KafkaCommitsPerSec
+- include:
+    domain: kafka.consumer
+    bean_regex: kafka.consumer:type=ZookeeperConsumerConnector,name=OwnedPartitionsCount,clientId=([-.\w]+),groupId=([-.\w]+)
+    attribute:
+      Value:
+        metric_type: KAFKA_CONSUMER_OLD_HIGH
+        alias: OwnedPartitionsCount

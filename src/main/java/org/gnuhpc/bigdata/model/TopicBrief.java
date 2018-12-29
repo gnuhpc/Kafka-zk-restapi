@@ -8,7 +8,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class TopicBrief {
-    private String topic;
-    private int numPartition;
-    private double isrRate;
+
+  private String topic;
+  private int numPartition;
+  private double isrRate;
 }

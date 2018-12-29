@@ -1,15 +1,14 @@
 package org.gnuhpc.bigdata.model;
 
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.gnuhpc.bigdata.constant.ZkServerMode;
 
-import java.util.List;
-
-
 @Data
 @AllArgsConstructor
 public class ZkServerStat {
+
   private final String version;
   private final String buildDate;
   private final List<ZkServerClient> clients;

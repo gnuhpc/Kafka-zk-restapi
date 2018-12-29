@@ -1,44 +1,33 @@
 package org.gnuhpc.bigdata.utils;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Properties;
 import kafka.admin.AdminClient;
-import kafka.admin.AdminUtils;
-import kafka.coordinator.group.GroupOverview;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.log4j.Log4j;
-import org.apache.kafka.clients.admin.*;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.Node;
 import org.apache.kafka.common.PartitionInfo;
-import org.apache.kafka.common.errors.ApiException;
 import org.apache.kafka.common.serialization.StringDeserializer;
-import org.gnuhpc.bigdata.CollectionConvertor;
 import org.gnuhpc.bigdata.config.KafkaConfig;
 import org.gnuhpc.bigdata.config.ZookeeperConfig;
-import org.gnuhpc.bigdata.constant.ConsumerType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.*;
-import java.util.concurrent.ExecutionException;
-import org.apache.kafka.clients.admin.KafkaAdminClient;
-
-/**
- * Created by gnuhpc on 2017/7/12.
- */
+/** Created by gnuhpc on 2017/7/12. */
 @Log4j
 @Getter
 @Setter
 @Configuration
 public class KafkaUtils {
 
-  @Autowired
-  private KafkaConfig kafkaConfig;
-  @Autowired
-  private ZookeeperConfig zookeeperConfig;
+  @Autowired private KafkaConfig kafkaConfig;
+  @Autowired private ZookeeperConfig zookeeperConfig;
 
   private AdminClient adminClient;
 
@@ -50,16 +39,17 @@ public class KafkaUtils {
   public void init() {
     prop = new Properties();
     prop.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaConfig.getBrokers());
-    prop.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG,
+    prop.setProperty(
+        ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG,
         "org.apache.kafka.common.serialization.StringSerializer");
-    prop.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
+    prop.setProperty(
+        ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
         "org.apache.kafka.common.serialization.StringSerializer");
     producer = new KafkaProducer(prop);
     log.info("Kafka initing...");
 
     adminClient = AdminClient.create(prop);
   }
-
 
   public void destroy() {
     log.info("Kafka destorying...");
@@ -77,9 +67,10 @@ public class KafkaUtils {
     properties.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, "30000");
     properties.put(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, "100000000");
     properties.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, "5");
-    properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
-        StringDeserializer.class.getCanonicalName());
-    properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
+    properties.put(
+        ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getCanonicalName());
+    properties.put(
+        ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
         StringDeserializer.class.getCanonicalName());
 
     return new KafkaConsumer(properties);
@@ -95,14 +86,17 @@ public class KafkaUtils {
     properties.put(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, "100000000");
     properties.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, "5");
     if (decoder == null || decoder.isEmpty()) {
-      properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
+      properties.put(
+          ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
           StringDeserializer.class.getCanonicalName());
-      properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
+      properties.put(
+          ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
           StringDeserializer.class.getCanonicalName());
     } else {
-      properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
-          Class.forName(decoder).getCanonicalName());
-      properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
+      properties.put(
+          ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, Class.forName(decoder).getCanonicalName());
+      properties.put(
+          ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
           Class.forName(decoder).getCanonicalName());
     }
     return new KafkaConsumer(properties);
@@ -112,9 +106,10 @@ public class KafkaUtils {
     Properties properties = new Properties();
     properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, getKafkaConfig().getBrokers());
     properties.put(ConsumerConfig.GROUP_ID_CONFIG, DEFAULTCP);
-    properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
-        StringDeserializer.class.getCanonicalName());
-    properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
+    properties.put(
+        ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getCanonicalName());
+    properties.put(
+        ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
         StringDeserializer.class.getCanonicalName());
     KafkaConsumer kafkaConsumer = new KafkaConsumer(properties);
     kafkaConsumer.subscribe(Collections.singletonList(topic));
@@ -125,9 +120,11 @@ public class KafkaUtils {
   public KafkaProducer createProducer() {
     Properties prop = new Properties();
     prop.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaConfig.getBrokers());
-    prop.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG,
+    prop.setProperty(
+        ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG,
         "org.apache.kafka.common.serialization.StringSerializer");
-    prop.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
+    prop.setProperty(
+        ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
         "org.apache.kafka.common.serialization.StringSerializer");
     prop.setProperty(ProducerConfig.RETRIES_CONFIG, "3");
     prop.setProperty(ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG, "10000");
@@ -140,8 +137,8 @@ public class KafkaUtils {
     KafkaConsumer consumer = createNewConsumer(DEFAULTCP);
     List<PartitionInfo> tmList = consumer.partitionsFor(topic);
 
-    PartitionInfo partitionInfo = tmList.stream().filter(pi -> pi.partition() == partitionId)
-        .findFirst().get();
+    PartitionInfo partitionInfo =
+        tmList.stream().filter(pi -> pi.partition() == partitionId).findFirst().get();
     consumer.close();
     return partitionInfo.leader();
   }

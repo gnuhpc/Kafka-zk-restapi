@@ -1,6 +1,13 @@
 package org.gnuhpc.bigdata.security;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import lombok.extern.log4j.Log4j;
 import org.gnuhpc.bigdata.config.WebSecurityConfig;
 import org.gnuhpc.bigdata.model.User;
@@ -10,26 +17,23 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-
 @Log4j
 public class UserDetailsServiceImp implements UserDetailsService {
+
   private ScheduledExecutorService securityFileChecker;
   private ArrayList<User> userList = new ArrayList<>();
 
-  public UserDetailsServiceImp(boolean checkSecurity, int checkInitDelay, int checkSecurityInterval) {
+  public UserDetailsServiceImp(
+      boolean checkSecurity, int checkInitDelay, int checkSecurityInterval) {
     if (checkSecurity) {
-      securityFileChecker = Executors.newSingleThreadScheduledExecutor(
+      securityFileChecker =
+          Executors.newSingleThreadScheduledExecutor(
               new ThreadFactoryBuilder().setNameFormat("securityFileChecker").build());
-      securityFileChecker.scheduleWithFixedDelay(new SecurityFileCheckerRunnable(),
-              checkInitDelay, checkSecurityInterval, TimeUnit.SECONDS);
+      securityFileChecker.scheduleWithFixedDelay(
+          new SecurityFileCheckerRunnable(),
+          checkInitDelay,
+          checkSecurityInterval,
+          TimeUnit.SECONDS);
       userList = fetchUserListFromSecurtiyFile();
     }
   }
@@ -51,7 +55,7 @@ public class UserDetailsServiceImp implements UserDetailsService {
   }
 
   private User findUserByUsername(String username) {
-    for (User user:userList) {
+    for (User user : userList) {
       if (username.equals(user.getUsername())) {
         return user;
       }
@@ -64,11 +68,12 @@ public class UserDetailsServiceImp implements UserDetailsService {
     try {
       HashMap<Object, Object> accounts = CommonUtils.yamlParse(securityFilePath);
       userList.clear();
-      accounts.forEach((key, value)->{
-        String username = (String)key;
-        Map<String, String> userInfo = (Map)value;
-        userList.add(new User(username, userInfo.get("password"), userInfo.get("role")));
-      });
+      accounts.forEach(
+          (key, value) -> {
+            String username = (String) key;
+            Map<String, String> userInfo = (Map) value;
+            userList.add(new User(username, userInfo.get("password"), userInfo.get("role")));
+          });
     } catch (IOException ioException) {
       log.error("Security file process exception.", ioException);
     }
@@ -77,6 +82,7 @@ public class UserDetailsServiceImp implements UserDetailsService {
   }
 
   private class SecurityFileCheckerRunnable implements Runnable {
+
     @Override
     public void run() {
       try {

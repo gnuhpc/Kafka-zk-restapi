@@ -10,7 +10,7 @@ public enum ConsumerGroupState {
   DEAD("Dead"),
   EMPTY("Empty");
 
-  private final static HashMap<String, ConsumerGroupState> NAME_TO_ENUM;
+  private static final HashMap<String, ConsumerGroupState> NAME_TO_ENUM;
 
   static {
     NAME_TO_ENUM = new HashMap<>();
@@ -25,10 +25,7 @@ public enum ConsumerGroupState {
     this.name = name;
   }
 
-
-  /**
-   * Parse a string into a consumer group state.
-   */
+  /** Parse a string into a consumer group state. */
   public static ConsumerGroupState parse(String name) {
     ConsumerGroupState state = NAME_TO_ENUM.get(name);
     return state == null ? UNKNOWN : state;

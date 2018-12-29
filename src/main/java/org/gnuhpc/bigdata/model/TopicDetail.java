@@ -16,28 +16,27 @@
 
 package org.gnuhpc.bigdata.model;
 
+import java.util.Properties;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-
-import java.util.Properties;
 
 @Setter
 @Getter
 @ToString
 public class TopicDetail {
 
-    public static final int DEFAULT_PARTITION_NUMBER = 2;
-    public static final int DEFAULT_REPLICATION_FACTOR = 1;
+  public static final int DEFAULT_PARTITION_NUMBER = 2;
+  public static final int DEFAULT_REPLICATION_FACTOR = 1;
 
-    private int partitions;
-    private int factor;
-    private String name;
-    private Properties prop;
+  private int partitions;
+  private int factor;
+  private String name;
+  private Properties prop;
 
-    public TopicDetail() {
-        this.partitions = DEFAULT_PARTITION_NUMBER;
-        this.factor = DEFAULT_REPLICATION_FACTOR;
-        this.prop = new Properties();
-    }
+  public TopicDetail() {
+    this.partitions = DEFAULT_PARTITION_NUMBER;
+    this.factor = DEFAULT_REPLICATION_FACTOR;
+    this.prop = new Properties();
+  }
 }

@@ -4,6 +4,7 @@ import lombok.Data;
 
 @Data
 public class TwoTuple<A, B> {
+
   private A first;
   private B second;
 

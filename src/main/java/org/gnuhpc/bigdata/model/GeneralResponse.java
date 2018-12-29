@@ -11,7 +11,8 @@ import org.gnuhpc.bigdata.constant.GeneralResponseState;
 @AllArgsConstructor
 @Builder
 public class GeneralResponse {
-    private GeneralResponseState state;
-    private String msg;
-    private Object data;
+
+  private GeneralResponseState state;
+  private String msg;
+  private Object data;
 }

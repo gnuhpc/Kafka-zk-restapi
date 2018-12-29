@@ -10,6 +10,7 @@ import org.apache.kafka.common.TopicPartition;
 @Getter
 @Setter
 public class MemberDescription {
+
   private String memberId;
   private String clientId;
   private String host;

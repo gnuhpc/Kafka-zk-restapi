@@ -9,6 +9,7 @@ import org.apache.kafka.common.Node;
 @Builder
 @AllArgsConstructor
 public class PartitionAssignmentState {
+
   private String group;
   private Node coordinator;
   private String topic;

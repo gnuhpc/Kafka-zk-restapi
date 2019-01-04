@@ -152,6 +152,7 @@ public class KafkaAdminService {
   private static final long kafkaAdminClientAlterTimeoutMs = 60000;
   private static final String CONSUMERPATHPREFIX = "/consumers/";
   private static final String OFFSETSPATHPREFIX = "/offsets/";
+
   @Autowired private ZookeeperUtils zookeeperUtils;
 
   @Autowired private KafkaUtils kafkaUtils;
@@ -163,6 +164,7 @@ public class KafkaAdminService {
   // For AdminUtils use
   private ZkUtils zkUtils;
 
+  private org.apache.kafka.clients.admin.AdminClient kafkaAdminClient = null;
   // For Json serialized
   // TODO replace gson with jackson
   private Gson gson;
@@ -184,10 +186,13 @@ public class KafkaAdminService {
   }
 
   private org.apache.kafka.clients.admin.AdminClient createKafkaAdminClient() {
-    Properties adminClientProp = new Properties();
-    adminClientProp.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaConfig.getBrokers());
+    if (this.kafkaAdminClient == null) {
+      Properties adminClientProp = new Properties();
+      adminClientProp.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaConfig.getBrokers());
+      this.kafkaAdminClient = KafkaAdminClient.create(adminClientProp);
+    }
 
-    return KafkaAdminClient.create(adminClientProp);
+    return this.kafkaAdminClient;
   }
 
   public TopicMeta createTopic(TopicDetail topic, String reassignStr) {
@@ -228,8 +233,6 @@ public class KafkaAdminService {
       TopicCommand.createTopic(
           kafkaZkClient,
           new TopicCommand.TopicCommandOptions(argsList.stream().toArray(String[]::new)));
-
-      kafkaZkClient.close();
     }
 
     try {
@@ -265,7 +268,6 @@ public class KafkaAdminService {
       throw new ApiException("List topic exception : " + exception);
     }
 
-    kafkaAdminClient.close();
     return topicNames;
   }
 
@@ -310,15 +312,12 @@ public class KafkaAdminService {
       throw new ApiException("Describe all topics exception:" + exception);
     }
 
-    kafkaAdminClient.close();
     return result;
   }
 
   public boolean existTopic(String topicName) {
     KafkaZkClient kafkaZkClient = zookeeperUtils.createKafkaZkClient();
     boolean exists = kafkaZkClient.topicExists(topicName);
-
-    kafkaZkClient.close();
 
     return exists;
   }
@@ -359,22 +358,14 @@ public class KafkaAdminService {
       }
     }
 
-    kafkaAdminClient.close();
-
     return clusterDetail;
   }
 
   public List<BrokerInfo> listBrokers() {
     CuratorFramework zkClient = zookeeperUtils.createZkClient();
-    if (!zookeeperUtils.isConnected(zkClient)) {
-      throw new ApiException("Zookeeper is not connected.");
-    }
-
     KafkaZkClient kafkaZkClient = zookeeperUtils.createKafkaZkClient();
     List<Broker> brokerList =
         CollectionConvertor.seqConvertJavaList(kafkaZkClient.getAllBrokersInCluster());
-
-    zkClient.start();
 
     List<BrokerInfo> brokerInfoList = brokerList
         .parallelStream()
@@ -403,9 +394,6 @@ public class KafkaAdminService {
             })
         .collect(toList());
 
-    zkClient.close();
-    kafkaZkClient.close();
-
     return brokerInfoList;
   }
 
@@ -416,8 +404,6 @@ public class KafkaAdminService {
     if (!kafkaZkClient.getControllerId().equals(none)) {
       controllerId = (int) kafkaZkClient.getControllerId().get();
     }
-
-    kafkaZkClient.close();
 
     return controllerId;
   }
@@ -495,8 +481,6 @@ public class KafkaAdminService {
       }
     }
 
-    kafkaAdminClient.close();
-
     return logDirInfosByBroker;
   }
 
@@ -520,8 +504,6 @@ public class KafkaAdminService {
       throw new ApiException("Describe replica log dirs exception:" + exception);
     }
 
-    kafkaAdminClient.close();
-
     return replicaLogDirInfoMap;
   }
 
@@ -544,8 +526,6 @@ public class KafkaAdminService {
     } else if (type.equals(Type.TOPIC)) {
       properties = adminZkClient.fetchEntityConfig(ConfigType.Topic(), name);
     }
-
-    kafkaZkClient.close();
 
     return properties;
   }
@@ -581,7 +561,6 @@ public class KafkaAdminService {
 
   public Properties updateBrokerDynConf(int brokerId, Properties propsToBeUpdated) {
     Properties props = getConfigInZk(Type.BROKER, String.valueOf(brokerId));
-
     KafkaZkClient kafkaZkClient = zookeeperUtils.createKafkaZkClient();
     AdminZkClient adminZkClient = new AdminZkClient(kafkaZkClient);
 
@@ -598,8 +577,6 @@ public class KafkaAdminService {
             .asScala()
             .toSeq(),
         props);
-
-    kafkaZkClient.close();
 
     return getConfigInZk(Type.BROKER, String.valueOf(brokerId));
   }
@@ -625,7 +602,6 @@ public class KafkaAdminService {
       adminZkClient.changeTopicConfig(name, props);
     }
 
-    kafkaZkClient.close();
   }
 
   public TopicMeta describeTopic(@TopicExistConstraint String topicName) {
@@ -667,7 +643,6 @@ public class KafkaAdminService {
       throw new ApiException("Describe topic exception." + exception);
     }
 
-    kafkaAdminClient.close();
     return topicMeta;
   }
 
@@ -701,7 +676,6 @@ public class KafkaAdminService {
               });
     }
 
-    kafkaAdminClient.close();
     return deleteResults;
   }
 
@@ -719,7 +693,6 @@ public class KafkaAdminService {
       throw new ApiException("Describe config exception:" + exception.getLocalizedMessage());
     }
 
-    kafkaAdminClient.close();
     return configs.get(configResource).entries();
   }
 
@@ -737,8 +710,6 @@ public class KafkaAdminService {
       log.warn("Alter config type:" + type + ", name:" + name + " exception:" + exception);
       return false;
     }
-
-    kafkaAdminClient.close();
 
     return true;
   }
@@ -828,8 +799,6 @@ public class KafkaAdminService {
             .stream()
             .collect(toSet());
 
-    kafkaZkClient.close();
-
     return oldConsumerGroups;
   }
 
@@ -889,8 +858,6 @@ public class KafkaAdminService {
       }
     }
 
-    kafkaZkClient.close();
-
     return consumerList;
   }
 
@@ -919,8 +886,6 @@ public class KafkaAdminService {
     } else {
       throw new ApiException("Unknown Type " + type);
     }
-
-    kafkaZkClient.close();
 
     return topicList;
   }
@@ -1379,7 +1344,6 @@ public class KafkaAdminService {
             addPartitionsResult.put(topic, generalResponse);
           });
 
-      kafkaAdminClient.close();
       return addPartitionsResult;
     }
   }
@@ -1404,8 +1368,6 @@ public class KafkaAdminService {
         ReassignPartitionsCommand.formatAsReassignmentJson(
             (scala.collection.Map<TopicPartition, Seq<Object>>) resultTuple2._2(),
             JavaConverters.mapAsScalaMapConverter(emptyMap).asScala()));
-
-    kafkaZkClient.close();
 
     return result;
   }
@@ -1463,9 +1425,6 @@ public class KafkaAdminService {
         throw new ApiException("Failed to reassign partitions " + reassignPlan.getFirst());
       }
     }
-
-    kafkaZkClient.close();
-    kafkaAdminClient.close();
 
     return checkReassignStatus(partitionsToBeReassignedMap, replicatAssignment);
   }
@@ -1551,8 +1510,6 @@ public class KafkaAdminService {
       }
     }
 
-    kafkaZkClient.close();
-
     return true;
   }
 
@@ -1577,7 +1534,6 @@ public class KafkaAdminService {
               .status());
     }
 
-    kafkaZkClient.close();
     return reassignedPartitionsStatus;
   }
 
@@ -1615,7 +1571,6 @@ public class KafkaAdminService {
       }
     }
 
-    kafkaAdminClient.close();
     return replicasReassignmentStatus;
   }
 
@@ -1659,8 +1614,6 @@ public class KafkaAdminService {
 
     scala.collection.Map<TopicPartitionReplica, String> replicatAssignment =
         (scala.collection.Map<TopicPartitionReplica, String>) resultTuple2._2();
-
-    kafkaZkClient.close();
 
     return new TwoTuple<>(partitionsToBeReassignedMap, replicatAssignment);
   }
@@ -1975,12 +1928,6 @@ public class KafkaAdminService {
 
     if (type != null && type == ConsumerType.OLD) {
       CuratorFramework zkClient = zookeeperUtils.createZkClient();
-
-      if (!zookeeperUtils.isConnected(zkClient)) {
-        throw new ApiException("Zookeeper is not connected.");
-      }
-
-      zkClient.start();
       // Get Old Consumer commit time
       try {
         Map<Integer, Long> oldConsumerOffsetMap = new ConcurrentHashMap<>();
@@ -2014,7 +1961,6 @@ public class KafkaAdminService {
       } catch (Exception e) {
         log.warn("Get last commit time for consumergroup:" + consumerGroup + " failed. " + e.getLocalizedMessage());
       }
-      zkClient.close();
     } else {
       //      Get New consumer commit time, from offset storage instance
       // TODO find a solution a replace the storage

@@ -30,7 +30,6 @@ import org.gnuhpc.bigdata.model.TopicBrief;
 import org.gnuhpc.bigdata.model.TopicDetail;
 import org.gnuhpc.bigdata.model.TopicMeta;
 import org.gnuhpc.bigdata.service.KafkaAdminService;
-import org.gnuhpc.bigdata.service.KafkaProducerService;
 import org.gnuhpc.bigdata.validator.ConsumerGroupExistConstraint;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -53,7 +52,7 @@ public class KafkaController {
 
   @Autowired private KafkaAdminService kafkaAdminService;
 
-  @Autowired private KafkaProducerService kafkaProducerService;
+//  @Autowired private KafkaProducerService kafkaProducerService;
 
   @GetMapping(value = "/cluster")
   @ApiOperation(value = "Describe cluster, nodes, controller info.")
@@ -89,7 +88,7 @@ public class KafkaController {
   }
 
   @GetMapping(value = "/brokers/replicalogdirs")
-  @ApiOperation(value = "Describe replicat log dirs.")
+  @ApiOperation(value = "Describe replica log dirs.")
   public Map<TopicPartitionReplica, ReplicaLogDirInfo> describeReplicaLogDirs(
       @RequestParam List<TopicPartitionReplica> replicas) {
     return kafkaAdminService.describeReplicaLogDirs(replicas);
@@ -153,7 +152,7 @@ public class KafkaController {
   @ResponseStatus(HttpStatus.CREATED)
   @ApiOperation(value = "Write a message to the topic, for testing purpose")
   public GeneralResponse writeMessage(@PathVariable String topic, @RequestBody String message) {
-    kafkaProducerService.send(topic, message);
+//    kafkaProducerService.send(topic, message);
     return GeneralResponse.builder()
         .state(GeneralResponseState.success)
         .msg(message + " has been sent")
@@ -357,4 +356,6 @@ public class KafkaController {
   public HealthCheckResult healthCheck() {
     return kafkaAdminService.healthCheck();
   }
+
+  //TODO add kafkaAdminClient.deleterecords api
 }

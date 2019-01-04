@@ -29,7 +29,6 @@ public class KafkaUtils {
   @Autowired private KafkaConfig kafkaConfig;
   @Autowired private ZookeeperConfig zookeeperConfig;
 
-  private AdminClient adminClient;
 
   private KafkaProducer producer;
   private Properties prop;
@@ -37,18 +36,6 @@ public class KafkaUtils {
   public static final String DEFAULTCP = "kafka-rest-consumergroup";
 
   public void init() {
-    prop = new Properties();
-    prop.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaConfig.getBrokers());
-    prop.setProperty(
-        ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG,
-        "org.apache.kafka.common.serialization.StringSerializer");
-    prop.setProperty(
-        ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
-        "org.apache.kafka.common.serialization.StringSerializer");
-    producer = new KafkaProducer(prop);
-    log.info("Kafka initing...");
-
-    adminClient = AdminClient.create(prop);
   }
 
   public void destroy() {

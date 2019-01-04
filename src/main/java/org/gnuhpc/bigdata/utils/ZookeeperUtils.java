@@ -11,14 +11,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import kafka.utils.ZKStringSerializer$;
 import kafka.utils.ZkUtils;
 import kafka.zk.KafkaZkClient;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.log4j.Log4j;
-import org.I0Itec.zkclient.ZkClient;
-import org.I0Itec.zkclient.ZkConnection;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.curator.RetryPolicy;
@@ -27,6 +24,7 @@ import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.api.GetDataBuilder;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.curator.utils.ZKPaths;
+import org.apache.kafka.common.errors.ApiException;
 import org.apache.kafka.common.utils.Time;
 import org.apache.zookeeper.data.Stat;
 import org.gnuhpc.bigdata.config.ZookeeperConfig;
@@ -66,65 +64,12 @@ public class ZookeeperUtils {
 
   private static final int SESSION_TIMEOUT = 5000;
   private static final int CONNECTION_TIMEOUT = 5000;
-  private CuratorFramework curatorClient;
-  private ZkClient zkClient;
   private ZkUtils zkUtils;
-  private KafkaZkClient kafkaZkClient;
 
-  public void init() {
-
-    // 1.设置重试策略,重试时间计算策略sleepMs = baseSleepTimeMs * Math.max(1, random.nextInt(1 << (retryCount +
-    // 1)));
-    RetryPolicy retryPolicy =
-        new ExponentialBackoffRetry(BASE_SLEEP_TIME, MAX_RETRIES_COUNT, MAX_SLEEP_TIME);
-
-    // 2.初始化客户端
-    curatorClient =
-        CuratorFrameworkFactory.builder()
-            .connectString(zookeeperConfig.getUris())
-            .sessionTimeoutMs(SESSION_TIMEOUT)
-            .connectionTimeoutMs(CONNECTION_TIMEOUT)
-            .retryPolicy(retryPolicy)
-            //                .namespace("kafka-rest")        //命名空间隔离
-            .build();
-    curatorClient.start();
-    try {
-      curatorClient.blockUntilConnected();
-      log.info("Zookeeper:" + zookeeperConfig.getUris() + " Connected.Continue...");
-      zkClient =
-          new ZkClient(
-              zookeeperConfig.getUris(),
-              SESSION_TIMEOUT,
-              CONNECTION_TIMEOUT,
-              ZKStringSerializer$.MODULE$);
-      zkUtils = new ZkUtils(zkClient, new ZkConnection(zookeeperConfig.getUris()), false);
-      log.info("Zkutils" + zkUtils.toString());
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-      log.error("Exception:", e);
-    }
-    kafkaZkClient =
-        KafkaZkClient.apply(
-            zookeeperConfig.getUris(),
-            false,
-            10 * SESSION_TIMEOUT,
-            CONNECTION_TIMEOUT,
-            Integer.MAX_VALUE,
-            Time.SYSTEM,
-            "testMetricGroup",
-            "testMetricType");
-  }
+  public void init() {}
 
   public void destroy() {
-    curatorClient.close();
-    zkClient.close();
-    kafkaZkClient.close();
     log.info("zookeeper closed.");
-  }
-
-  @Override
-  public String toString() {
-    return zookeeperConfig.getUris() + curatorClient.getState();
   }
 
   public List<String> executeCommand(String host, Integer port, String command)
@@ -134,7 +79,9 @@ public class ZookeeperUtils {
       socket = new Socket(InetAddress.getByName(host), port);
     } catch (IOException e) {
       throw new ServiceNotAvailableException(
-          "zookeeper", "down", "could not connect to host: " + host + " and port: " + port);
+          "zookeeper",
+          ZkServerMode.Down,
+          "could not connect to host: " + host + " and port: " + port);
     }
 
     try {
@@ -142,13 +89,8 @@ public class ZookeeperUtils {
     } catch (IOException e) {
       throw new ServiceNotAvailableException(
           "zookeeper",
-          "write command failed",
-          "could not execute command to host: "
-              + host
-              + " and port: "
-              + port
-              + ", command: "
-              + command);
+          ZkServerMode.Unknow,
+          "could not write to host: " + host + " and port: " + port + ", command: " + command);
     }
 
     try {
@@ -156,13 +98,8 @@ public class ZookeeperUtils {
     } catch (IOException e) {
       throw new ServiceNotAvailableException(
           "zookeeper",
-          "read command failed",
-          "could not execute command to host: "
-              + host
-              + " and port: "
-              + port
-              + ", command: "
-              + command);
+          ZkServerMode.Unknow,
+          "could not read from host: " + host + " and port: " + port + ", command: " + command);
     } finally {
       try {
         socket.close();
@@ -198,20 +135,21 @@ public class ZookeeperUtils {
             StringUtils.capitalize(parseStringFromLine(iterator.next(), PROP_DELIMITER)));
     Integer nodeCount = parseIntFromLine(iterator.next(), PROP_DELIMITER);
 
-    return new ZkServerStat(
-        version,
-        buildDate,
-        clients,
-        minLatency,
-        avgLatency,
-        maxLatency,
-        received,
-        sent,
-        connections,
-        outstanding,
-        zxid,
-        mode,
-        nodeCount);
+    return ZkServerStat.builder()
+        .version(version)
+        .buildDate(buildDate)
+        .clients(clients)
+        .minLatency(minLatency)
+        .avgLatency(avgLatency)
+        .maxLatency(maxLatency)
+        .received(received)
+        .sent(sent)
+        .connections(connections)
+        .outstanding(outstanding)
+        .zxId(zxid)
+        .mode(mode)
+        .nodes(nodeCount)
+        .build();
   }
 
   private List<ZkServerClient> parseClientLines(Iterator<String> iterator) {
@@ -280,16 +218,35 @@ public class ZookeeperUtils {
   }
 
   public List<String> lsPath(@ZkNodePathExistConstraint String path) {
+    List<String> stringList = null;
+    CuratorFramework curatorClient = createZkClient();
+    curatorClient.start();
+
+    if (!isConnected(curatorClient)) {
+      curatorClient.close();
+      throw new ApiException("Zookeeper is not connected.");
+    }
+
     try {
-      return curatorClient.getChildren().forPath(path);
+      stringList = curatorClient.getChildren().forPath(path);
     } catch (Exception e) {
       log.error("ls path fail! path: " + path + ", error: {}" + e);
-      return null;
+    } finally {
+      curatorClient.close();
     }
+
+    return stringList;
   }
 
   public Map<String, String> getNodeData(@ZkNodePathExistConstraint String path) {
     Map<String, String> map = new HashMap<>();
+    CuratorFramework curatorClient = createZkClient();
+    curatorClient.start();
+
+    if (!isConnected(curatorClient)) {
+      curatorClient.close();
+      throw new ApiException("Zookeeper is not connected.");
+    }
 
     try {
       List<String> childrens = curatorClient.getChildren().forPath(path);
@@ -310,27 +267,80 @@ public class ZookeeperUtils {
       log.error("get node data fail! path: " + path + ", error: {}" + e);
     }
 
+    curatorClient.close();
+
     return map;
   }
 
   public Stat getNodePathStat(String path) {
+    CuratorFramework curatorClient = createZkClient();
+    curatorClient.start();
+    Stat stat = null;
+
+    if (!isConnected(curatorClient)) {
+      curatorClient.close();
+      throw new ApiException("Zookeeper is not connected.");
+    }
+
     try {
-      return curatorClient.checkExists().forPath(path);
+      stat = curatorClient.checkExists().forPath(path);
     } catch (Exception e) {
       log.error("get node data fail! path: " + path + ", error: {}" + e);
     }
-    return null;
+
+    curatorClient.close();
+
+    return stat;
+  }
+
+  public CuratorFramework createZkClient() {
+    // 1.设置重试策略,重试时间计算策略sleepMs = baseSleepTimeMs * Math.max(1, random.nextInt(1 << (retryCount +
+    // 1)));
+    RetryPolicy retryPolicy =
+        new ExponentialBackoffRetry(BASE_SLEEP_TIME, MAX_RETRIES_COUNT, MAX_SLEEP_TIME);
+
+    // 2.初始化客户端
+    CuratorFramework curatorClient =
+        CuratorFrameworkFactory.builder()
+            .connectString(zookeeperConfig.getUris())
+            .sessionTimeoutMs(SESSION_TIMEOUT)
+            .connectionTimeoutMs(CONNECTION_TIMEOUT)
+            .retryPolicy(retryPolicy)
+            //                .namespace("kafka-rest")        //命名空间隔离
+            .build();
+
+    return curatorClient;
+  }
+
+  public String getState() {
+    CuratorFramework curatorClient = createZkClient();
+    curatorClient.start();
+
+    if (!isConnected(curatorClient)) {
+      curatorClient.close();
+      throw new ApiException("Zookeeper is not connected.");
+    }
+
+    String stateStr = curatorClient.getState().toString();
+
+    curatorClient.close();
+
+    return stateStr;
   }
 
   public KafkaZkClient createKafkaZkClient() {
     return KafkaZkClient.apply(
         zookeeperConfig.getUris(),
         false,
-        10 * SESSION_TIMEOUT,
+        SESSION_TIMEOUT,
         CONNECTION_TIMEOUT,
         Integer.MAX_VALUE,
         Time.SYSTEM,
-        "testMetricGroup",
-        "testMetricType");
+        "kafka.zk.rest",
+        "rest");
+  }
+
+  public boolean isConnected(CuratorFramework curatorClient) {
+    return curatorClient.getZookeeperClient().isConnected();
   }
 }

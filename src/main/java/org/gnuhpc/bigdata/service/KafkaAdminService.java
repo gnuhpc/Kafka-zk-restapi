@@ -163,15 +163,8 @@ public class KafkaAdminService {
   // For AdminUtils use
   private ZkUtils zkUtils;
 
-  // For zookeeper connection
-  private CuratorFramework zkClient;
-
-  //  private KafkaZkClient kafkaZkClient;
-
-  //  private AdminZkClient adminZkClient;
-
-  //  private org.apache.kafka.clients.admin.AdminClient kafkaAdminClient;
   // For Json serialized
+  // TODO replace gson with jackson
   private Gson gson;
 
   private scala.Option<String> none = scala.Option.apply(null);
@@ -179,12 +172,12 @@ public class KafkaAdminService {
   @PostConstruct
   private void init() {
     this.zkUtils = zookeeperUtils.getZkUtils();
-    this.zkClient = zookeeperUtils.getCuratorClient();
 
     GsonBuilder builder = new GsonBuilder();
     builder.registerTypeAdapter(
         DateTime.class,
-        (JsonDeserializer<DateTime>) (jsonElement, type, jsonDeserializationContext) ->
+        (JsonDeserializer<DateTime>)
+            (jsonElement, type, jsonDeserializationContext) ->
                 new DateTime(jsonElement.getAsJsonPrimitive().getAsLong()));
 
     this.gson = builder.create();
@@ -193,6 +186,7 @@ public class KafkaAdminService {
   private org.apache.kafka.clients.admin.AdminClient createKafkaAdminClient() {
     Properties adminClientProp = new Properties();
     adminClientProp.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaConfig.getBrokers());
+
     return KafkaAdminClient.create(adminClientProp);
   }
 
@@ -371,12 +365,18 @@ public class KafkaAdminService {
   }
 
   public List<BrokerInfo> listBrokers() {
+    CuratorFramework zkClient = zookeeperUtils.createZkClient();
+    if (!zookeeperUtils.isConnected(zkClient)) {
+      throw new ApiException("Zookeeper is not connected.");
+    }
+
     KafkaZkClient kafkaZkClient = zookeeperUtils.createKafkaZkClient();
     List<Broker> brokerList =
         CollectionConvertor.seqConvertJavaList(kafkaZkClient.getAllBrokersInCluster());
 
-    kafkaZkClient.close();
-    return brokerList
+    zkClient.start();
+
+    List<BrokerInfo> brokerInfoList = brokerList
         .parallelStream()
         .collect(Collectors.toMap(Broker::id, Broker::rack))
         .entrySet()
@@ -402,6 +402,11 @@ public class KafkaAdminService {
               return brokerInfo;
             })
         .collect(toList());
+
+    zkClient.close();
+    kafkaZkClient.close();
+
+    return brokerInfoList;
   }
 
   public int getControllerId() {
@@ -1255,8 +1260,8 @@ public class KafkaAdminService {
     return mapper.getTypeFactory().constructParametricType(collectionClass, elementClasses);
   }
 
-  public List<ConsumerGroupDesc> describeNewConsumerGroupByTopic(String consumerGroup,
-      String topic) {
+  public List<ConsumerGroupDesc> describeNewConsumerGroupByTopic(
+      String consumerGroup, String topic) {
     if (!isNewConsumerGroup(consumerGroup)) {
       throw new RuntimeException(consumerGroup + " non-exist!");
     }
@@ -1820,18 +1825,20 @@ public class KafkaAdminService {
       ConsumerType type,
       String offset) {
     KafkaConsumer consumer = null;
-    log.info("To tell the consumergroup " + consumerGroup + " is new");
     if (type != null && type == ConsumerType.NEW) {
       if (!isNewConsumerGroup(consumerGroup)) {
         throw new ApiException("Consumer group " + consumerGroup + " is non-exist!");
       }
     }
 
-    log.info("To tell the consumergroup " + consumerGroup + " is old");
     if (type != null && type == ConsumerType.OLD) {
       if (!isOldConsumerGroup(consumerGroup)) {
         throw new ApiException("Consumer group " + consumerGroup + " is non-exist!");
       }
+    }
+
+    if (!isTopicPartitionValid(topic, partition)) {
+      throw new ApiException("Topic:" + topic + " has no partition:" + partition);
     }
 
     long offsetToBeReset = -1;
@@ -1855,11 +1862,11 @@ public class KafkaAdminService {
         if (offset.equals("earliest")) {
           consumer.seekToBeginning(Arrays.asList(tp));
           offsetToBeReset = beginningOffset;
-          log.info("Reset to" + consumer.position(tp));
+          log.info("Reset to " + consumer.position(tp));
         } else if (offset.equals("latest")) {
           consumer.seekToEnd(Arrays.asList(tp));
           offsetToBeReset = endOffset;
-          log.info("Reset to" + consumer.position(tp));
+          log.info("Reset to " + consumer.position(tp));
         } else if (isDateTime(offset)) {
           // Reset offset by time
           SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -1879,7 +1886,6 @@ public class KafkaAdminService {
                       + ", timestampToDate:"
                       + sdf.format(new Date(offsetAndTimestamp.timestamp())));
               consumer.seek(tp, offsetToBeReset);
-              consumer.commitSync();
             } else {
               throw new ApiException(
                   "No offset whose timestamp is greater than or equal to the given timestamp:"
@@ -1904,8 +1910,8 @@ public class KafkaAdminService {
           }
           offsetToBeReset = Long.parseLong(offset);
           consumer.seek(tp, offsetToBeReset);
-          consumer.commitSync();
         }
+        consumer.commitSync();;
       } catch (IllegalStateException e) {
         storage.getMap().remove(consumerGroup);
         throw new ApiException(e);
@@ -1968,6 +1974,13 @@ public class KafkaAdminService {
     Map<String, Map<Integer, Long>> result = new ConcurrentHashMap<>();
 
     if (type != null && type == ConsumerType.OLD) {
+      CuratorFramework zkClient = zookeeperUtils.createZkClient();
+
+      if (!zookeeperUtils.isConnected(zkClient)) {
+        throw new ApiException("Zookeeper is not connected.");
+      }
+
+      zkClient.start();
       // Get Old Consumer commit time
       try {
         Map<Integer, Long> oldConsumerOffsetMap = new ConcurrentHashMap<>();
@@ -1999,12 +2012,12 @@ public class KafkaAdminService {
           result.put("old", oldConsumerOffsetMap);
         }
       } catch (Exception e) {
-        e.printStackTrace();
+        log.warn("Get last commit time for consumergroup:" + consumerGroup + " failed. " + e.getLocalizedMessage());
       }
-
+      zkClient.close();
     } else {
       //      Get New consumer commit time, from offset storage instance
-
+      // TODO find a solution a replace the storage
       if (storage.get(consumerGroup) != null) {
         Map<GroupTopicPartition, kafka.common.OffsetAndMetadata> storageResult =
             storage.get(consumerGroup);
@@ -2116,7 +2129,6 @@ public class KafkaAdminService {
     consumer.close();
     return offsets[0];
   }
-
 
   public long getBeginningOffset(String topic, int partitionId) {
     KafkaConsumer consumer = kafkaUtils.createNewConsumer(KafkaUtils.DEFAULTCP);

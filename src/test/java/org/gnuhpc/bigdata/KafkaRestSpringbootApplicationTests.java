@@ -33,7 +33,7 @@ public class KafkaRestSpringbootApplicationTests {
   @Before
   public void before() {
     this.zkUtils = zookeeperUtils.getZkUtils();
-    this.zkCuratorClient = zookeeperUtils.getCuratorClient();
+//    this.zkCuratorClient = zookeeperUtils.getCuratorClient();
   }
 
   @Test

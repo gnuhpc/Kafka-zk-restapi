@@ -29,15 +29,6 @@ public class ZookeeperController {
   @ApiOperation(value = "List a zookeeper path")
   public List<String> ls(@RequestParam String path) {
     return zookeeperUtils.lsPath(path);
-    /*
-    try {
-        return zookeeperUtils.getCuratorClient().getChildren().forPath(path);
-    } catch (Exception e) {
-        e.printStackTrace();
-    }
-
-    return null;
-    */
   }
 
   @GetMapping("/get/path")
@@ -49,7 +40,7 @@ public class ZookeeperController {
   @GetMapping("/connstate")
   @ApiOperation(value = "Get the connection state of zookeeper")
   public String zkConnState() {
-    return zookeeperUtils.getCuratorClient().getState().toString();
+    return zookeeperUtils.getState();
   }
 
   @GetMapping("/stat")

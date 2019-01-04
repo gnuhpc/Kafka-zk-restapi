@@ -13,6 +13,7 @@ import lombok.extern.log4j.Log4j;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.ByteBufferDeserializer;
 import org.gnuhpc.bigdata.componet.OffsetStorage;
+import org.gnuhpc.bigdata.service.KafkaConsumerService;
 import org.gnuhpc.bigdata.utils.KafkaUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -58,10 +59,10 @@ public class KafkaConfig {
     return new OffsetStorage();
   }
 
-  //    @Bean
-  //    public KafkaConsumerService kafkaConsumerService() {
-  //        return new KafkaConsumerService(internalTopicPartitions);
-  //    }
+  @Bean
+  public KafkaConsumerService kafkaConsumerService() {
+      return new KafkaConsumerService(internalTopicPartitions);
+  }
 
   @Bean
   public KafkaListenerContainerFactory<ConcurrentMessageListenerContainer<ByteBuffer, ByteBuffer>>

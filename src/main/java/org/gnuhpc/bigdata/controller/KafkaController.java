@@ -17,7 +17,6 @@ import org.apache.kafka.common.config.ConfigResource.Type;
 import org.apache.kafka.common.errors.ApiException;
 import org.apache.kafka.common.requests.DescribeLogDirsResponse.LogDirInfo;
 import org.gnuhpc.bigdata.constant.ConsumerType;
-import org.gnuhpc.bigdata.constant.GeneralResponseState;
 import org.gnuhpc.bigdata.model.AddPartition;
 import org.gnuhpc.bigdata.model.BrokerInfo;
 import org.gnuhpc.bigdata.model.ConsumerGroupDesc;
@@ -148,16 +147,16 @@ public class KafkaController {
     return kafkaAdminService.existTopic(topic);
   }
 
-  @PostMapping(value = "/topics/{topic}/write", consumes = "text/plain")
-  @ResponseStatus(HttpStatus.CREATED)
-  @ApiOperation(value = "Write a message to the topic, for testing purpose")
-  public GeneralResponse writeMessage(@PathVariable String topic, @RequestBody String message) {
+//  @PostMapping(value = "/topics/{topic}/write", consumes = "text/plain")
+//  @ResponseStatus(HttpStatus.CREATED)
+//  @ApiOperation(value = "Write a message to the topic, for testing purpose")
+//  public GeneralResponse writeMessage(@PathVariable String topic, @RequestBody String message) {
 //    kafkaProducerService.send(topic, message);
-    return GeneralResponse.builder()
-        .state(GeneralResponseState.success)
-        .msg(message + " has been sent")
-        .build();
-  }
+//    return GeneralResponse.builder()
+//        .state(GeneralResponseState.success)
+//        .msg(message + " has been sent")
+//        .build();
+//  }
 
   @GetMapping(value = "/consumer/{topic}/{partition}/{offset}")
   @ApiOperation(

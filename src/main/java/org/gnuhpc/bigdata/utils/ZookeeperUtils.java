@@ -329,7 +329,9 @@ public class ZookeeperUtils {
   }
 
   public KafkaZkClient createKafkaZkClient() {
-    return KafkaZkClient.apply(
+    KafkaZkClient kafkaZkClient = null;
+    try {
+      kafkaZkClient = KafkaZkClient.apply(
         zookeeperConfig.getUris(),
         false,
         SESSION_TIMEOUT,
@@ -338,6 +340,11 @@ public class ZookeeperUtils {
         Time.SYSTEM,
         "kafka.zk.rest",
         "rest");
+    } catch (Exception exception) {
+      throw new ApiException("Failed to create kafkaZkClient." + exception.getLocalizedMessage());
+    }
+
+    return kafkaZkClient;
   }
 
   public boolean isConnected(CuratorFramework curatorClient) {

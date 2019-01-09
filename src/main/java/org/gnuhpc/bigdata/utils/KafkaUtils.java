@@ -48,7 +48,7 @@ public class KafkaUtils {
 
   public KafkaConsumer createNewConsumer(String consumerGroup) {
     Properties properties = new Properties();
-    properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, getKafkaConfig().getBrokers());
+    properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaConfig.getBrokers());
     properties.put(ConsumerConfig.GROUP_ID_CONFIG, consumerGroup);
     properties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
     properties.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, "30000");

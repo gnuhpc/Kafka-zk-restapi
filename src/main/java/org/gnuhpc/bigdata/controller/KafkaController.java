@@ -5,6 +5,7 @@ import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -134,11 +135,11 @@ public class KafkaController {
 
   @PostMapping(value = "/topics/create", consumes = "application/json")
   @ResponseStatus(HttpStatus.CREATED)
-  @ApiOperation(value = "Create a topic")
+  @ApiOperation(value = "Create topics")
   @ApiParam(value = "if reassignStr set, partitions and repli-factor will be ignored.")
-  public TopicMeta createTopic(
-      @RequestBody TopicDetail topic, @RequestParam(required = false) String reassignStr) {
-    return kafkaAdminService.createTopic(topic, reassignStr);
+  public HashMap<String, GeneralResponse> createTopic(
+      @RequestBody List<TopicDetail> topicList) {
+    return kafkaAdminService.createTopic(topicList);
   }
 
   @ApiOperation(value = "Tell if a topic exists")

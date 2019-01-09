@@ -10,7 +10,6 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.module.scala.DefaultScalaModule;
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -42,10 +41,8 @@ import kafka.admin.AdminClient.ConsumerGroupSummary;
 import kafka.admin.AdminClient.ConsumerSummary;
 import kafka.admin.AdminUtils;
 import kafka.admin.ConsumerGroupCommand;
-import kafka.admin.RackAwareMode;
 import kafka.admin.ReassignPartitionsCommand;
 import kafka.admin.ReassignPartitionsCommand.Throttle;
-import kafka.admin.TopicCommand;
 import kafka.api.PartitionOffsetRequestInfo;
 import kafka.cluster.Broker;
 import kafka.common.TopicAndPartition;
@@ -66,6 +63,8 @@ import org.apache.kafka.clients.admin.AlterConfigsResult;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.ConfigEntry;
 import org.apache.kafka.clients.admin.CreatePartitionsResult;
+import org.apache.kafka.clients.admin.CreateTopicsOptions;
+import org.apache.kafka.clients.admin.CreateTopicsResult;
 import org.apache.kafka.clients.admin.DeleteTopicsResult;
 import org.apache.kafka.clients.admin.DescribeClusterOptions;
 import org.apache.kafka.clients.admin.DescribeClusterResult;
@@ -80,7 +79,9 @@ import org.apache.kafka.clients.admin.KafkaAdminClient;
 import org.apache.kafka.clients.admin.ListTopicsOptions;
 import org.apache.kafka.clients.admin.ListTopicsResult;
 import org.apache.kafka.clients.admin.NewPartitions;
+import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.admin.TopicDescription;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -101,6 +102,7 @@ import org.apache.kafka.common.errors.InvalidTopicException;
 import org.apache.kafka.common.internals.Topic;
 import org.apache.kafka.common.protocol.Errors;
 import org.apache.kafka.common.requests.DescribeLogDirsResponse.LogDirInfo;
+import org.apache.kafka.common.serialization.StringDeserializer;
 import org.gnuhpc.bigdata.CollectionConvertor;
 import org.gnuhpc.bigdata.componet.OffsetStorage;
 import org.gnuhpc.bigdata.config.KafkaConfig;
@@ -173,8 +175,6 @@ public class KafkaAdminService {
 
   @PostConstruct
   private void init() {
-    this.zkUtils = zookeeperUtils.getZkUtils();
-
     GsonBuilder builder = new GsonBuilder();
     builder.registerTypeAdapter(
         DateTime.class,
@@ -195,54 +195,80 @@ public class KafkaAdminService {
     return this.kafkaAdminClient;
   }
 
-  public TopicMeta createTopic(TopicDetail topic, String reassignStr) {
+  public HashMap<String, GeneralResponse> createTopic(List<TopicDetail> topicList) {
+    List<NewTopic> newTopicList = new ArrayList<>();
+    HashMap<String, GeneralResponse> createResults = new HashMap<>();
 
-    if (Topic.hasCollisionChars(topic.getName())) {
-      throw new InvalidTopicException("Invalid topic name, it contains '.' or '_'.");
-    }
+    for (TopicDetail topic : topicList) {
+      NewTopic newTopic;
+      Map<Integer, List<Integer>> replicasAssignments = topic.getReplicasAssignments();
 
-    if (Strings.isNullOrEmpty(reassignStr) && topic.getPartitions() <= 0) {
-      throw new InvalidTopicException("Number of partitions must be larger than 0");
-    }
-    Topic.validate(topic.getName());
+      try {
+        Topic.validate(topic.getName());
 
-    if (Strings.isNullOrEmpty(reassignStr)) {
-      AdminUtils.createTopic(
-          zkUtils,
-          topic.getName(),
-          topic.getPartitions(),
-          topic.getFactor(),
-          topic.getProp(),
-          RackAwareMode.Enforced$.MODULE$);
-    } else {
-      List<String> argsList = new ArrayList<>();
-      argsList.add("--topic");
-      argsList.add(topic.getName());
-
-      if (topic.getProp().stringPropertyNames().size() != 0) {
-        argsList.add("--config");
-
-        for (String key : topic.getProp().stringPropertyNames()) {
-          argsList.add(key + "=" + topic.getProp().get(key));
+        if (Topic.hasCollisionChars(topic.getName())) {
+          throw new InvalidTopicException("Invalid topic name, it contains '.' or '_'.");
         }
+      } catch (Exception exception) {
+        GeneralResponse generalResponse =
+            GeneralResponse.builder()
+                .state(GeneralResponseState.failure)
+                .msg(exception.getMessage())
+                .build();
+        createResults.put(topic.getName(), generalResponse);
+        continue;
       }
-      argsList.add("--replica-assignment");
-      argsList.add(reassignStr);
 
-      KafkaZkClient kafkaZkClient = zookeeperUtils.createKafkaZkClient();
-      TopicCommand.createTopic(
-          kafkaZkClient,
-          new TopicCommand.TopicCommandOptions(argsList.stream().toArray(String[]::new)));
+      if (replicasAssignments != null && !replicasAssignments.isEmpty()) {
+        newTopic = new NewTopic(topic.getName(), replicasAssignments);
+      } else {
+        newTopic = new NewTopic(topic.getName(), topic.getPartitions(), (short) topic.getFactor());
+      }
+
+      if (topic.getProp() != null) {
+        newTopic.configs((Map) topic.getProp());
+      }
+
+      newTopicList.add(newTopic);
     }
+
+    org.apache.kafka.clients.admin.AdminClient kafkaAdminClient = createKafkaAdminClient();
+
+    CreateTopicsOptions createTopicsOptions = new CreateTopicsOptions();
+    createTopicsOptions.timeoutMs((int) kafkaAdminClientAlterTimeoutMs);
+    CreateTopicsResult createTopicsResult =
+        kafkaAdminClient.createTopics(newTopicList, createTopicsOptions);
 
     try {
-      // Wait for a second for metadata propergating
-      Thread.sleep(3000);
-    } catch (InterruptedException e) {
-      e.printStackTrace();
+      createTopicsResult.all().get(kafkaAdminClientAlterTimeoutMs, TimeUnit.MILLISECONDS);
+    } catch (Exception exception) {
+      log.warn("Create topic exception:" + exception);
+    } finally {
+      createTopicsResult
+          .values()
+          .forEach(
+              (topicName, result) -> {
+                GeneralResponse generalResponse;
+                if (result.isDone() && !result.isCompletedExceptionally()) {
+                  TopicMeta topicMeta = describeTopic(topicName);
+                  generalResponse =
+                      GeneralResponse.builder()
+                          .state(GeneralResponseState.success)
+                          .data(topicMeta)
+                          .build();
+                } else {
+                  generalResponse =
+                      GeneralResponse.builder()
+                          .state(GeneralResponseState.failure)
+                          .msg(result.toString())
+                          .build();
+                }
+                createResults.put(topicName, generalResponse);
+              });
     }
 
-    return describeTopic(topic.getName());
+    System.out.println("//////create results:" + createResults.toString());
+    return createResults;
   }
 
   public List<String> listTopics() {
@@ -367,32 +393,35 @@ public class KafkaAdminService {
     List<Broker> brokerList =
         CollectionConvertor.seqConvertJavaList(kafkaZkClient.getAllBrokersInCluster());
 
-    List<BrokerInfo> brokerInfoList = brokerList
-        .parallelStream()
-        .collect(Collectors.toMap(Broker::id, Broker::rack))
-        .entrySet()
-        .parallelStream()
-        .map(
-            entry -> {
-              String brokerInfoStr = null;
-              try {
-                // TODO replace zkClient with kafkaZKClient
-                brokerInfoStr =
-                    new String(
-                        zkClient.getData().forPath(ZkUtils.BrokerIdsPath() + "/" + entry.getKey()));
-              } catch (Exception e) {
-                e.printStackTrace();
-              }
-              BrokerInfo brokerInfo = gson.fromJson(brokerInfoStr, BrokerInfo.class);
-              if (entry.getValue().isEmpty()) {
-                brokerInfo.setRack("");
-              } else {
-                brokerInfo.setRack(entry.getValue().get());
-              }
-              brokerInfo.setId(entry.getKey());
-              return brokerInfo;
-            })
-        .collect(toList());
+    List<BrokerInfo> brokerInfoList =
+        brokerList
+            .parallelStream()
+            .collect(Collectors.toMap(Broker::id, Broker::rack))
+            .entrySet()
+            .parallelStream()
+            .map(
+                entry -> {
+                  String brokerInfoStr = null;
+                  try {
+                    // TODO replace zkClient with kafkaZKClient
+                    brokerInfoStr =
+                        new String(
+                            zkClient
+                                .getData()
+                                .forPath(ZkUtils.BrokerIdsPath() + "/" + entry.getKey()));
+                  } catch (Exception e) {
+                    e.printStackTrace();
+                  }
+                  BrokerInfo brokerInfo = gson.fromJson(brokerInfoStr, BrokerInfo.class);
+                  if (entry.getValue().isEmpty()) {
+                    brokerInfo.setRack("");
+                  } else {
+                    brokerInfo.setRack(entry.getValue().get());
+                  }
+                  brokerInfo.setId(entry.getKey());
+                  return brokerInfo;
+                })
+            .collect(toList());
 
     return brokerInfoList;
   }
@@ -601,7 +630,6 @@ public class KafkaAdminService {
     } else if (type.equals(Type.TOPIC)) {
       adminZkClient.changeTopicConfig(name, props);
     }
-
   }
 
   public TopicMeta describeTopic(@TopicExistConstraint String topicName) {
@@ -1864,7 +1892,8 @@ public class KafkaAdminService {
           offsetToBeReset = Long.parseLong(offset);
           consumer.seek(tp, offsetToBeReset);
         }
-        consumer.commitSync();;
+        consumer.commitSync();
+        ;
       } catch (IllegalStateException e) {
         storage.getMap().remove(consumerGroup);
         throw new ApiException(e);
@@ -1897,6 +1926,7 @@ public class KafkaAdminService {
                     + endOffset);
           }
           log.info("Offset will be reset to " + offset);
+          zkUtils = zookeeperUtils.getZkUtils();
           offsetToBeReset = Long.parseLong(offset);
           zkUtils
               .zkClient()
@@ -1959,7 +1989,11 @@ public class KafkaAdminService {
           result.put("old", oldConsumerOffsetMap);
         }
       } catch (Exception e) {
-        log.warn("Get last commit time for consumergroup:" + consumerGroup + " failed. " + e.getLocalizedMessage());
+        log.warn(
+            "Get last commit time for consumergroup:"
+                + consumerGroup
+                + " failed. "
+                + e.getLocalizedMessage());
       }
     } else {
       //      Get New consumer commit time, from offset storage instance
@@ -1997,6 +2031,7 @@ public class KafkaAdminService {
       throw new RuntimeException("New consumer group:" + consumerGroup + " non-exist");
     }
     if (type == ConsumerType.OLD) {
+      zkUtils = zookeeperUtils.getZkUtils();
       if (!AdminUtils.deleteConsumerGroupInZK(zkUtils, consumerGroup)) {
         throw new ApiException(
             "The consumer " + consumerGroup + " is still active.Please stop it first");
@@ -2032,6 +2067,7 @@ public class KafkaAdminService {
   private List<TopicAndPartition> getTopicPartitions(String t) {
     List<TopicAndPartition> tpList = new ArrayList<>();
     List<String> l = Arrays.asList(t);
+    zkUtils = zookeeperUtils.getZkUtils();
     java.util.Map<String, Seq<Object>> tpMap =
         JavaConverters.mapAsJavaMapConverter(
                 zkUtils.getPartitionsForTopics(
@@ -2091,6 +2127,23 @@ public class KafkaAdminService {
     return -1;
   }
 
+  private KafkaConsumer createNewConsumer(String consumerGroup) {
+    Properties properties = new Properties();
+    properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaConfig.getBrokers());
+    properties.put(ConsumerConfig.GROUP_ID_CONFIG, consumerGroup);
+    properties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
+    properties.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, "30000");
+    properties.put(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, "100000000");
+    properties.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, "5");
+    properties.put(
+        ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getCanonicalName());
+    properties.put(
+        ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
+        StringDeserializer.class.getCanonicalName());
+
+    return new KafkaConsumer(properties);
+  }
+
   public long getEndOffset(String topic, int partitionId) {
     KafkaConsumer consumer = kafkaUtils.createNewConsumer(KafkaUtils.DEFAULTCP);
     TopicPartition tp = new TopicPartition(topic, partitionId);
@@ -2140,6 +2193,7 @@ public class KafkaAdminService {
       throw new ApiException(
           "Consumer group:" + consumerGroup + " state:" + groupState + " unkown.");
     } else if (type == ConsumerType.OLD) {
+      zkUtils = zookeeperUtils.getZkUtils();
       return zkUtils.getConsumersInGroup(consumerGroup).nonEmpty();
     } else {
       throw new ApiException("Unknown type " + type);

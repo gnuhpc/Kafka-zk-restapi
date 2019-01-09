@@ -12,11 +12,14 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import kafka.utils.ZKStringSerializer$;
 import kafka.utils.ZkUtils;
 import kafka.zk.KafkaZkClient;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.log4j.Log4j;
+import org.I0Itec.zkclient.ZkClient;
+import org.I0Itec.zkclient.ZkConnection;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.curator.RetryPolicy;
@@ -328,6 +331,15 @@ public class ZookeeperUtils {
       }
     }
     return kafkaZkClient;
+  }
+
+  public ZkUtils getZkUtils() {
+    if (zkUtils == null) {
+      ZkClient zkClient = new ZkClient(zookeeperConfig.getUris(), SESSION_TIMEOUT, CONNECTION_TIMEOUT, ZKStringSerializer$.MODULE$);
+      zkUtils = new ZkUtils(zkClient, new ZkConnection(zookeeperConfig.getUris()), false);
+    }
+
+    return zkUtils;
   }
 
   public boolean isConnected(CuratorFramework curatorClient) {

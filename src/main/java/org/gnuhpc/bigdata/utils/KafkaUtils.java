@@ -63,6 +63,24 @@ public class KafkaUtils {
     return new KafkaConsumer(properties);
   }
 
+  public KafkaConsumer createNewConsumerByClientId(String consumerGroup, String clientId) {
+    Properties properties = new Properties();
+    properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaConfig.getBrokers());
+    properties.put(ConsumerConfig.GROUP_ID_CONFIG, consumerGroup);
+    properties.put(ConsumerConfig.CLIENT_ID_CONFIG, clientId);
+    properties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
+    properties.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, "30000");
+    properties.put(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, "100000000");
+    properties.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, "5");
+    properties.put(
+        ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getCanonicalName());
+    properties.put(
+        ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
+        StringDeserializer.class.getCanonicalName());
+
+    return new KafkaConsumer(properties);
+  }
+
   public KafkaConsumer createNewConsumer(String consumerGroup, String decoder)
       throws ClassNotFoundException {
     Properties properties = new Properties();

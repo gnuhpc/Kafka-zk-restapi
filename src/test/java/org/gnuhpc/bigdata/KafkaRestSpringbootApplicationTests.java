@@ -45,5 +45,6 @@ public class KafkaRestSpringbootApplicationTests {
   public void testListBrokers() throws Exception {
     // List<BrokerInfo> brokerInfoList = kafkaAdminService.listBrokers();
     // brokerInfoList.stream().forEach(log::info);
+    System.out.println(kafkaAdminService.listTopics());
   }
 }

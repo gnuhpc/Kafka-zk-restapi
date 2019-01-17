@@ -11,9 +11,6 @@ import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.module.scala.DefaultScalaModule;
 import com.google.common.collect.ImmutableMap;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonDeserializer;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -112,6 +109,7 @@ import org.gnuhpc.bigdata.constant.GeneralResponseState;
 import org.gnuhpc.bigdata.constant.ReassignmentStatus;
 import org.gnuhpc.bigdata.model.AddPartition;
 import org.gnuhpc.bigdata.model.BrokerInfo;
+import org.gnuhpc.bigdata.model.ClusterInfo;
 import org.gnuhpc.bigdata.model.ConsumerGroupDesc;
 import org.gnuhpc.bigdata.model.ConsumerGroupMeta;
 import org.gnuhpc.bigdata.model.CustomConfigEntry;
@@ -130,7 +128,6 @@ import org.gnuhpc.bigdata.utils.KafkaUtils;
 import org.gnuhpc.bigdata.utils.ZookeeperUtils;
 import org.gnuhpc.bigdata.validator.ConsumerGroupExistConstraint;
 import org.gnuhpc.bigdata.validator.TopicExistConstraint;
-import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
@@ -167,23 +164,11 @@ public class KafkaAdminService {
   private ZkUtils zkUtils;
 
   private org.apache.kafka.clients.admin.AdminClient kafkaAdminClient = null;
-  // For Json serialized
-  // TODO replace gson with jackson
-  private Gson gson;
 
   private scala.Option<String> none = scala.Option.apply(null);
 
   @PostConstruct
-  private void init() {
-    GsonBuilder builder = new GsonBuilder();
-    builder.registerTypeAdapter(
-        DateTime.class,
-        (JsonDeserializer<DateTime>)
-            (jsonElement, type, jsonDeserializationContext) ->
-                new DateTime(jsonElement.getAsJsonPrimitive().getAsLong()));
-
-    this.gson = builder.create();
-  }
+  private void init() {}
 
   private org.apache.kafka.clients.admin.AdminClient createKafkaAdminClient() {
     if (this.kafkaAdminClient == null) {
@@ -240,7 +225,7 @@ public class KafkaAdminService {
         kafkaAdminClient.createTopics(newTopicList, createTopicsOptions);
 
     try {
-      createTopicsResult.all().get(kafkaAdminClientAlterTimeoutMs, TimeUnit.MILLISECONDS);
+      createTopicsResult.all().get(kafkaAdminClientGetTimeoutMs, TimeUnit.MILLISECONDS);
     } catch (Exception exception) {
       log.warn("Create topic exception:" + exception);
     } finally {
@@ -348,8 +333,9 @@ public class KafkaAdminService {
     return exists;
   }
 
-  public Map<String, Object> describeCluster() {
-    Map<String, Object> clusterDetail = new HashMap<>();
+  public ClusterInfo describeCluster() {
+    //    Map<String, Object> clusterDetail = new HashMap<>();
+    ClusterInfo clusterInfo = new ClusterInfo();
 
     org.apache.kafka.clients.admin.AdminClient kafkaAdminClient = createKafkaAdminClient();
     DescribeClusterOptions describeClusterOptions =
@@ -374,17 +360,20 @@ public class KafkaAdminService {
       throw new ApiException("Describe cluster exception:" + exception);
     } finally {
       if (clusterIdFuture.isDone() && !clusterIdFuture.isCompletedExceptionally()) {
-        clusterDetail.put("clusterId", clusterId);
+        //        clusterDetail.put("clusterId", clusterId);
+        clusterInfo.setClusterId(clusterId);
       }
       if (controllerFuture.isDone() && !controllerFuture.isCompletedExceptionally()) {
-        clusterDetail.put("controllerId", controller);
+        //        clusterDetail.put("controllerId", controller);
+        clusterInfo.setController(controller);
       }
       if (nodesFuture.isDone() && !nodesFuture.isCompletedExceptionally()) {
-        clusterDetail.put("nodes", nodes);
+        //        clusterDetail.put("nodes", nodes);
+        clusterInfo.setNodes(nodes);
       }
     }
 
-    return clusterDetail;
+    return clusterInfo;
   }
 
   public List<BrokerInfo> listBrokers() {
@@ -412,7 +401,13 @@ public class KafkaAdminService {
                   } catch (Exception e) {
                     e.printStackTrace();
                   }
-                  BrokerInfo brokerInfo = gson.fromJson(brokerInfoStr, BrokerInfo.class);
+                  BrokerInfo brokerInfo;
+                  try {
+                    ObjectMapper objectMapper = new ObjectMapper();
+                    brokerInfo = objectMapper.readValue(brokerInfoStr, BrokerInfo.class);
+                  } catch (Exception exception) {
+                    throw new ApiException("List broker exception." + exception);
+                  }
                   if (entry.getValue().isEmpty()) {
                     brokerInfo.setRack("");
                   } else {
@@ -426,15 +421,8 @@ public class KafkaAdminService {
     return brokerInfoList;
   }
 
-  public int getControllerId() {
-    KafkaZkClient kafkaZkClient = zookeeperUtils.createKafkaZkClient();
-
-    int controllerId = -1;
-    if (!kafkaZkClient.getControllerId().equals(none)) {
-      controllerId = (int) kafkaZkClient.getControllerId().get();
-    }
-
-    return controllerId;
+  public Node getController() {
+    return describeCluster().getController();
   }
 
   public Map<Integer, List<String>> listLogDirsByBroker(List<Integer> brokerList) {
@@ -470,14 +458,16 @@ public class KafkaAdminService {
         }
       }
     }
-
-    if (topicList != null && !topicList.isEmpty()) {
-      for (String topic : topicList) {
-        if (!existTopic(topic)) {
-          throw new ApiException("Bad Request. Topic:" + topic + " non-exist.");
-        }
-      }
-    }
+    // Delete reason: we want to delete the topic data that no longer found on zk, we can still use
+    // this
+    //    function to get the topic log dir
+    //    if (topicList != null && !topicList.isEmpty()) {
+    //      for (String topic : topicList) {
+    //        if (!existTopic(topic)) {
+    //          throw new ApiException("Bad Request. Topic:" + topic + " non-exist.");
+    //        }
+    //      }
+    //    }
 
     DescribeLogDirsOptions describeLogDirsOptions =
         new DescribeLogDirsOptions().timeoutMs((int) kafkaAdminClientGetTimeoutMs);
@@ -678,8 +668,31 @@ public class KafkaAdminService {
     org.apache.kafka.clients.admin.AdminClient kafkaAdminClient = createKafkaAdminClient();
     HashMap<String, GeneralResponse> deleteResults = new HashMap<>();
 
+    List<String> topicListToBeDeleted = new ArrayList<>(topicList);
+
     log.warn("Delete topic " + topicList);
-    DeleteTopicsResult deleteTopicsResult = kafkaAdminClient.deleteTopics(topicList);
+    for (int i = 0; i < topicList.size(); i++) {
+      String topic = topicList.get(i);
+      try {
+        if (Topic.isInternal(topic)) {
+          throw new ApiException(
+              "Topic " + topic + " is a kafka internal topic and is not allowed to be deleted.");
+        }
+        if (!existTopic(topic)) {
+          throw new ApiException("Topic " + topic + " non-exists.");
+        }
+      } catch (Exception exception) {
+        topicListToBeDeleted.remove(topic);
+        GeneralResponse generalResponse =
+            GeneralResponse.builder()
+                .state(GeneralResponseState.failure)
+                .msg(exception.getMessage())
+                .build();
+        deleteResults.put(topic, generalResponse);
+      }
+    }
+
+    DeleteTopicsResult deleteTopicsResult = kafkaAdminClient.deleteTopics(topicListToBeDeleted);
     try {
       deleteTopicsResult.all().get(kafkaAdminClientGetTimeoutMs, TimeUnit.MILLISECONDS);
     } catch (Exception exception) {
@@ -922,7 +935,6 @@ public class KafkaAdminService {
     AdminClient adminClient = kafkaUtils.createAdminClient();
     Map<TopicPartition, Object> groupOffsets =
         CollectionConvertor.mapConvertJavaMap(adminClient.listGroupOffsets(consumerGroup));
-    adminClient.close();
 
     return groupOffsets
         .entrySet()
@@ -960,8 +972,8 @@ public class KafkaAdminService {
         });
 
     consumerGroupMeta.setMembers(members);
-    adminClient.close();
 
+    adminClient.close();
     return consumerGroupMeta;
   }
 
@@ -1078,6 +1090,8 @@ public class KafkaAdminService {
       Map<TopicPartition, Object> offsets =
           CollectionConvertor.mapConvertJavaMap(adminClient.listGroupOffsets(consumerGroup));
       Map<TopicPartition, Object> offsetsFiltered;
+
+      adminClient.close();
       if (filtered && existTopic(topic)) {
         offsetsFiltered =
             offsets
@@ -1157,7 +1171,6 @@ public class KafkaAdminService {
       }
     }
 
-    adminClient.close();
     return partitionAssignmentStateList;
   }
 
@@ -1221,7 +1234,6 @@ public class KafkaAdminService {
     try {
       String source =
           mapper.writeValueAsString(zkConsumerGroupService.collectGroupOffsets()._2().get());
-      System.out.println("source:" + source);
       partitionAssignmentStateList =
           mapper.readValue(
               source, getCollectionType(mapper, List.class, PartitionAssignmentState.class));
@@ -1567,7 +1579,6 @@ public class KafkaAdminService {
 
   private Map<TopicPartitionReplica, Integer> checkIfReplicaReassignmentSucceeded(
       Map<TopicPartitionReplica, String> replicaAssignement) {
-    org.apache.kafka.clients.admin.AdminClient kafkaAdminClient = createKafkaAdminClient();
     Map<TopicPartitionReplica, Integer> replicasReassignmentStatus = new HashMap<>();
 
     Map<TopicPartitionReplica, ReplicaLogDirInfo> replicaLogDirInfos = new HashMap<>();
@@ -2046,6 +2057,7 @@ public class KafkaAdminService {
       scala.collection.immutable.Map<String, Errors> stringErrorsMap =
           adminClient.deleteConsumerGroups((scala.collection.immutable.List) (groupsList));
 
+      adminClient.close();
       if (!stringErrorsMap.get(consumerGroup).get().equals(Errors.NONE)) {
         throw new ApiException(
             "Consumer group:"
@@ -2055,7 +2067,6 @@ public class KafkaAdminService {
                 + ". Error msg:"
                 + stringErrorsMap.get(consumerGroup).get().exception());
       }
-      adminClient.close();
     }
 
     return GeneralResponse.builder()

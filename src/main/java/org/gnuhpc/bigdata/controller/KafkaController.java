@@ -13,6 +13,7 @@ import java.util.Set;
 import joptsimple.internal.Strings;
 import lombok.extern.log4j.Log4j;
 import org.apache.kafka.clients.admin.DescribeReplicaLogDirsResult.ReplicaLogDirInfo;
+import org.apache.kafka.common.Node;
 import org.apache.kafka.common.TopicPartitionReplica;
 import org.apache.kafka.common.config.ConfigResource.Type;
 import org.apache.kafka.common.errors.ApiException;
@@ -20,6 +21,7 @@ import org.apache.kafka.common.requests.DescribeLogDirsResponse.LogDirInfo;
 import org.gnuhpc.bigdata.constant.ConsumerType;
 import org.gnuhpc.bigdata.model.AddPartition;
 import org.gnuhpc.bigdata.model.BrokerInfo;
+import org.gnuhpc.bigdata.model.ClusterInfo;
 import org.gnuhpc.bigdata.model.ConsumerGroupDesc;
 import org.gnuhpc.bigdata.model.ConsumerGroupMeta;
 import org.gnuhpc.bigdata.model.CustomConfigEntry;
@@ -56,7 +58,7 @@ public class KafkaController {
 
   @GetMapping(value = "/cluster")
   @ApiOperation(value = "Describe cluster, nodes, controller info.")
-  public Map<String, Object> describeCluster() {
+  public ClusterInfo describeCluster() {
     return kafkaAdminService.describeCluster();
   }
 
@@ -67,9 +69,9 @@ public class KafkaController {
   }
 
   @GetMapping(value = "/controller")
-  @ApiOperation(value = "Get controller id in this cluster")
-  public int getControllerId() {
-    return kafkaAdminService.getControllerId();
+  @ApiOperation(value = "Get controller in this cluster")
+  public Node getControllerId() {
+    return kafkaAdminService.getController();
   }
 
   @GetMapping(value = "/brokers/logdirs")
@@ -181,6 +183,11 @@ public class KafkaController {
   @DeleteMapping(value = "/topics")
   @ApiOperation(value = "Delete a topic list (you should enable topic deletion")
   public Map<String, GeneralResponse> deleteTopicList(@RequestParam List<String> topicList) {
+    // TODO add a function to delete topics completely,
+    // rmr /brokers/topics/< topic_name >
+    // rmr /config/topics/< topic_name >
+    // rmr /admin/delete_topics/< topic_name >
+    // rm log dirs on all brokers
     return kafkaAdminService.deleteTopicList(topicList);
   }
 

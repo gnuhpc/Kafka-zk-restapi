@@ -1,7 +1,11 @@
 package org.gnuhpc.bigdata.utils;
 
+import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import kafka.admin.AdminClient;
 import lombok.Getter;
@@ -14,6 +18,8 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.Node;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.serialization.StringDeserializer;
+import org.apache.kafka.common.serialization.StringSerializer;
+import org.apache.kafka.common.utils.Bytes;
 import org.gnuhpc.bigdata.config.KafkaConfig;
 import org.gnuhpc.bigdata.config.ZookeeperConfig;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,6 +40,19 @@ public class KafkaUtils {
   private Properties prop;
 
   public static final String DEFAULTCP = "kafka-rest-consumergroup";
+  public static final Map<String, Class<Object>> DESERIALIZER_TYPE_MAP = new HashMap() {
+    {
+      put("StringDeserializer", String.class);
+      put("ShortDeserializer", Short.class);
+      put("IntegerDeserializer", Integer.class);
+      put("LongDeserializer", Long.class);
+      put("FloatDeserializer", Float.class);
+      put("DoubleDeserializer", Double.class);
+      put("ByteArrayDeserializer", byte[].class);
+      put("ByteBufferDeserializer", ByteBuffer.class);
+      put("BytesDeserializer", Bytes.class);
+    }
+  };
 
   public void init() {
   }
@@ -138,6 +157,38 @@ public class KafkaUtils {
     return producer;
   }
 
+  public KafkaProducer createProducer(String encoder) throws ClassNotFoundException {
+    Properties prop = new Properties();
+    prop.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaConfig.getBrokers());
+    prop.setProperty(
+        ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG,
+        "org.apache.kafka.common.serialization.StringSerializer");
+    prop.setProperty(
+        ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
+        "org.apache.kafka.common.serialization.StringSerializer");
+    prop.setProperty(ProducerConfig.RETRIES_CONFIG, "3");
+    prop.setProperty(ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG, "10000");
+    producer = new KafkaProducer(prop);
+
+    if (encoder == null || encoder.isEmpty()) {
+      prop.put(
+          ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG,
+          StringSerializer.class.getCanonicalName());
+      prop.put(
+          ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
+          StringSerializer.class.getCanonicalName());
+    } else {
+      prop.put(
+          ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, Class.forName(encoder).getCanonicalName());
+      prop.put(
+          ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
+          Class.forName(encoder).getCanonicalName());
+    }
+    producer = new KafkaProducer(prop);
+
+    return producer;
+  }
+  
   public Node getLeader(String topic, int partitionId) {
     KafkaConsumer consumer = createNewConsumer(DEFAULTCP);
     List<PartitionInfo> tmList = consumer.partitionsFor(topic);

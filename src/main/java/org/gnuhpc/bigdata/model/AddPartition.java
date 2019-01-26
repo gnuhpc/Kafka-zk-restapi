@@ -1,5 +1,7 @@
 package org.gnuhpc.bigdata.model;
 
+import java.util.List;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -10,9 +12,11 @@ import lombok.extern.log4j.Log4j;
 @Setter
 @Log4j
 @ToString
+@Builder
 public class AddPartition {
 
   String topic;
   int numPartitionsAdded;
-  String replicaAssignment;
+//  String replicaAssignment;
+  List<List<Integer>> replicaAssignment;
 }

@@ -27,6 +27,8 @@ import org.gnuhpc.bigdata.model.ConsumerGroupMeta;
 import org.gnuhpc.bigdata.model.CustomConfigEntry;
 import org.gnuhpc.bigdata.model.GeneralResponse;
 import org.gnuhpc.bigdata.model.HealthCheckResult;
+import org.gnuhpc.bigdata.model.ReassignModel;
+import org.gnuhpc.bigdata.model.ReassignStatus;
 import org.gnuhpc.bigdata.model.ReassignWrapper;
 import org.gnuhpc.bigdata.model.TopicBrief;
 import org.gnuhpc.bigdata.model.TopicDetail;
@@ -171,7 +173,7 @@ public class KafkaController {
       @PathVariable int partition,
       @PathVariable long offset,
       @RequestParam(required = false) String decoder) {
-    return kafkaAdminService.getRecordByOffset(topic, partition, offset, decoder, "").getValue();
+    return kafkaAdminService.getRecordByOffset(topic, partition, offset, decoder, "").getValue().toString();
   }
 
   @GetMapping(value = "/topics/{topic}")
@@ -231,19 +233,19 @@ public class KafkaController {
 
   @PostMapping(value = "/partitions/reassign/generate")
   @ApiOperation(value = "Generate plan for the partition reassignment")
-  public List<String> generateReassignPartitions(@RequestBody ReassignWrapper reassignWrapper) {
+  public List<ReassignModel> generateReassignPartitions(@RequestBody ReassignWrapper reassignWrapper) {
     return kafkaAdminService.generateReassignPartition(reassignWrapper);
   }
 
   @PutMapping(value = "/partitions/reassign/execute")
   @ApiOperation(value = "Execute the partition reassignment")
-  public Map<String, Object> executeReassignPartitions(
-      @RequestBody String reassignStr,
+  public ReassignStatus executeReassignPartitions(
+      @RequestBody ReassignModel reassign,
       long interBrokerThrottle,
       long replicaAlterLogDirsThrottle,
       long timeoutMs) {
     return kafkaAdminService.executeReassignPartition(
-        reassignStr, interBrokerThrottle, replicaAlterLogDirsThrottle, timeoutMs);
+        reassign, interBrokerThrottle, replicaAlterLogDirsThrottle, timeoutMs);
   }
 
   @PutMapping(value = "/partitions/reassign/check")
@@ -254,8 +256,8 @@ public class KafkaController {
         @ApiResponse(code = 0, message = "Reassignment In Progress"),
         @ApiResponse(code = -1, message = "Reassignment Failed")
       })
-  public Map<String, Object> checkReassignPartitions(@RequestBody String reassignStr) {
-    return kafkaAdminService.checkReassignStatusByStr(reassignStr);
+  public ReassignStatus checkReassignPartitions(@RequestBody ReassignModel reassign) {
+    return kafkaAdminService.checkReassignStatus(reassign);
   }
 
   @GetMapping(value = "/consumergroups")
@@ -327,7 +329,7 @@ public class KafkaController {
   @ApiOperation(
       value =
           "Reset consumer group offset, earliest/latest can be used. Support reset by time for "
-              + "new consumer group, pass a parameter that satisfies yyyy-MM-dd HH:mm:ss "
+              + "new consumer group, pass a parameter that satisfies yyyy-MM-dd HH:mm:ss.SSS "
               + "to offset.")
   public GeneralResponse resetOffset(
       @PathVariable String topic,
@@ -336,7 +338,7 @@ public class KafkaController {
       @PathVariable
           @ApiParam(
               value =
-                  "[earliest/latest/{long}/yyyy-MM-dd HH:mm:ss] can be supported. "
+                  "[earliest/latest/{long}/yyyy-MM-dd HH:mm:ss.SSS] can be supported. "
                       + "The date type is only valid for new consumer group.")
           String offset,
       @PathVariable ConsumerType type) {

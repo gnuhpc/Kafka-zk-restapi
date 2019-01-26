@@ -33,19 +33,14 @@ public class ConsumerGroupDesc implements Comparable<ConsumerGroupDesc> {
   private long lag;
 
   private String consumerId;
+  private String clientId;
   private String host = "-";
   private ConsumerType type;
 
   @Override
   public int compareTo(ConsumerGroupDesc o) {
     if (this.topic.equals(o.topic)) {
-      if (this.partitionId == o.partitionId) {
-        return 0;
-      } else if (this.partitionId < o.partitionId) {
-        return -1;
-      } else {
-        return 1;
-      }
+      return (this.partitionId - o.partitionId);
     } else {
       return this.topic.compareTo(o.topic);
     }

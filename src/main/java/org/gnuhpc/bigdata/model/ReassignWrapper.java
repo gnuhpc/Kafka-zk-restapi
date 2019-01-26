@@ -38,7 +38,5 @@ public class ReassignWrapper {
       log.error("Serialize ReassignWrapper object to string error." + exeception);
       throw new ApiException("Serialize ReassignWrapper object to string error." + exeception);
     }
-    //    Gson gson = new Gson();
-    //    return gson.toJson(reassignJsonWrapper);
   }
 }

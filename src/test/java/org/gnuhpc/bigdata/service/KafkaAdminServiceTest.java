@@ -2,37 +2,67 @@ package org.gnuhpc.bigdata.service;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
-import static org.testng.Assert.assertTrue;
+//import static org.testng.Assert.assertFalse;
+//import static org.testng.Assert.assertTrue;
 
-import io.swagger.models.auth.In;
+import java.nio.ByteBuffer;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
+import lombok.extern.log4j.Log4j;
+import org.apache.kafka.clients.admin.DescribeReplicaLogDirsResult.ReplicaLogDirInfo;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.Node;
-import org.gnuhpc.bigdata.componet.OffsetStorage;
+import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.TopicPartitionInfo;
+import org.apache.kafka.common.TopicPartitionReplica;
+import org.apache.kafka.common.config.ConfigResource.Type;
+import org.apache.kafka.common.errors.ApiException;
+import org.apache.kafka.common.requests.DescribeLogDirsResponse.LogDirInfo;
+import org.apache.kafka.common.serialization.Serde;
+import org.apache.kafka.common.serialization.Serdes;
+import org.apache.kafka.common.utils.Bytes;
 import org.gnuhpc.bigdata.config.KafkaConfig;
 import org.gnuhpc.bigdata.config.ZookeeperConfig;
 import org.gnuhpc.bigdata.constant.ConsumerType;
 import org.gnuhpc.bigdata.constant.GeneralResponseState;
+import org.gnuhpc.bigdata.constant.ReassignmentState;
+import org.gnuhpc.bigdata.model.AddPartition;
 import org.gnuhpc.bigdata.model.BrokerInfo;
 import org.gnuhpc.bigdata.model.ClusterInfo;
+import org.gnuhpc.bigdata.model.ConsumerGroupDesc;
 import org.gnuhpc.bigdata.model.ConsumerGroupMeta;
 import org.gnuhpc.bigdata.model.CustomConfigEntry;
+import org.gnuhpc.bigdata.model.CustomTopicPartitionInfo;
 import org.gnuhpc.bigdata.model.GeneralResponse;
+import org.gnuhpc.bigdata.model.HealthCheckResult;
 import org.gnuhpc.bigdata.model.MemberDescription;
 import org.gnuhpc.bigdata.model.PartitionAssignmentState;
+import org.gnuhpc.bigdata.model.ReassignModel;
+import org.gnuhpc.bigdata.model.ReassignStatus;
+import org.gnuhpc.bigdata.model.ReassignWrapper;
+import org.gnuhpc.bigdata.model.Record;
 import org.gnuhpc.bigdata.model.TopicBrief;
 import org.gnuhpc.bigdata.model.TopicDetail;
 import org.gnuhpc.bigdata.model.TopicMeta;
+import org.gnuhpc.bigdata.model.TopicPartitionReplicaAssignment;
 import org.gnuhpc.bigdata.utils.KafkaUtils;
 import org.gnuhpc.bigdata.utils.ZookeeperUtils;
 import org.junit.After;
@@ -46,12 +76,12 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 
 @FixMethodOrder(MethodSorters.JVM)
+@Log4j
 public class KafkaAdminServiceTest {
   @Mock private static KafkaConfig mockKafkaConfig;
   @Mock private static ZookeeperConfig mockZookeeperConfig;
   @Spy private ZookeeperUtils mockZookeeperUtils = new ZookeeperUtils();
   @Spy private KafkaUtils mockKafkaUtils = new KafkaUtils();
-  @Mock private OffsetStorage mockStorage;
 
   @InjectMocks private KafkaAdminService kafkaAdminServiceUnderTest;
 
@@ -60,16 +90,17 @@ public class KafkaAdminServiceTest {
   private static final List<Integer> TEST_KAFKA_BOOTSTRAP_SERVERS_ID = Arrays.asList(111, 113, 115);
   private static final int KAFKA_NODES_COUNT = TEST_KAFKA_BOOTSTRAP_SERVERS_ID.size();
   private static final String TEST_ZK = "localhost:2183";
-  private static final int TEST_CONTROLLER_ID = 113;
+  private static final int TEST_CONTROLLER_ID = 115;
   private static final List<String> TEST_KAFKA_LOG_DIRS =
       Arrays.asList(
           "/home/xiangli/bigdata/kafka_2.11-1.1.1/kafka-logs,/home/xiangli/bigdata/kafka_2.11-1.1.1/kafka111_2-logs,/home/xiangli/bigdata/kafka_2.11-1.1.1/kafka111_3-logs",
           "/home/xiangli/bigdata/kafka_2.11-1.1.1/kafka113-logs,/home/xiangli/bigdata/kafka_2.11-1.1.1/kafka113_2-logs,/home/xiangli/bigdata/kafka_2.11-1.1.1/kafka113_3-logs",
           "/home/xiangli/bigdata/kafka_2.11-1.1.1/kafka115-logs,/home/xiangli/bigdata/kafka_2.11-1.1.1/kafka115_2-logs,/home/xiangli/bigdata/kafka_2.11-1.1.1/kafka115_3-logs");
 
-  private static final String FIRST_TOPIC_TO_TEST = "first";
+  private static final String FIRST_TOPIC_TO_TEST = "first2";
   private static final String SECOND_TOPIC_TO_TEST = "second";
   private static final String NON_EXIST_TOPIC_TO_TEST = "nontopic";
+  private static final int TEST_TOPIC_PARTITION_COUNT = 2;
   private static final String FIRST_CONSUMER_GROUP_TO_TEST = "testConsumerGroup1";
   private static final String SECOND_CONSUMER_GROUP_TO_TEST = "testConsumerGroup2";
   private static final String FIRST_CONSUMER_CLIENT_TO_TEST = "testConsumerClient1";
@@ -88,23 +119,6 @@ public class KafkaAdminServiceTest {
     initMocks(this);
     when(mockKafkaConfig.getBrokers()).thenReturn(TEST_KAFKA_BOOTSTRAP_SERVERS);
     when(mockZookeeperConfig.getUris()).thenReturn(TEST_ZK);
-    //    when(mockZookeeperUtils.createKafkaZkClient())
-    //        .thenReturn(
-    //            KafkaZkClient.apply(
-    //                MOCK_ZK,
-    //                false,
-    //                5000,
-    //                5000,
-    //                Integer.MAX_VALUE,
-    //                Time.SYSTEM,
-    //                "kafka.zk.rest",
-    //                "rest"));
-    //    when(mockZookeeperUtils.getZkUtils())
-    //        .thenReturn(
-    //            new ZkUtils(
-    //                new ZkClient(MOCK_ZK, 5000, 5000, ZKStringSerializer$.MODULE$),
-    //                new ZkConnection(MOCK_ZK),
-    //                false));
 
     mockKafkaUtils.setKafkaConfig(mockKafkaConfig);
     mockZookeeperUtils.setZookeeperConfig(mockZookeeperConfig);
@@ -113,21 +127,18 @@ public class KafkaAdminServiceTest {
     allTopicsInClusterBeforeTest = kafkaAdminServiceUnderTest.getAllTopics();
   }
 
-  private void clean() throws InterruptedException {
+  private void clean() {
     // Delete test topics
     kafkaAdminServiceUnderTest.deleteTopicList(
         Arrays.asList(FIRST_TOPIC_TO_TEST, SECOND_TOPIC_TO_TEST));
 
     // Delete test consumers
-    if (kafkaAdminServiceUnderTest.isNewConsumerGroup(FIRST_CONSUMER_GROUP_TO_TEST)) {
-      kafkaAdminServiceUnderTest.deleteConsumerGroup(
-          FIRST_CONSUMER_GROUP_TO_TEST, ConsumerType.NEW);
-    }
-    if (kafkaAdminServiceUnderTest.isNewConsumerGroup(SECOND_CONSUMER_GROUP_TO_TEST)) {
-      kafkaAdminServiceUnderTest.deleteConsumerGroup(
-          SECOND_CONSUMER_GROUP_TO_TEST, ConsumerType.NEW);
-    }
-    Thread.sleep(1000);
+    GeneralResponse deleteConsumer1Response =
+        kafkaAdminServiceUnderTest.deleteConsumerGroup(
+            FIRST_CONSUMER_GROUP_TO_TEST, ConsumerType.NEW);
+    GeneralResponse deleteConsumer2Response =
+        kafkaAdminServiceUnderTest.deleteConsumerGroup(
+            SECOND_CONSUMER_GROUP_TO_TEST, ConsumerType.NEW);
   }
 
   public static HashMap<Integer, Integer> getBrokerIdAndPort() {
@@ -147,6 +158,20 @@ public class KafkaAdminServiceTest {
   @After
   public void clearDirtyData() throws InterruptedException {
     //    clean();
+  }
+
+  private TopicDetail generateTopicDetail(
+      String topicName, int partitionCount, int replicationFactor) {
+    return TopicDetail.builder()
+        .name(topicName)
+        .partitions(partitionCount)
+        .factor(replicationFactor)
+        .build();
+  }
+
+  private TopicDetail generateTopicDetailByReplicaAssignment(
+      String topicName, HashMap<Integer, List<Integer>> replicaAssignments) {
+    return TopicDetail.builder().name(topicName).replicasAssignments(replicaAssignments).build();
   }
 
   @Test
@@ -242,20 +267,6 @@ public class KafkaAdminServiceTest {
     assertEquals(expectedBrokerLogDirMap, logDirs);
   }
 
-  private TopicDetail generateTopicDetail(
-      String topicName, int partitionCount, int replicationFactor) {
-    return TopicDetail.builder()
-        .name(topicName)
-        .partitions(partitionCount)
-        .factor(replicationFactor)
-        .build();
-  }
-
-  private TopicDetail generateTopicDetailByReplicaAssignment(
-      String topicName, HashMap<Integer, List<Integer>> replicaAssignments) {
-    return TopicDetail.builder().name(topicName).replicasAssignments(replicaAssignments).build();
-  }
-
   @Test
   public void testCreateTopic() {
     List<TopicDetail> topicList = new ArrayList<>();
@@ -325,11 +336,12 @@ public class KafkaAdminServiceTest {
     final Map<String, GeneralResponse> createTopicResult =
         kafkaAdminServiceUnderTest.createTopic(topicListToCreate);
 
-    //Create first topic again
+    // Create first topic again
     final Map<String, GeneralResponse> createTopicExistResult =
         kafkaAdminServiceUnderTest.createTopic(topicListToCreate);
 
-    assertEquals(GeneralResponseState.success, createTopicResult.get(FIRST_TOPIC_TO_TEST).getState());
+    assertEquals(
+        GeneralResponseState.success, createTopicResult.get(FIRST_TOPIC_TO_TEST).getState());
     assertEquals(
         GeneralResponseState.failure, createTopicExistResult.get(FIRST_TOPIC_TO_TEST).getState());
     assertTrue(
@@ -343,8 +355,7 @@ public class KafkaAdminServiceTest {
     int paritionCount = 3;
     int replicationFactor = TEST_KAFKA_BOOTSTRAP_SERVERS_ID.size() + 1;
 
-    System.out.println("////factor:" + replicationFactor);
-    //Create first topic with replicator that is more than broker count
+    // Create first topic with replicator that is more than broker count
     TopicDetail firstTopic =
         generateTopicDetail(FIRST_TOPIC_TO_TEST, paritionCount, replicationFactor);
 
@@ -356,7 +367,10 @@ public class KafkaAdminServiceTest {
     assertEquals(
         GeneralResponseState.failure, createTopicResult.get(FIRST_TOPIC_TO_TEST).getState());
     assertTrue(
-        createTopicResult.get(FIRST_TOPIC_TO_TEST).getMsg().contains("InvalidReplicationFactorException"));
+        createTopicResult
+            .get(FIRST_TOPIC_TO_TEST)
+            .getMsg()
+            .contains("InvalidReplicationFactorException"));
   }
 
   @Test
@@ -427,7 +441,7 @@ public class KafkaAdminServiceTest {
     // Setup
     List<String> topicListToDelete = new ArrayList<>();
     // Create firsttopic and secondtopic
-    createTwoTopics();
+    createTwoTopics(1);
 
     // Run the test
     topicListToDelete.add(FIRST_TOPIC_TO_TEST);
@@ -487,10 +501,12 @@ public class KafkaAdminServiceTest {
 
   class ConsumerGroup {
     private List<ConsumerRunnable> consumers;
+    private List<Thread> threadList;
 
     public ConsumerGroup(
         String groupId, int numConsumers, List<String> clientIdList, List<String> topicList) {
       consumers = new ArrayList<>(numConsumers);
+      threadList = new ArrayList<>();
       for (int i = 0; i < numConsumers; i++) {
         ConsumerRunnable consumerRunnable =
             new ConsumerRunnable(groupId, clientIdList.get(i), topicList);
@@ -500,67 +516,85 @@ public class KafkaAdminServiceTest {
 
     public void execute() {
       for (ConsumerRunnable consumerRunnable : consumers) {
-        new Thread(consumerRunnable).start();
+        Thread thread = new Thread(consumerRunnable);
+        threadList.add(thread);
+        thread.start();
       }
     }
 
     public void close() {
-      for (ConsumerRunnable consumerRunnable : consumers) {
-        consumerRunnable.close();
+      for (int i = 0; i < consumers.size(); i++) {
+        try {
+          ConsumerRunnable consumerRunnable = consumers.get(i);
+          consumerRunnable.close();
+        } catch (Exception closeException) {
+          threadList.get(i).stop();
+        }
       }
     }
   }
 
-  private KafkaConsumer consumer(
-      String consumerGroup, String clientId, List<String> subscribedTopicList) {
-    KafkaConsumer kafkaConsumer =
-        mockKafkaUtils.createNewConsumerByClientId(consumerGroup, clientId);
-    kafkaConsumer.subscribe(subscribedTopicList);
-    kafkaConsumer.poll(1000);
-    kafkaConsumer.commitSync();
-    return kafkaConsumer;
-  }
-
-  private KafkaConsumer consumer(String consumerGroup, List<String> subscribedTopicList) {
-    KafkaConsumer kafkaConsumer = mockKafkaUtils.createNewConsumer(consumerGroup);
-    kafkaConsumer.subscribe(subscribedTopicList);
-    kafkaConsumer.poll(3000);
-    kafkaConsumer.commitSync();
-    return kafkaConsumer;
-  }
-
   @Test
-  public void testListAllConsumerGroups() {
+  public void testListAllConsumerGroupsAndIsNewConsumerGroup() throws InterruptedException {
     // Setup, just test the new consumer groups
     final ConsumerType type = ConsumerType.NEW;
 
     String consumerGroup = FIRST_CONSUMER_GROUP_TO_TEST;
 
-    KafkaConsumer kafkaConsumer = consumer(consumerGroup, Arrays.asList(GROUP_METADATA_TOPIC_NAME));
+    createOneTopic();
+
+    final int numConsumers = 1;
+    ConsumerGroup group =
+        new ConsumerGroup(
+            consumerGroup,
+            numConsumers,
+            Arrays.asList(FIRST_CONSUMER_CLIENT_TO_TEST),
+            Arrays.asList(FIRST_TOPIC_TO_TEST));
+
+    group.execute();
+    Thread.sleep(1000);
 
     // Run the test
     final Map<String, Set<String>> consumerGroups =
         kafkaAdminServiceUnderTest.listAllConsumerGroups(type);
+    final boolean isNewConsumerGroup = kafkaAdminServiceUnderTest.isNewConsumerGroup(consumerGroup);
 
     Set<String> newConsumerGroups = consumerGroups.get("new");
 
     // Verify the results
     assertTrue(newConsumerGroups.contains(consumerGroup));
+    assertTrue(isNewConsumerGroup);
 
-    kafkaConsumer.close();
+    group.close();
   }
 
   @Test
-  public void testListConsumerGroupsByTopic() {
+  public void testListConsumerGroupsByTopic() throws InterruptedException {
     // Setup
-    final String topic = GROUP_METADATA_TOPIC_NAME;
+    final String topic = FIRST_TOPIC_TO_TEST;
     final ConsumerType type = ConsumerType.NEW;
     String testGroup1 = FIRST_CONSUMER_GROUP_TO_TEST;
     String testGroup2 = SECOND_CONSUMER_GROUP_TO_TEST;
 
-    List<String> subscribedTopicList = Arrays.asList(GROUP_METADATA_TOPIC_NAME);
-    KafkaConsumer kafkaConsumer1 = consumer(testGroup1, subscribedTopicList);
-    KafkaConsumer kafkaConsumer2 = consumer(testGroup2, subscribedTopicList);
+    createOneTopic();
+    List<String> subscribedTopicList = Arrays.asList(topic);
+
+    final int numConsumers = 1;
+    ConsumerGroup group1 =
+        new ConsumerGroup(
+            testGroup1,
+            numConsumers,
+            Arrays.asList(FIRST_CONSUMER_CLIENT_TO_TEST),
+            subscribedTopicList);
+    ConsumerGroup group2 =
+        new ConsumerGroup(
+            testGroup2,
+            numConsumers,
+            Arrays.asList(SECOND_CONSUMER_CLIENT_TO_TEST),
+            subscribedTopicList);
+    group1.execute();
+    group2.execute();
+    Thread.sleep(1000);
 
     // Run the test
     final Map<String, Set<String>> consumerGroupsByTopic =
@@ -571,22 +605,42 @@ public class KafkaAdminServiceTest {
     assertTrue(newConsumerGroupsByTopic.contains(testGroup1));
     assertTrue(newConsumerGroupsByTopic.contains(testGroup2));
 
-    kafkaConsumer1.close();
-    kafkaConsumer2.close();
+    group1.close();
+    group2.close();
   }
 
   private void createOneTopic() {
     List<TopicDetail> topicListToCreate = new ArrayList<>();
-    TopicDetail firstTopic = generateTopicDetail(FIRST_TOPIC_TO_TEST, 2, 1);
+    TopicDetail firstTopic =
+        generateTopicDetail(FIRST_TOPIC_TO_TEST, TEST_TOPIC_PARTITION_COUNT, 1);
     topicListToCreate.add(firstTopic);
 
     kafkaAdminServiceUnderTest.createTopic(topicListToCreate);
   }
 
-  private void createTwoTopics() {
+  private void createOneTopic(String topic, int partitionCount, int repcliaFactor) {
     List<TopicDetail> topicListToCreate = new ArrayList<>();
-    TopicDetail firstTopic = generateTopicDetail(FIRST_TOPIC_TO_TEST, 2, 1);
-    TopicDetail secondTopic = generateTopicDetail(SECOND_TOPIC_TO_TEST, 2, 1);
+    TopicDetail topicDetail = generateTopicDetail(topic, partitionCount, repcliaFactor);
+    topicListToCreate.add(topicDetail);
+
+    kafkaAdminServiceUnderTest.createTopic(topicListToCreate);
+  }
+
+  private void createOneTopic(String topic, Map<Integer, List<Integer>> replicaAssignment) {
+    List<TopicDetail> topicListToCreate = new ArrayList<>();
+    TopicDetail topicDetail =
+        TopicDetail.builder().name(topic).replicasAssignments(replicaAssignment).build();
+    topicListToCreate.add(topicDetail);
+
+    kafkaAdminServiceUnderTest.createTopic(topicListToCreate);
+  }
+
+  private void createTwoTopics(int replicationFactor) {
+    List<TopicDetail> topicListToCreate = new ArrayList<>();
+    TopicDetail firstTopic =
+        generateTopicDetail(FIRST_TOPIC_TO_TEST, TEST_TOPIC_PARTITION_COUNT, replicationFactor);
+    TopicDetail secondTopic =
+        generateTopicDetail(SECOND_TOPIC_TO_TEST, TEST_TOPIC_PARTITION_COUNT, replicationFactor);
     topicListToCreate.add(firstTopic);
     topicListToCreate.add(secondTopic);
 
@@ -594,40 +648,50 @@ public class KafkaAdminServiceTest {
   }
 
   @Test
-  public void testListTopicsByConsumerGroup() {
+  public void testListTopicsByConsumerGroup() throws InterruptedException {
     // Setup
     final String consumerGroup = FIRST_CONSUMER_GROUP_TO_TEST;
     final ConsumerType type = ConsumerType.NEW;
 
     // Create two topics
-    createTwoTopics();
+    createTwoTopics(1);
 
     List<String> subscribedTopicList = Arrays.asList(FIRST_TOPIC_TO_TEST, SECOND_TOPIC_TO_TEST);
-    KafkaConsumer kafkaConsumer = consumer(consumerGroup, subscribedTopicList);
+    final int numConsumers = 1;
+    ConsumerGroup group =
+        new ConsumerGroup(
+            consumerGroup,
+            numConsumers,
+            Arrays.asList(FIRST_CONSUMER_CLIENT_TO_TEST),
+            subscribedTopicList);
+
+    group.execute();
+    Thread.sleep(1000);
 
     // Run the test
     final Set<String> topicsByConsumerGroup =
         kafkaAdminServiceUnderTest.listTopicsByConsumerGroup(consumerGroup, type);
 
-    kafkaConsumer.close();
     // Verify the results
     assertEquals(2, topicsByConsumerGroup.size());
     assertTrue(topicsByConsumerGroup.contains(FIRST_TOPIC_TO_TEST));
     assertTrue(topicsByConsumerGroup.contains(SECOND_TOPIC_TO_TEST));
+
+    group.close();
   }
 
   @Test
   public void testGetConsumerGroupMeta() throws InterruptedException {
     // Setup
-    final String consumerGroup = FIRST_CONSUMER_GROUP_TO_TEST;
-    createTwoTopics();
+    final String consumerGroup = SECOND_CONSUMER_GROUP_TO_TEST;
+    createTwoTopics(1);
 
-    final int numConsumers = 2;
+    final int numConsumers = 1;
     ConsumerGroup group =
         new ConsumerGroup(
             consumerGroup,
             numConsumers,
-            Arrays.asList(FIRST_CONSUMER_CLIENT_TO_TEST, SECOND_CONSUMER_CLIENT_TO_TEST),
+            Arrays.asList(FIRST_CONSUMER_CLIENT_TO_TEST),
             Arrays.asList(FIRST_TOPIC_TO_TEST, SECOND_TOPIC_TO_TEST));
     group.execute();
     Thread.sleep(1000);
@@ -641,13 +705,7 @@ public class KafkaAdminServiceTest {
     List<MemberDescription> members = groupMeta.getMembers();
     assertEquals(numConsumers, members.size());
     String memberClientId1 = members.get(0).getClientId();
-    String memberClientId2 = members.get(1).getClientId();
-    assertTrue(
-        memberClientId1.equals(FIRST_CONSUMER_CLIENT_TO_TEST)
-            || memberClientId1.equals(SECOND_CONSUMER_CLIENT_TO_TEST));
-    assertTrue(
-        memberClientId2.equals(FIRST_CONSUMER_CLIENT_TO_TEST)
-            || memberClientId2.equals(SECOND_CONSUMER_CLIENT_TO_TEST));
+    assertTrue(memberClientId1.equals(FIRST_CONSUMER_CLIENT_TO_TEST));
 
     group.close();
   }
@@ -658,10 +716,10 @@ public class KafkaAdminServiceTest {
     final String consumerGroup = FIRST_CONSUMER_GROUP_TO_TEST;
     final boolean filtered = false;
 
-    //Create first topic with 2 partitions and 1 replica
+    // Create first topic with 2 partitions and 1 replica
     createOneTopic();
 
-    //Create a group with only one consumer
+    // Create a group with only one consumer
     ConsumerGroup group =
         new ConsumerGroup(
             consumerGroup,
@@ -676,18 +734,18 @@ public class KafkaAdminServiceTest {
         kafkaAdminServiceUnderTest.describeNewConsumerGroup(consumerGroup, filtered, null);
 
     // Verify the results
-    //Assign the consumer with 2 paritions, since there is only one consumer in the group
+    // Assign the consumer with 2 partitions, since there is only one consumer in the group
     assertEquals(2, partitionAssignments.size());
     PartitionAssignmentState assignment1 = partitionAssignments.get(0);
     PartitionAssignmentState assignment2 = partitionAssignments.get(1);
     assertEquals(consumerGroup, assignment1.getGroup());
     assertEquals(FIRST_TOPIC_TO_TEST, assignment1.getTopic());
     assertEquals(FIRST_CONSUMER_CLIENT_TO_TEST, assignment1.getClientId());
-    assertTrue(assignment1.getPartition() == 0 || assignment1.getPartition() == 1);
+    assertTrue(assignment1.getPartition() == 0);
     assertEquals(consumerGroup, assignment2.getGroup());
     assertEquals(FIRST_TOPIC_TO_TEST, assignment2.getTopic());
     assertEquals(FIRST_CONSUMER_CLIENT_TO_TEST, assignment2.getClientId());
-    assertTrue(assignment2.getPartition() == 0 || assignment2.getPartition() == 1);
+    assertTrue(assignment2.getPartition() == 1);
 
     group.close();
   }
@@ -699,489 +757,1670 @@ public class KafkaAdminServiceTest {
     final boolean filtered = true;
     final String topic = SECOND_TOPIC_TO_TEST;
 
-    //Create first and second topic
-    createTwoTopics();
+    // Create first and second topic
+    createTwoTopics(1);
 
-    //Create a group with only one consumer
+    // Create a group with only one consumer
     ConsumerGroup group =
         new ConsumerGroup(
             consumerGroup,
             1,
-            Arrays.asList(FIRST_CONSUMER_CLIENT_TO_TEST, SECOND_CONSUMER_CLIENT_TO_TEST),
+            Arrays.asList(FIRST_CONSUMER_CLIENT_TO_TEST),
             Arrays.asList(FIRST_TOPIC_TO_TEST, SECOND_TOPIC_TO_TEST));
     group.execute();
-
     Thread.sleep(1000);
 
     // Run the test
     final List<PartitionAssignmentState> partitionAssignmentsFilteredByTopic =
         kafkaAdminServiceUnderTest.describeNewConsumerGroup(consumerGroup, filtered, topic);
 
-    System.out.println("/////result: " + partitionAssignmentsFilteredByTopic);
     // Verify the results
-
     assertEquals(2, partitionAssignmentsFilteredByTopic.size());
     PartitionAssignmentState assignment1 = partitionAssignmentsFilteredByTopic.get(0);
     PartitionAssignmentState assignment2 = partitionAssignmentsFilteredByTopic.get(1);
     assertEquals(consumerGroup, assignment1.getGroup());
     assertEquals(topic, assignment1.getTopic());
     assertEquals(FIRST_CONSUMER_CLIENT_TO_TEST, assignment1.getClientId());
-    assertTrue(assignment1.getPartition() == 0 || assignment1.getPartition() == 1);
+    assertTrue(assignment1.getPartition() == 0);
     assertEquals(consumerGroup, assignment2.getGroup());
     assertEquals(topic, assignment2.getTopic());
     assertEquals(FIRST_CONSUMER_CLIENT_TO_TEST, assignment2.getClientId());
-    assertTrue(assignment2.getPartition() == 0 || assignment2.getPartition() == 1);
+    assertTrue(assignment2.getPartition() == 1);
 
     group.close();
   }
 
-  /*
+  @Test
+  public void testDescribeConsumerGroup() throws InterruptedException {
+    // Setup
+    final String consumerGroup = SECOND_CONSUMER_GROUP_TO_TEST;
+    final ConsumerType type = ConsumerType.NEW;
+
+    // Create first topic with 2 partitions and 1 replica
+    createTwoTopics(1);
+
+    // Create a group with only one consumer
+    ConsumerGroup group =
+        new ConsumerGroup(
+            consumerGroup,
+            1,
+            Arrays.asList(FIRST_CONSUMER_CLIENT_TO_TEST),
+            Arrays.asList(FIRST_TOPIC_TO_TEST, SECOND_TOPIC_TO_TEST));
+    group.execute();
+    Thread.sleep(1000);
+
+    // Run the test
+    final Map<String, List<ConsumerGroupDesc>> result =
+        kafkaAdminServiceUnderTest.describeConsumerGroup(consumerGroup, type);
+
+    // Verify the results
+    assertEquals(2, result.size());
+    assertTrue(result.containsKey(FIRST_TOPIC_TO_TEST));
+    assertTrue(result.containsKey(SECOND_TOPIC_TO_TEST));
+    List<ConsumerGroupDesc> firstTopicConsumersDesc = result.get(FIRST_TOPIC_TO_TEST);
+    List<ConsumerGroupDesc> secondTopicConsumersDesc = result.get(SECOND_TOPIC_TO_TEST);
+    assertEquals(2, firstTopicConsumersDesc.size());
+    assertEquals(consumerGroup, firstTopicConsumersDesc.get(0).getGroupName());
+    assertEquals(consumerGroup, firstTopicConsumersDesc.get(1).getGroupName());
+    assertEquals(FIRST_CONSUMER_CLIENT_TO_TEST, firstTopicConsumersDesc.get(0).getClientId());
+    assertEquals(FIRST_CONSUMER_CLIENT_TO_TEST, firstTopicConsumersDesc.get(1).getClientId());
+    assertEquals(0, firstTopicConsumersDesc.get(0).getPartitionId());
+    assertEquals(1, firstTopicConsumersDesc.get(1).getPartitionId());
+
+    assertEquals(2, secondTopicConsumersDesc.size());
+    assertEquals(consumerGroup, secondTopicConsumersDesc.get(0).getGroupName());
+    assertEquals(consumerGroup, secondTopicConsumersDesc.get(1).getGroupName());
+    assertEquals(FIRST_CONSUMER_CLIENT_TO_TEST, secondTopicConsumersDesc.get(0).getClientId());
+    assertEquals(FIRST_CONSUMER_CLIENT_TO_TEST, secondTopicConsumersDesc.get(1).getClientId());
+    assertEquals(0, secondTopicConsumersDesc.get(0).getPartitionId());
+    assertEquals(1, secondTopicConsumersDesc.get(1).getPartitionId());
+
+    group.close();
+  }
+
+  private boolean isCollectionEqual(Collection collection1, Collection collection2) {
+    if (collection1.size() != collection2.size()) return false;
+
+    Iterator iterator = collection2.iterator();
+    while (iterator.hasNext()) {
+      Object object = iterator.next();
+      if (!collection1.contains(object)) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  @Test
+  public void testDeleteConsumerGroup() throws InterruptedException {
+    // Setup
+    final String consumerGroup = FIRST_CONSUMER_GROUP_TO_TEST;
+    final ConsumerType type = ConsumerType.NEW;
+
+    Set<String> allConsumerGroupsBefore =
+        kafkaAdminServiceUnderTest.listAllConsumerGroups(type).get("new");
+    // Create first topic with 2 partitions and 1 replica
+    createOneTopic();
+
+    // Create a group with only one consumer
+    ConsumerGroup group =
+        new ConsumerGroup(
+            consumerGroup,
+            1,
+            Arrays.asList(FIRST_CONSUMER_CLIENT_TO_TEST),
+            Arrays.asList(FIRST_TOPIC_TO_TEST));
+    group.execute();
+    Thread.sleep(1000);
+    Set<String> allConsumerGroupsAfterAdd =
+        kafkaAdminServiceUnderTest.listAllConsumerGroups(type).get("new");
+    Set<String> expectedAllConsumerGroupsAfterAdd = new HashSet<>(allConsumerGroupsBefore);
+    expectedAllConsumerGroupsAfterAdd.add(consumerGroup);
+
+    group.close();
+    // Run the test
+    final GeneralResponse deleteResult =
+        kafkaAdminServiceUnderTest.deleteConsumerGroup(consumerGroup, type);
+
+    // Verify the results
+    assertEquals(expectedAllConsumerGroupsAfterAdd, allConsumerGroupsAfterAdd);
+    assertEquals(GeneralResponseState.success, deleteResult.getState());
+    assertEquals(consumerGroup, deleteResult.getData());
+
+    Set<String> allConsumerGroupsAfterDel =
+        kafkaAdminServiceUnderTest.listAllConsumerGroups(type).get("new");
+    assertTrue(isCollectionEqual(allConsumerGroupsBefore, allConsumerGroupsAfterDel));
+  }
+
+  @Test
+  public void testDeleteConsumerGroupNonEmpty() throws InterruptedException {
+    // Setup
+    final String consumerGroup = FIRST_CONSUMER_GROUP_TO_TEST;
+    final ConsumerType type = ConsumerType.NEW;
+
+    // Create first topic with 2 partitions and 1 replica
+    createOneTopic();
+
+    // Create a group with only one consumer
+    ConsumerGroup group =
+        new ConsumerGroup(
+            consumerGroup,
+            1,
+            Arrays.asList(FIRST_CONSUMER_CLIENT_TO_TEST),
+            Arrays.asList(FIRST_TOPIC_TO_TEST));
+    group.execute();
+    Thread.sleep(1000);
+
+    // Run the test
+    final GeneralResponse deleteResult =
+        kafkaAdminServiceUnderTest.deleteConsumerGroup(consumerGroup, type);
+
+    // Verify the results
+    assertEquals(GeneralResponseState.failure, deleteResult.getState());
+    assertTrue(deleteResult.getMsg().contains("GroupNotEmptyException"));
+
+    group.close();
+  }
+
+  @Test
+  public void testAddPartitionsByAddPartitionCount() {
+    // Setup
+    final int numPartitionsToAdd = 1;
+    final List<AddPartition> addPartitions =
+        Arrays.asList(
+            AddPartition.builder()
+                .topic(FIRST_TOPIC_TO_TEST)
+                .numPartitionsAdded(numPartitionsToAdd)
+                .build(),
+            AddPartition.builder()
+                .topic(SECOND_TOPIC_TO_TEST)
+                .numPartitionsAdded(numPartitionsToAdd)
+                .build());
+
+    // Create first and second topic with 2 partitions and 1 replica
+    createTwoTopics(1);
+    // Run the test
+    final Map<String, GeneralResponse> addPartitionsResult =
+        kafkaAdminServiceUnderTest.addPartitions(addPartitions);
+
+    // Verify the results
+    GeneralResponse firstTopicResult = addPartitionsResult.get(FIRST_TOPIC_TO_TEST);
+    assertEquals(GeneralResponseState.success, firstTopicResult.getState());
+    TopicMeta firstTopicMeta = (TopicMeta) firstTopicResult.getData();
+    assertEquals(FIRST_TOPIC_TO_TEST, firstTopicMeta.getTopicName());
+    assertEquals(
+        TEST_TOPIC_PARTITION_COUNT + numPartitionsToAdd, firstTopicMeta.getPartitionCount());
+
+    GeneralResponse secondTopicResult = addPartitionsResult.get(SECOND_TOPIC_TO_TEST);
+    assertEquals(GeneralResponseState.success, secondTopicResult.getState());
+    TopicMeta secondTopicMeta = (TopicMeta) secondTopicResult.getData();
+    assertEquals(SECOND_TOPIC_TO_TEST, secondTopicMeta.getTopicName());
+    assertEquals(
+        TEST_TOPIC_PARTITION_COUNT + numPartitionsToAdd, secondTopicMeta.getPartitionCount());
+  }
+
+  @Test
+  public void testAddPartitionsByReplicaAssignment() {
+    // Setup
+    final int brokerCount = TEST_KAFKA_BOOTSTRAP_SERVERS_ID.size();
+    final int replicaFactor = brokerCount - 1;
+    List<List<Integer>> replicaAssignment =
+        Arrays.asList(
+            TEST_KAFKA_BOOTSTRAP_SERVERS_ID.subList(0, brokerCount - 1),
+            TEST_KAFKA_BOOTSTRAP_SERVERS_ID.subList(1, brokerCount));
+    final int numPartitionsToAdd = 2;
+    AddPartition addPartition =
+        AddPartition.builder()
+            .topic(FIRST_TOPIC_TO_TEST)
+            .numPartitionsAdded(numPartitionsToAdd)
+            .replicaAssignment(replicaAssignment)
+            .build();
+
+    // In my env, replicaAssignment is [[111,113],[113,115]]
+    final List<AddPartition> addPartitions = Arrays.asList(addPartition);
+
+    // Create first topic with 2 partitions and 2 replicas
+    createOneTopic(FIRST_TOPIC_TO_TEST, TEST_TOPIC_PARTITION_COUNT, replicaFactor);
+    // Run the test
+    final Map<String, GeneralResponse> addPartitionsResult =
+        kafkaAdminServiceUnderTest.addPartitions(addPartitions);
+
+    // Verify the results
+    GeneralResponse response = addPartitionsResult.get(FIRST_TOPIC_TO_TEST);
+    assertEquals(GeneralResponseState.success, response.getState());
+
+    TopicMeta topicMeta = (TopicMeta) response.getData();
+    int partitionCount = topicMeta.getPartitionCount();
+    assertEquals(TEST_TOPIC_PARTITION_COUNT + numPartitionsToAdd, partitionCount);
+
+    List<CustomTopicPartitionInfo> topicPartitionInfoList = topicMeta.getTopicPartitionInfos();
+    TopicPartitionInfo firstAddedPartition =
+        topicPartitionInfoList.get(partitionCount - numPartitionsToAdd).getTopicPartitionInfo();
+    assertEquals(replicaFactor, firstAddedPartition.replicas().size());
+    for (int i = 0; i < firstAddedPartition.replicas().size(); i++) {
+      assertEquals(
+          replicaAssignment.get(0).get(i).intValue(), firstAddedPartition.replicas().get(i).id());
+    }
+
+    TopicPartitionInfo secondAddedPartition =
+        topicPartitionInfoList.get(partitionCount - numPartitionsToAdd + 1).getTopicPartitionInfo();
+    assertEquals(replicaFactor, secondAddedPartition.replicas().size());
+    for (int i = 0; i < secondAddedPartition.replicas().size(); i++) {
+      assertEquals(
+          replicaAssignment.get(1).get(i).intValue(), secondAddedPartition.replicas().get(i).id());
+    }
+  }
+
+  private int getMaxBrokerId(List<Integer> brokerIdList) {
+    int max = -1;
+    for (int id : brokerIdList) {
+      if (id > max) {
+        max = id;
+      }
+    }
+
+    return max;
+  }
+
+  @Test
+  public void testAddPartitionsByReplicaAssignmentWithInvalidBrokerId() {
+    // Setup
+    final int replicaFactor = 1;
+    // In my env, kafka broker id list is [111, 113, 115]. Invalid broker id is 116.
+    final int invalidBrokerId = getMaxBrokerId(TEST_KAFKA_BOOTSTRAP_SERVERS_ID) + 1;
+    List<List<Integer>> replicaAssignment = Arrays.asList(Arrays.asList(invalidBrokerId));
+    final int numPartitionsToAdd = 1;
+    AddPartition addPartition =
+        AddPartition.builder()
+            .topic(FIRST_TOPIC_TO_TEST)
+            .numPartitionsAdded(numPartitionsToAdd)
+            .replicaAssignment(replicaAssignment)
+            .build();
+
+    final List<AddPartition> addPartitions = Arrays.asList(addPartition);
+
+    // Create first topic with 2 partitions and 1 replica
+    createOneTopic(FIRST_TOPIC_TO_TEST, TEST_TOPIC_PARTITION_COUNT, replicaFactor);
+    // Run the test
+    final Map<String, GeneralResponse> addPartitionsResult =
+        kafkaAdminServiceUnderTest.addPartitions(addPartitions);
+
+    // Verify the results
+    GeneralResponse response = addPartitionsResult.get(FIRST_TOPIC_TO_TEST);
+    assertEquals(GeneralResponseState.failure, response.getState());
+    assertTrue(response.getMsg().contains("InvalidReplicaAssignmentException: Unknown broker"));
+  }
+
+  @Test
+  public void testAddPartitionsByReplicaAssignmentWithInconsistentReplicationFactor() {
+    // Setup
+    final int brokerCount = TEST_KAFKA_BOOTSTRAP_SERVERS_ID.size();
+    final int replicaFactor = brokerCount - 1;
+    // In my env, replicaAssignment is [[111,113],[115]]. And it is invalid.
+    List<List<Integer>> replicaAssignment =
+        Arrays.asList(
+            TEST_KAFKA_BOOTSTRAP_SERVERS_ID.subList(0, brokerCount - 1),
+            TEST_KAFKA_BOOTSTRAP_SERVERS_ID.subList(2, brokerCount));
+    final int numPartitionsToAdd = 2;
+    AddPartition addPartition =
+        AddPartition.builder()
+            .topic(FIRST_TOPIC_TO_TEST)
+            .numPartitionsAdded(numPartitionsToAdd)
+            .replicaAssignment(replicaAssignment)
+            .build();
+
+    final List<AddPartition> addPartitions = Arrays.asList(addPartition);
+
+    // Create first topic with 2 partitions and 2 replicas
+    createOneTopic(FIRST_TOPIC_TO_TEST, TEST_TOPIC_PARTITION_COUNT, replicaFactor);
+    // Run the test
+    final Map<String, GeneralResponse> addPartitionsResult =
+        kafkaAdminServiceUnderTest.addPartitions(addPartitions);
+
+    // Verify the results
+    GeneralResponse response = addPartitionsResult.get(FIRST_TOPIC_TO_TEST);
+    assertEquals(GeneralResponseState.failure, response.getState());
+    assertTrue(
+        response
+            .getMsg()
+            .contains(
+                "InvalidReplicaAssignmentException: Inconsistent replication factor between partitions"));
+  }
+
+  @Test
+  public void testAddPartitionsByReplicaAssignmentWithInconsistentPartitionCount() {
+    // Setup
+    final int brokerCount = TEST_KAFKA_BOOTSTRAP_SERVERS_ID.size();
+    final int replicaFactor = 1;
+    // In my env, replicaAssignment is [[111,113],[113,115]]. But numPartitionsToAdd is 3, so it is
+    // invalid.
+    List<List<Integer>> replicaAssignment =
+        Arrays.asList(
+            TEST_KAFKA_BOOTSTRAP_SERVERS_ID.subList(0, brokerCount - 1),
+            TEST_KAFKA_BOOTSTRAP_SERVERS_ID.subList(1, brokerCount));
+    final int numPartitionsToAdd = 3;
+    AddPartition addPartition =
+        AddPartition.builder()
+            .topic(FIRST_TOPIC_TO_TEST)
+            .numPartitionsAdded(numPartitionsToAdd)
+            .replicaAssignment(replicaAssignment)
+            .build();
+
+    final List<AddPartition> addPartitions = Arrays.asList(addPartition);
+
+    // Create first topic with 2 partitions and 2 replicas
+    createOneTopic(FIRST_TOPIC_TO_TEST, TEST_TOPIC_PARTITION_COUNT, replicaFactor);
+    // Run the test
+    final Map<String, GeneralResponse> addPartitionsResult =
+        kafkaAdminServiceUnderTest.addPartitions(addPartitions);
+
+    // Verify the results
+    GeneralResponse response = addPartitionsResult.get(FIRST_TOPIC_TO_TEST);
+    assertEquals(GeneralResponseState.failure, response.getState());
+    assertTrue(
+        response
+            .getMsg()
+            .contains(
+                "InvalidReplicaAssignmentException: Increasing the number of partitions by "
+                    + numPartitionsToAdd
+                    + " but "
+                    + replicaAssignment.size()
+                    + " assignments provided."));
+  }
+
+  @Test
+  public void testAddPartitionsOnNonExistTopic() {
+    // Setup
+    final int numPartitionsToAdd = 1;
+    final List<AddPartition> addPartitions =
+        Arrays.asList(
+            AddPartition.builder()
+                .topic(NON_EXIST_TOPIC_TO_TEST)
+                .numPartitionsAdded(numPartitionsToAdd)
+                .build());
+
+    // Run the test
+    final Map<String, GeneralResponse> addPartitionsResult =
+        kafkaAdminServiceUnderTest.addPartitions(addPartitions);
+
+    // Verify the results
+    GeneralResponse response = addPartitionsResult.get(NON_EXIST_TOPIC_TO_TEST);
+    assertEquals(GeneralResponseState.failure, response.getState());
+    assertEquals("Topic:" + NON_EXIST_TOPIC_TO_TEST + " non-exist.", response.getMsg());
+  }
+
+  @Test
+  public void testGenerateReassignPartition() {
+    // Setup
+    // Create first topic with 2 partitions and 1 replica
+    String topic = FIRST_TOPIC_TO_TEST;
+    createOneTopic();
+    TopicMeta topicMeta = kafkaAdminServiceUnderTest.describeTopic(topic);
+
+    final ReassignWrapper reassignWrapper = new ReassignWrapper();
+    reassignWrapper.setTopics(Arrays.asList(topic));
+    // Reassign on only one broker
+    List assignedBrokerList = Arrays.asList(TEST_KAFKA_BOOTSTRAP_SERVERS_ID.get(0));
+    reassignWrapper.setBrokers(assignedBrokerList);
+
+    // Run the test
+    final List<ReassignModel> reassignResult =
+        kafkaAdminServiceUnderTest.generateReassignPartition(reassignWrapper);
+    assertEquals(2, reassignResult.size());
+
+    // Verify the results
+    // The first element is current topic assignment
+    List<TopicPartitionReplicaAssignment> currentTopicPartitionReplicaAssignments =
+        reassignResult.get(0).getPartitions();
+    List<CustomTopicPartitionInfo> expectedTopicPartitionInfos = topicMeta.getTopicPartitionInfos();
+    assertEquals(
+        expectedTopicPartitionInfos.size(), currentTopicPartitionReplicaAssignments.size());
+    for (int i = 0; i < expectedTopicPartitionInfos.size(); i++) {
+      int expectedBrokerId =
+          expectedTopicPartitionInfos.get(i).getTopicPartitionInfo().replicas().get(0).id();
+      int brokerId = currentTopicPartitionReplicaAssignments.get(i).getReplicas().get(0).intValue();
+      assertEquals(expectedBrokerId, brokerId);
+    }
+
+    // The second element is proposed topic assignment
+    List<TopicPartitionReplicaAssignment> proposedTopicPartitionReplicaAssignments =
+        reassignResult.get(1).getPartitions();
+    for (TopicPartitionReplicaAssignment tpra : proposedTopicPartitionReplicaAssignments) {
+      List<Integer> proposedReplicas = tpra.getReplicas();
+      assertTrue(isCollectionEqual(assignedBrokerList, proposedReplicas));
+    }
+  }
+
+  @Test
+  public void testGenerateReassignPartitionWithInvalidReplicator() {
+    // Setup
+    // Create first topic with 1 partition and 2 replicas
+    String topic = FIRST_TOPIC_TO_TEST;
+    createOneTopic(topic, 1, 2);
+
+    final ReassignWrapper reassignWrapper = new ReassignWrapper();
+    reassignWrapper.setTopics(Arrays.asList(topic));
+    // Reassign on only one broker, but replica factor is 2, so it's invalid
+    List assignedBrokerList = Arrays.asList(TEST_KAFKA_BOOTSTRAP_SERVERS_ID.get(0));
+    reassignWrapper.setBrokers(assignedBrokerList);
+
+    // Run the test
+    try {
+      kafkaAdminServiceUnderTest.generateReassignPartition(reassignWrapper);
+    } catch (ApiException apiException) {
+      assertTrue(
+          apiException
+              .getMessage()
+              .contains("InvalidReplicationFactorException: Replication factor"));
+    }
+  }
+
+  private boolean isReassignComplete(Map<TopicPartition, Integer> partitionsReassignStatus) {
+    Iterator<Map.Entry<TopicPartition, Integer>> iterator =
+        partitionsReassignStatus.entrySet().iterator();
+    while (iterator.hasNext()) {
+      Map.Entry<TopicPartition, Integer> entry = iterator.next();
+      if (entry.getValue().intValue() != ReassignmentState.ReassignmentCompleted.code()) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  private boolean isReassignComplete(
+      Map<TopicPartition, Integer> partitionsReassignStatus,
+      Map<TopicPartitionReplica, Integer> replicasReassignStatus) {
+    Iterator<Map.Entry<TopicPartition, Integer>> iterator =
+        partitionsReassignStatus.entrySet().iterator();
+    while (iterator.hasNext()) {
+      Map.Entry<TopicPartition, Integer> entry = iterator.next();
+      if (entry.getValue().intValue() != ReassignmentState.ReassignmentCompleted.code()) {
+        return false;
+      }
+    }
+
+    Iterator<Map.Entry<TopicPartitionReplica, Integer>> iterator2 =
+        replicasReassignStatus.entrySet().iterator();
+    while (iterator2.hasNext()) {
+      Map.Entry<TopicPartitionReplica, Integer> entry = iterator2.next();
+      if (entry.getValue().intValue() != ReassignmentState.ReassignmentCompleted.code()) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  @Test
+  public void testExecuteReassignPartition() throws InterruptedException {
+    // Setup
+    final Long interBrokerThrottle = -2000L;
+    final Long replicaAlterLogDirsThrottle = -3000L;
+    final Long timeoutMs = 10000L;
+
+    // Create first topic with 2 partitions and 1 replica
+    createOneTopic();
+    List assignedBrokerList = Arrays.asList(TEST_KAFKA_BOOTSTRAP_SERVERS_ID.get(0));
+
+    List<TopicPartitionReplicaAssignment> topicPartitionReplicaAssignment = new ArrayList<>();
+    TopicPartitionReplicaAssignment tpr =
+        TopicPartitionReplicaAssignment.builder()
+            .topic(FIRST_TOPIC_TO_TEST)
+            .partition(0)
+            .replicas(assignedBrokerList)
+            .log_dirs(Arrays.asList("any"))
+            .build();
+    TopicPartitionReplicaAssignment tpr2 =
+        TopicPartitionReplicaAssignment.builder()
+            .topic(FIRST_TOPIC_TO_TEST)
+            .partition(1)
+            .replicas(assignedBrokerList)
+            .log_dirs(Arrays.asList("any"))
+            .build();
+    topicPartitionReplicaAssignment.add(tpr);
+    topicPartitionReplicaAssignment.add(tpr2);
+    ReassignModel reassignModel =
+        ReassignModel.builder().partitions(topicPartitionReplicaAssignment).build();
+
+    // Run the test
+    final ReassignStatus reassignResult =
+        kafkaAdminServiceUnderTest.executeReassignPartition(
+            reassignModel, interBrokerThrottle, replicaAlterLogDirsThrottle, timeoutMs);
+
+    // Verify the results
+    Map<TopicPartition, Integer> partitionsReassignStatus =
+        reassignResult.getPartitionsReassignStatus();
+    TopicPartition topicPartition0 = new TopicPartition(FIRST_TOPIC_TO_TEST, 0);
+    int partition0ReassignState = partitionsReassignStatus.get(topicPartition0).intValue();
+    assertTrue(
+        partition0ReassignState == ReassignmentState.ReassignmentInProgress.code()
+            || partition0ReassignState == ReassignmentState.ReassignmentCompleted.code());
+    TopicPartition topicPartition1 = new TopicPartition(FIRST_TOPIC_TO_TEST, 1);
+    int partition1ReassignState = partitionsReassignStatus.get(topicPartition1).intValue();
+    assertTrue(
+        partition1ReassignState == ReassignmentState.ReassignmentInProgress.code()
+            || partition1ReassignState == ReassignmentState.ReassignmentCompleted.code());
+    if (partition0ReassignState == ReassignmentState.ReassignmentCompleted.code()
+        && partition1ReassignState == ReassignmentState.ReassignmentCompleted.code()) {
+      // If all completed, removeThrottle will be true
+      assertTrue(reassignResult.isRemoveThrottle());
+    } else {
+      assertFalse(reassignResult.isRemoveThrottle());
+    }
+
+    // Wait reassign to complete
+    int count = 30;
+    while (true) {
+      Thread.sleep(2000);
+      ReassignStatus reassignmentStatusFinal =
+          kafkaAdminServiceUnderTest.checkReassignStatus(reassignModel);
+      Map<TopicPartition, Integer> partitionsReassignStatusFinal =
+          reassignmentStatusFinal.getPartitionsReassignStatus();
+      if (isReassignComplete(partitionsReassignStatusFinal)) {
+        for (int i = 0; i < TEST_KAFKA_BOOTSTRAP_SERVERS_ID.size(); i++) {
+          Properties properties =
+              kafkaAdminServiceUnderTest.getConfigInZk(
+                  Type.BROKER, String.valueOf(TEST_KAFKA_BOOTSTRAP_SERVERS_ID.get(i)));
+          assertFalse(properties.containsKey(KafkaAdminService.LeaderReplicationThrottledRateProp));
+          assertFalse(
+              properties.containsKey(KafkaAdminService.FollowerReplicationThrottledRateProp));
+          assertFalse(
+              properties.containsKey(KafkaAdminService.ReplicaAlterLogDirsIoMaxBytesPerSecondProp));
+        }
+        break;
+      }
+      count++;
+      if (count == 30) {
+        break;
+      }
+    }
+
+    // Describe topic
+    List<CustomTopicPartitionInfo> topicPartitionInfos =
+        kafkaAdminServiceUnderTest.describeTopic(FIRST_TOPIC_TO_TEST).getTopicPartitionInfos();
+    for (CustomTopicPartitionInfo ctpi : topicPartitionInfos) {
+      assertEquals(1, ctpi.getTopicPartitionInfo().replicas().size());
+      assertEquals(
+          TEST_KAFKA_BOOTSTRAP_SERVERS_ID.get(0).intValue(),
+          ctpi.getTopicPartitionInfo().replicas().get(0).id());
+    }
+  }
+
+  private void waitReassignToComplete(ReassignModel reassignModel) throws InterruptedException {
+    int count = 30;
+    while (true) {
+      Thread.sleep(2000);
+      ReassignStatus reassignmentStatusFinal =
+          kafkaAdminServiceUnderTest.checkReassignStatus(reassignModel);
+      Map<TopicPartition, Integer> partitionsReassignStatusFinal =
+          reassignmentStatusFinal.getPartitionsReassignStatus();
+      Map<TopicPartitionReplica, Integer> replicasReassignStatusFinal =
+          reassignmentStatusFinal.getReplicasReassignStatus();
+      if (isReassignComplete(partitionsReassignStatusFinal, replicasReassignStatusFinal)) {
+        break;
+      }
+      count++;
+      if (count == 30) {
+        break;
+      }
+    }
+  }
+
+  @Test
+  public void testExecuteReassignReplicasInnerBroker() throws InterruptedException {
+    // Setup
+    final Long interBrokerThrottle = -1L;
+    final Long replicaAlterLogDirsThrottle = -1L;
+    final Long timeoutMs = 10000L;
+
+    // Create first topic with 1 partition and 1 replica on broker 111
+    int brokerId = TEST_KAFKA_BOOTSTRAP_SERVERS_ID.get(0);
+    List<Integer> assignedBrokerList = TEST_KAFKA_BOOTSTRAP_SERVERS_ID.subList(0, 1);
+
+    Map<Integer, List<Integer>> replicaAssignment = new HashMap<>();
+    replicaAssignment.put(0, assignedBrokerList);
+    createOneTopic(FIRST_TOPIC_TO_TEST, replicaAssignment);
+
+    // Get first-0 log dir
+    TopicPartitionReplica topicPartitionReplica =
+        new TopicPartitionReplica(FIRST_TOPIC_TO_TEST, 0, brokerId);
+    List<TopicPartitionReplica> replicas = Arrays.asList(topicPartitionReplica);
+    String replicaLogDirBeforeReassign =
+        kafkaAdminServiceUnderTest
+            .describeReplicaLogDirs(replicas)
+            .get(topicPartitionReplica)
+            .getCurrentReplicaLogDir();
+
+    // Find another log dir on broker 111 to reassign
+    String replicaLogDirToReassign = "any";
+    String[] logDirs = TEST_KAFKA_LOG_DIRS.get(0).split(",");
+    for (int i = 0; i < logDirs.length; i++) {
+      if (!logDirs[i].equals(replicaLogDirBeforeReassign)) {
+        replicaLogDirToReassign = logDirs[i];
+        break;
+      }
+    }
+
+    List<TopicPartitionReplicaAssignment> topicPartitionReplicaAssignment = new ArrayList<>();
+    TopicPartitionReplicaAssignment tpr =
+        TopicPartitionReplicaAssignment.builder()
+            .topic(FIRST_TOPIC_TO_TEST)
+            .partition(0)
+            .replicas(assignedBrokerList)
+            .log_dirs(Arrays.asList(replicaLogDirToReassign))
+            .build();
+
+    topicPartitionReplicaAssignment.add(tpr);
+    ReassignModel reassignModel =
+        ReassignModel.builder().partitions(topicPartitionReplicaAssignment).build();
+
+    // Run the test
+    final ReassignStatus reassignResult =
+        kafkaAdminServiceUnderTest.executeReassignPartition(
+            reassignModel, interBrokerThrottle, replicaAlterLogDirsThrottle, timeoutMs);
+
+    // Verify the results
+    Map<TopicPartition, Integer> partitionsReassignStatus =
+        reassignResult.getPartitionsReassignStatus();
+    TopicPartition topicPartition = new TopicPartition(FIRST_TOPIC_TO_TEST, 0);
+    int partitionReassignState = partitionsReassignStatus.get(topicPartition).intValue();
+    assertTrue(
+        partitionReassignState == ReassignmentState.ReassignmentInProgress.code()
+            || partitionReassignState == ReassignmentState.ReassignmentCompleted.code());
+
+    Map<TopicPartitionReplica, Integer> replicasReassignStatus =
+        reassignResult.getReplicasReassignStatus();
+    int replicaReassignState = replicasReassignStatus.get(topicPartitionReplica);
+    assertTrue(
+        replicaReassignState == ReassignmentState.ReassignmentInProgress.code()
+            || replicaReassignState == ReassignmentState.ReassignmentCompleted.code());
+    if (partitionReassignState == ReassignmentState.ReassignmentCompleted.code()
+        && replicaReassignState == ReassignmentState.ReassignmentCompleted.code()) {
+      // If all completed, removeThrottle will be true
+      assertTrue(reassignResult.isRemoveThrottle());
+    } else {
+      assertFalse(reassignResult.isRemoveThrottle());
+    }
+
+    // Wait reassign to complete
+    waitReassignToComplete(reassignModel);
+
+    // Describe topic log dir
+    String currentLogDir =
+        kafkaAdminServiceUnderTest
+            .describeReplicaLogDirs(replicas)
+            .get(topicPartitionReplica)
+            .getCurrentReplicaLogDir();
+    assertEquals(replicaLogDirToReassign, currentLogDir);
+  }
+
+  @Test
+  public void testExecuteReassignReplicasInterBroker() throws InterruptedException {
+    // Setup
+    final Long interBrokerThrottle = -1L;
+    final Long replicaAlterLogDirsThrottle = -1L;
+    final Long timeoutMs = 10000L;
+
+    // Create first topic with 1 partition and 1 replica on broker 111
+    List<Integer> assignedBrokerListBefore = TEST_KAFKA_BOOTSTRAP_SERVERS_ID.subList(0, 1);
+
+    Map<Integer, List<Integer>> replicaAssignment = new HashMap<>();
+    replicaAssignment.put(0, assignedBrokerListBefore);
+    createOneTopic(FIRST_TOPIC_TO_TEST, replicaAssignment);
+
+    // Find a log dir on broker 113 to reassign
+    String replicaLogDirToReassign = TEST_KAFKA_LOG_DIRS.get(1).split(",")[0];
+
+    int newBrokerId = TEST_KAFKA_BOOTSTRAP_SERVERS_ID.get(1);
+    List<TopicPartitionReplicaAssignment> topicPartitionReplicaAssignment = new ArrayList<>();
+    TopicPartitionReplicaAssignment tpr =
+        TopicPartitionReplicaAssignment.builder()
+            .topic(FIRST_TOPIC_TO_TEST)
+            .partition(0)
+            .replicas(Arrays.asList(newBrokerId))
+            .log_dirs(Arrays.asList(replicaLogDirToReassign))
+            .build();
+
+    topicPartitionReplicaAssignment.add(tpr);
+    ReassignModel reassignModel =
+        ReassignModel.builder().partitions(topicPartitionReplicaAssignment).build();
+
+    // Run the test
+    final ReassignStatus reassignResult =
+        kafkaAdminServiceUnderTest.executeReassignPartition(
+            reassignModel, interBrokerThrottle, replicaAlterLogDirsThrottle, timeoutMs);
+
+    // Verify the results
+    Map<TopicPartition, Integer> partitionsReassignStatus =
+        reassignResult.getPartitionsReassignStatus();
+    TopicPartition topicPartition = new TopicPartition(FIRST_TOPIC_TO_TEST, 0);
+    int partitionReassignState = partitionsReassignStatus.get(topicPartition).intValue();
+    assertTrue(
+        partitionReassignState == ReassignmentState.ReassignmentInProgress.code()
+            || partitionReassignState == ReassignmentState.ReassignmentCompleted.code());
+
+    TopicPartitionReplica topicPartitionReplica =
+        new TopicPartitionReplica(FIRST_TOPIC_TO_TEST, 0, newBrokerId);
+    Map<TopicPartitionReplica, Integer> replicasReassignStatus =
+        reassignResult.getReplicasReassignStatus();
+    int replicaReassignState = replicasReassignStatus.get(topicPartitionReplica);
+    assertTrue(
+        replicaReassignState == ReassignmentState.ReassignmentInProgress.code()
+            || replicaReassignState == ReassignmentState.ReassignmentCompleted.code());
+    if (partitionReassignState == ReassignmentState.ReassignmentCompleted.code()
+        && replicaReassignState == ReassignmentState.ReassignmentCompleted.code()) {
+      // If all completed, removeThrottle will be true
+      assertTrue(reassignResult.isRemoveThrottle());
+    } else {
+      assertFalse(reassignResult.isRemoveThrottle());
+    }
+
+    // Wait reassign to complete
+    waitReassignToComplete(reassignModel);
+
+    // Describe topic log dir
+    String currentLogDir =
+        kafkaAdminServiceUnderTest
+            .describeReplicaLogDirs(Arrays.asList(topicPartitionReplica))
+            .get(topicPartitionReplica)
+            .getCurrentReplicaLogDir();
+
+    assertEquals(replicaLogDirToReassign, currentLogDir);
+  }
+
+  private List<RecordMetadata> produceRecords(String topic, int recordsCount) {
+    KafkaProducer kafkaProducer = mockKafkaUtils.createProducer();
+    List<RecordMetadata> recordMetadataList = new ArrayList<>();
+
+    for (int i = 0; i < recordsCount; i++) {
+      ProducerRecord<String, String> record = new ProducerRecord(topic, "record" + i);
+      try {
+        RecordMetadata metadata = (RecordMetadata) kafkaProducer.send(record).get();
+        recordMetadataList.add(metadata);
+      } catch (Exception exception) {
+        log.error("Produce record:" + i + " error." + exception);
+      }
+    }
+
+    kafkaProducer.close();
+    return recordMetadataList;
+  }
+
+  private Map<Class<Object>, List<Long>> produceRecords(
+      String topic, Map<Class<Object>, List<Object>> testData) {
+    Map<Class<Object>, List<Long>> dataOffsetMap = new HashMap<>();
+    KafkaProducer kafkaProducer = null;
+
+    for (Map.Entry<Class<Object>, List<Object>> test : testData.entrySet()) {
+      Class<Object> type = test.getKey();
+      List<Long> offsetList = new ArrayList<>();
+      try {
+        kafkaProducer =
+            mockKafkaUtils.createProducer(
+                Serdes.serdeFrom(type).serializer().getClass().getCanonicalName());
+        for (Object value : test.getValue()) {
+          ProducerRecord record = new ProducerRecord(topic, value);
+          try {
+            RecordMetadata metadata = (RecordMetadata) kafkaProducer.send(record).get();
+            Long offset = metadata.offset();
+            offsetList.add(offset);
+          } catch (Exception exception) {
+            log.error("Send record exception." + exception);
+          }
+        }
+      } catch (ClassNotFoundException classNotFoundException) {
+        log.error("Encoder class not found. " + classNotFoundException);
+      }
+      System.out.println("////type:" + type + ", offsetList:" + offsetList);
+      dataOffsetMap.put(type, offsetList);
+    }
+
+    kafkaProducer.close();
+    return dataOffsetMap;
+  }
+
+  private List<RecordMetadata> produceRecords(String topic, int recordsCount, String encoder) {
+    KafkaProducer kafkaProducer = null;
+    try {
+      kafkaProducer = mockKafkaUtils.createProducer(encoder);
+    } catch (ClassNotFoundException exception) {
+      System.out.println("///exception:" + exception);
+    }
+    List<RecordMetadata> recordMetadataList = new ArrayList<>();
+
+    for (int i = 0; i < recordsCount; i++) {
+      String value = "record" + i;
+      //      ProducerRecord record = new ProducerRecord(topic, new Bytes(value.getBytes()));
+      //      ProducerRecord record = new ProducerRecord(topic, value.getBytes());
+      //      ByteBuffer byteBuffer =
+      // ByteBuffer.allocate(value.getBytes().length).put(value.getBytes());
+      ProducerRecord record = new ProducerRecord(topic, i + 0.01);
+      try {
+        RecordMetadata metadata = (RecordMetadata) kafkaProducer.send(record).get();
+        recordMetadataList.add(metadata);
+        System.out.println("metada:" + metadata.offset());
+      } catch (Exception exception) {
+        log.error("Produce record:" + i + " error." + exception);
+      }
+    }
+
+    kafkaProducer.close();
+    return recordMetadataList;
+  }
+
+  @Test
+  public void testResetOffsetToBeginning() throws InterruptedException {
+    // Setup
+    final String topic = FIRST_TOPIC_TO_TEST;
+    final int partition = 0;
+    final String consumerGroup = FIRST_CONSUMER_GROUP_TO_TEST;
+    final ConsumerType type = ConsumerType.NEW;
+    final String offset = "earliest";
+    final int recordsCount = 5;
+
+    // Create first topic with 1 partition and 1 replica
+    createOneTopic(topic, 1, 1);
+
+    // Produce data
+    produceRecords(topic, recordsCount);
+
+    // Create a group with only one consumer
+    ConsumerGroup group =
+        new ConsumerGroup(
+            consumerGroup,
+            1,
+            Arrays.asList(FIRST_CONSUMER_CLIENT_TO_TEST),
+            Arrays.asList(FIRST_TOPIC_TO_TEST));
+    group.execute();
+    Thread.sleep(1000);
+
+    // Reset offset can only be done when consumer group is inactive
+    group.close();
+
+    // Run the test
+    final GeneralResponse resetResult =
+        kafkaAdminServiceUnderTest.resetOffset(topic, partition, consumerGroup, type, offset);
+    assertEquals(GeneralResponseState.success, resetResult.getState());
+    assertEquals(0L, Long.parseLong(resetResult.getData().toString()));
+    // Verify the results
+    KafkaConsumer consumer = mockKafkaUtils.createNewConsumer(consumerGroup);
+    consumer.subscribe(Arrays.asList(topic));
+    while (true) {
+      ConsumerRecords<String, String> messages = consumer.poll(100);
+      if (messages.count() == 0) break;
+      assertEquals(recordsCount, messages.count());
+      int i = 0;
+      for (ConsumerRecord<String, String> message : messages) {
+        // Consumer will consume start from offset:0
+        assertEquals(i, message.offset());
+        i++;
+      }
+    }
+    consumer.close();
+  }
+
+  @Test
+  public void testResetOffsetToLatest() throws InterruptedException {
+    // Setup
+    final String topic = FIRST_TOPIC_TO_TEST;
+    final int partition = 0;
+    final String consumerGroup = FIRST_CONSUMER_GROUP_TO_TEST;
+    final ConsumerType type = ConsumerType.NEW;
+    final String offset = "latest";
+    final int recordsCount = 5;
+
+    // Create first topic with 1 partition and 1 replica
+    createOneTopic(topic, 1, 1);
+
+    // Produce data
+    produceRecords(topic, recordsCount);
+
+    // Create a group with only one consumer
+    ConsumerGroup group =
+        new ConsumerGroup(
+            consumerGroup,
+            1,
+            Arrays.asList(FIRST_CONSUMER_CLIENT_TO_TEST),
+            Arrays.asList(FIRST_TOPIC_TO_TEST));
+    group.execute();
+    Thread.sleep(1000);
+
+    // Reset offset can only be done when consumer group is inactive
+    group.close();
+
+    // Run the test
+    final GeneralResponse resetResult =
+        kafkaAdminServiceUnderTest.resetOffset(topic, partition, consumerGroup, type, offset);
+    assertEquals(GeneralResponseState.success, resetResult.getState());
+    assertEquals(recordsCount, Long.parseLong(resetResult.getData().toString()));
+    // Verify the results
+    // Produce another 5 records
+    produceRecords(topic, recordsCount);
+    KafkaConsumer consumer = mockKafkaUtils.createNewConsumer(consumerGroup);
+    consumer.subscribe(Arrays.asList(topic));
+    while (true) {
+      ConsumerRecords<String, String> messages = consumer.poll(100);
+      if (messages.count() == 0) break;
+      assertEquals(recordsCount, messages.count());
+      int i = 0;
+      for (ConsumerRecord<String, String> message : messages) {
+        // Consumer will consume start from offset:5
+        assertEquals(recordsCount + i, message.offset());
+        i++;
+      }
+    }
+    consumer.close();
+  }
+
+  @Test
+  public void testResetOffsetToSpecificOffset() throws InterruptedException {
+    // Setup
+    final String topic = FIRST_TOPIC_TO_TEST;
+    final int partition = 0;
+    final String consumerGroup = FIRST_CONSUMER_GROUP_TO_TEST;
+    final ConsumerType type = ConsumerType.NEW;
+    final String offset = "2";
+    final int recordsCount = 5;
+
+    // Create first topic with 1 partition and 1 replica
+    createOneTopic(topic, 1, 1);
+
+    // Produce data
+    produceRecords(topic, recordsCount);
+
+    // Create a group with only one consumer
+    ConsumerGroup group =
+        new ConsumerGroup(
+            consumerGroup,
+            1,
+            Arrays.asList(FIRST_CONSUMER_CLIENT_TO_TEST),
+            Arrays.asList(FIRST_TOPIC_TO_TEST));
+    group.execute();
+    Thread.sleep(1000);
+
+    // Reset offset can only be done when consumer group is inactive
+    group.close();
+
+    // Run the test
+    final GeneralResponse resetResult =
+        kafkaAdminServiceUnderTest.resetOffset(topic, partition, consumerGroup, type, offset);
+
+    assertEquals(GeneralResponseState.success, resetResult.getState());
+    assertEquals(Long.parseLong(offset), Long.parseLong(resetResult.getData().toString()));
+    // Verify the results
+    KafkaConsumer consumer = mockKafkaUtils.createNewConsumer(consumerGroup);
+    consumer.subscribe(Arrays.asList(topic));
+    while (true) {
+      ConsumerRecords<String, String> messages = consumer.poll(100);
+      if (messages.count() == 0) break;
+      assertEquals(recordsCount - Long.parseLong(offset), messages.count());
+      int i = 0;
+      for (ConsumerRecord<String, String> message : messages) {
+        // Consumer will consume start from offset:3
+        assertEquals(Long.parseLong(offset) + i, message.offset());
+        i++;
+      }
+    }
+    consumer.close();
+  }
+
+  @Test
+  public void testResetOffsetToSpecificOffsetButOutOfRange() throws InterruptedException {
+    // Setup
+    final String topic = FIRST_TOPIC_TO_TEST;
+    final int partition = 0;
+    final String consumerGroup = FIRST_CONSUMER_GROUP_TO_TEST;
+    final ConsumerType type = ConsumerType.NEW;
+    final String offset = "10";
+    final int recordsCount = 5;
+
+    // Create first topic with 1 partition and 1 replica
+    createOneTopic(topic, 1, 1);
+
+    // Produce data
+    produceRecords(topic, recordsCount);
+
+    // Create a group with only one consumer
+    ConsumerGroup group =
+        new ConsumerGroup(
+            consumerGroup,
+            1,
+            Arrays.asList(FIRST_CONSUMER_CLIENT_TO_TEST),
+            Arrays.asList(FIRST_TOPIC_TO_TEST));
+    group.execute();
+    Thread.sleep(1000);
+
+    // Reset offset can only be done when consumer group is inactive
+    group.close();
+
+    // Run the test
+    final GeneralResponse resetResult =
+        kafkaAdminServiceUnderTest.resetOffset(topic, partition, consumerGroup, type, offset);
+
+    assertEquals(GeneralResponseState.failure, resetResult.getState());
+    assertTrue(resetResult.getMsg().contains("Invalid request offset:" + offset));
+  }
+
+  @Test
+  public void testResetOffsetByTime() throws InterruptedException {
+    // Setup
+    final String topic = FIRST_TOPIC_TO_TEST;
+    final int partition = 0;
+    final String consumerGroup = FIRST_CONSUMER_GROUP_TO_TEST;
+    final ConsumerType type = ConsumerType.NEW;
+    final int recordsCount = 5;
+
+    // Create first topic with 1 partition and 1 replica
+    createOneTopic(topic, 1, 1);
+
+    // Produce data
+    List<RecordMetadata> metadataList = produceRecords(topic, recordsCount);
+
+    // Get the record timestamp to reset
+    int recordIndexToReset = 3;
+    Long timeToReset = metadataList.get(recordIndexToReset).timestamp();
+    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+    final String offset = sdf.format(new Date(timeToReset));
+
+    // Create a group with only one consumer
+    ConsumerGroup group =
+        new ConsumerGroup(
+            consumerGroup,
+            1,
+            Arrays.asList(FIRST_CONSUMER_CLIENT_TO_TEST),
+            Arrays.asList(FIRST_TOPIC_TO_TEST));
+    group.execute();
+    Thread.sleep(1000);
+
+    // Reset offset can only be done when consumer group is inactive
+    group.close();
+
+    // Run the test
+    final GeneralResponse resetResult =
+        kafkaAdminServiceUnderTest.resetOffset(topic, partition, consumerGroup, type, offset);
+
+    assertEquals(GeneralResponseState.success, resetResult.getState());
+    assertEquals(recordIndexToReset, Long.parseLong(resetResult.getData().toString()));
+    // Verify the results
+    KafkaConsumer consumer = mockKafkaUtils.createNewConsumer(consumerGroup);
+    consumer.subscribe(Arrays.asList(topic));
+    while (true) {
+      ConsumerRecords<String, String> messages = consumer.poll(100);
+      if (messages.count() == 0) break;
+      assertEquals(recordsCount - recordIndexToReset, messages.count());
+      int i = 0;
+      for (ConsumerRecord<String, String> message : messages) {
+        // Consumer will consume start from offset:0
+        assertEquals(i + recordIndexToReset, message.offset());
+        i++;
+      }
+    }
+    consumer.close();
+  }
+
+  @Test
+  public void testResetOffsetByTimeButMoreThanEndOffsetTime() throws InterruptedException {
+    // Setup
+    final String topic = FIRST_TOPIC_TO_TEST;
+    final int partition = 0;
+    final String consumerGroup = FIRST_CONSUMER_GROUP_TO_TEST;
+    final ConsumerType type = ConsumerType.NEW;
+    final int recordsCount = 5;
+
+    // Create first topic with 1 partition and 1 replica
+    createOneTopic(topic, 1, 1);
+
+    // Produce data
+    List<RecordMetadata> metadataList = produceRecords(topic, recordsCount);
+
+    // Get the (last record timestamp + 1000) to reset
+    Long timeToReset = metadataList.get(recordsCount - 1).timestamp() + 1000;
+    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+    final String offset = sdf.format(new Date(timeToReset));
+
+    // Create a group with only one consumer
+    ConsumerGroup group =
+        new ConsumerGroup(
+            consumerGroup,
+            1,
+            Arrays.asList(FIRST_CONSUMER_CLIENT_TO_TEST),
+            Arrays.asList(FIRST_TOPIC_TO_TEST));
+    group.execute();
+    Thread.sleep(1000);
+
+    // Reset offset can only be done when consumer group is inactive
+    group.close();
+
+    // Run the test
+    final GeneralResponse resetResult =
+        kafkaAdminServiceUnderTest.resetOffset(topic, partition, consumerGroup, type, offset);
+
+    assertEquals(GeneralResponseState.failure, resetResult.getState());
+    assertTrue(
+        resetResult
+            .getMsg()
+            .contains(
+                "No offset's timestamp is greater than or equal to the given timestamp:" + offset));
+  }
+
+  @Test
+  public void testResetOffsetOnActiveConsumerGroup() throws InterruptedException {
+    // Setup
+    final String topic = FIRST_TOPIC_TO_TEST;
+    final int partition = 0;
+    final String consumerGroup = FIRST_CONSUMER_GROUP_TO_TEST;
+    final ConsumerType type = ConsumerType.NEW;
+    final String offset = "1";
+    final int recordsCount = 5;
+
+    // Create first topic with 1 partition and 1 replica
+    createOneTopic(topic, 1, 1);
+
+    // Produce data
+    produceRecords(topic, recordsCount);
+
+    // Create a group with only one consumer
+    ConsumerGroup group =
+        new ConsumerGroup(
+            consumerGroup,
+            1,
+            Arrays.asList(FIRST_CONSUMER_CLIENT_TO_TEST),
+            Arrays.asList(FIRST_TOPIC_TO_TEST));
+    group.execute();
+    Thread.sleep(1000);
+
+    // Run the test
+    final GeneralResponse resetResult =
+        kafkaAdminServiceUnderTest.resetOffset(topic, partition, consumerGroup, type, offset);
+
+    assertEquals(GeneralResponseState.failure, resetResult.getState());
+    assertTrue(
+        resetResult
+            .getMsg()
+            .contains("Offsets can only be reset if the group " + consumerGroup + " is inactive"));
+
+    group.close();
+  }
+
+  @Test
+  public void testResetOffsetOnNonExistConsumerGroup() throws InterruptedException {
+    // Setup
+    final String topic = FIRST_TOPIC_TO_TEST;
+    final int partition = 0;
+    final String consumerGroup = FIRST_CONSUMER_GROUP_TO_TEST;
+    final ConsumerType type = ConsumerType.NEW;
+    final String offset = "1";
+    final int recordsCount = 5;
+
+    // Create first topic with 1 partition and 1 replica
+    createOneTopic(topic, 1, 1);
+
+    // Produce data
+    produceRecords(topic, recordsCount);
+
+    // Create a group with only one consumer
+    ConsumerGroup group =
+        new ConsumerGroup(
+            consumerGroup,
+            1,
+            Arrays.asList(FIRST_CONSUMER_CLIENT_TO_TEST),
+            Arrays.asList(FIRST_TOPIC_TO_TEST));
+    group.execute();
+    Thread.sleep(1000);
+
+    // Reset offset can only be done when consumer group is inactive
+    group.close();
+
+    // Run the test
+    final GeneralResponse resetResult =
+        kafkaAdminServiceUnderTest.resetOffset(
+            topic, partition, SECOND_CONSUMER_GROUP_TO_TEST, type, offset);
+
+    assertEquals(GeneralResponseState.failure, resetResult.getState());
+    assertTrue(resetResult.getMsg().contains("non-exists"));
+  }
+
+  @Test
+  public void testResetOffsetOnInvalidPartition() throws InterruptedException {
+    // Setup
+    final String topic = FIRST_TOPIC_TO_TEST;
+    final int partition = 1;
+    final String consumerGroup = FIRST_CONSUMER_GROUP_TO_TEST;
+    final ConsumerType type = ConsumerType.NEW;
+    final String offset = "1";
+    final int recordsCount = 5;
+
+    // Create first topic with 1 partition and 1 replica
+    createOneTopic(topic, 1, 1);
+
+    // Produce data
+    produceRecords(topic, recordsCount);
+
+    // Create a group with only one consumer
+    ConsumerGroup group =
+        new ConsumerGroup(
+            consumerGroup,
+            1,
+            Arrays.asList(FIRST_CONSUMER_CLIENT_TO_TEST),
+            Arrays.asList(FIRST_TOPIC_TO_TEST));
+    group.execute();
+    Thread.sleep(1000);
+
+    // Reset offset can only be done when consumer group is inactive
+    group.close();
+
+    // Run the test
+    final GeneralResponse resetResult =
+        kafkaAdminServiceUnderTest.resetOffset(topic, partition, consumerGroup, type, offset);
+
+    assertEquals(GeneralResponseState.failure, resetResult.getState());
+    assertTrue(resetResult.getMsg().contains("has no partition"));
+  }
+
   @Test
   public void testDescribeLogDirsByBrokerAndTopic() {
     // Setup
-    final List<Integer> brokerList = Arrays.asList();
-    final List<String> topicList = Arrays.asList();
-    final Map<Integer, Map<String, LogDirInfo>> expectedResult = new HashMap<>();
+    final String topic = FIRST_TOPIC_TO_TEST;
+    final List<String> topicList = Arrays.asList(topic);
+
+    int brokerId = TEST_KAFKA_BOOTSTRAP_SERVERS_ID.get(0);
+    final List<Integer> brokerList = Arrays.asList(brokerId);
+    Map<Integer, List<Integer>> replicaAssignment = new HashMap<>();
+    replicaAssignment.put(0, brokerList);
+
+    // Create first topic with 1 partition on broker 111
+    createOneTopic(topic, replicaAssignment);
 
     // Run the test
     final Map<Integer, Map<String, LogDirInfo>> result =
         kafkaAdminServiceUnderTest.describeLogDirsByBrokerAndTopic(brokerList, topicList);
+
+    //     Verify the results
+    assertTrue(result.containsKey(brokerId));
+
+    Map<String, LogDirInfo> logDirInfoMap = result.get(brokerId);
+    String[] logDirsOnBroker = TEST_KAFKA_LOG_DIRS.get(0).split(",");
+    TopicPartition topicPartition = new TopicPartition(topic, 0);
+    boolean logDirExist = false;
+    for (int i = 0; i < logDirsOnBroker.length; i++) {
+      String logDir = logDirsOnBroker[i];
+      assertTrue(logDirInfoMap.containsKey(logDir));
+      LogDirInfo logDirInfo = logDirInfoMap.get(logDir);
+      logDirExist = logDirInfo.replicaInfos.containsKey(topicPartition);
+      if (logDirExist) {
+        break;
+      }
+    }
+    assertTrue(logDirExist);
+  }
+
+  @Test
+  public void testDescribeReplicaLogDirs() {
+    // Setup
+    final String topic = FIRST_TOPIC_TO_TEST;
+    int brokerId = TEST_KAFKA_BOOTSTRAP_SERVERS_ID.get(0);
+    final List<Integer> brokerList = Arrays.asList(brokerId);
+    Map<Integer, List<Integer>> replicaAssignment = new HashMap<>();
+    replicaAssignment.put(0, brokerList);
+
+    // Create first topic with 1 partition on broker 111
+    createOneTopic(topic, replicaAssignment);
+
+    TopicPartitionReplica topicPartitionReplica = new TopicPartitionReplica(topic, 0, brokerId);
+    final List<TopicPartitionReplica> replicas = Arrays.asList(topicPartitionReplica);
+    // Run the test
+    final Map<TopicPartitionReplica, ReplicaLogDirInfo> result =
+        kafkaAdminServiceUnderTest.describeReplicaLogDirs(replicas);
+
+    // Verify the results
+    String currentLogDir = result.get(topicPartitionReplica).getCurrentReplicaLogDir();
+    final Map<Integer, Map<String, LogDirInfo>> logDirsByBrokerAndTopic =
+        kafkaAdminServiceUnderTest.describeLogDirsByBrokerAndTopic(
+            brokerList, Arrays.asList(topic));
+    Map<String, LogDirInfo> logDirInfoMap = logDirsByBrokerAndTopic.get(brokerId);
+    assertTrue(logDirInfoMap.containsKey(currentLogDir));
+    TopicPartition topicPartition = new TopicPartition(topic, 0);
+    assertTrue(logDirInfoMap.get(currentLogDir).replicaInfos.containsKey(topicPartition));
+  }
+
+  @Test
+  public void testGetBeginningOffset() {
+    // Setup
+    final String topic = FIRST_TOPIC_TO_TEST;
+    final int partitionId = 0;
+    final int recordsCount = 5;
+
+    // Create first topic with 1 partition and 1 replica
+    createOneTopic(topic, 1, 1);
+
+    // Produce data
+    produceRecords(topic, recordsCount);
+
+    // Run the test
+    final long result = kafkaAdminServiceUnderTest.getBeginningOffset(topic, partitionId);
+
+    // Verify the results
+    assertEquals(0, result);
+  }
+
+  @Test
+  public void testGetEndOffset() {
+    // Setup
+    final String topic = FIRST_TOPIC_TO_TEST;
+    final int partitionId = 0;
+    final int recordsCount = 5;
+
+    // Create first topic with 1 partition and 1 replica
+    createOneTopic(topic, 1, 1);
+
+    // Produce data
+    produceRecords(topic, recordsCount);
+
+    // Run the test
+    final long result = kafkaAdminServiceUnderTest.getEndOffset(topic, partitionId);
+
+    // Verify the results
+    assertEquals(recordsCount, result);
+  }
+
+  @Test
+  public void testGetMessage() {
+    // Setup
+    final String topic = FIRST_TOPIC_TO_TEST;
+    final int partition = 0;
+    final long offset = 1L;
+    final String decoder = "decoder";
+    final String avroSchema = "avroSchema";
+    final int recordsCount = 5;
+
+    // Create first topic with 1 partition and 1 replica
+    createOneTopic(topic, 1, 1);
+
+    // Produce data
+    List<RecordMetadata> metadataList = produceRecords(topic, recordsCount);
+
+    // Run the test
+    final String result =
+        kafkaAdminServiceUnderTest.getMessage(topic, partition, offset, decoder, avroSchema);
+
+    // Verify the results
+    String expectedResult =
+        "Value: record"
+            + offset
+            + ", Offset: "
+            + offset
+            + ", timestamp:"
+            + metadataList.get(1).timestamp();
+    assertEquals(expectedResult, result);
+  }
+
+  @Test
+  public void testGetRecordByOffset() {
+    final Map<Class<Object>, List<Object>> testData =
+        new HashMap() {
+          {
+            put(String.class, Arrays.asList("my string"));
+            put(Short.class, Arrays.asList((short) 32767, (short) -32768));
+            put(Integer.class, Arrays.asList((int) 423412424, (int) -41243432));
+            put(Long.class, Arrays.asList(922337203685477580L, -922337203685477581L));
+            put(Float.class, Arrays.asList(5678567.12312f, -5678567.12341f));
+            put(Double.class, Arrays.asList(5678567.12312d, -5678567.12341d));
+            put(byte[].class, Arrays.asList("my string".getBytes()));
+            put(
+                ByteBuffer.class,
+                Arrays.asList(ByteBuffer.allocate(10).put("my string".getBytes())));
+            put(Bytes.class, Arrays.asList(new Bytes("my string".getBytes())));
+          }
+        };
+    // Setup
+    final String topic = FIRST_TOPIC_TO_TEST;
+    final int partition = 0;
+    final String avroSchema = "avroSchema";
+
+    // Create first topic
+    createOneTopic(topic, 1, 1);
+
+    // Produce records
+    try {
+      Map<Class<Object>, List<Long>> dataOffsetMap = produceRecords(topic, testData);
+      for (Map.Entry<Class<Object>, List<Long>> entry : dataOffsetMap.entrySet()) {
+        Class<Object> type = entry.getKey();
+        List<Long> offsetList = entry.getValue();
+        Serde<Object> serde = Serdes.serdeFrom(type);
+        for (int i = 0; i < offsetList.size(); i++) {
+          Long offset = offsetList.get(i);
+          String decoder = serde.deserializer().getClass().getSimpleName();
+          Record result =
+              kafkaAdminServiceUnderTest.getRecordByOffset(
+                  topic, partition, offset, decoder, avroSchema);
+          Object exceptedValue =
+              serde
+                  .deserializer()
+                  .deserialize(
+                      topic, serde.serializer().serialize(topic, testData.get(type).get(i)));
+          if (type.equals(ByteBuffer.class)) {
+            ByteBuffer byteBuffer = (ByteBuffer) exceptedValue;
+            assertEquals(new String(byteBuffer.array()), result.getValue());
+          } else if (type.equals(byte[].class)) {
+            assertEquals(new String((byte[]) exceptedValue), result.getValue());
+          } else {
+            assertEquals(exceptedValue.toString(), result.getValue());
+          }
+        }
+      }
+    } catch (Exception exception) {
+      log.error("Catch exception." + exception);
+    }
+  }
+
+  @Test
+  public void testGetRecordByOffsetWithInvalidDecoder() {
+    final Map<Class<Object>, List<Object>> testData =
+        new HashMap() {
+          {
+            put(String.class, Arrays.asList("my string"));
+          }
+        };
+    // Setup
+    final String topic = FIRST_TOPIC_TO_TEST;
+    final int partition = 0;
+    final String avroSchema = "avroSchema";
+
+    // Create first topic
+    createOneTopic(topic, 1, 1);
+
+    String decoder = "DoubleDeserializer";
+    // Produce records
+    try {
+      Map<Class<Object>, List<Long>> dataOffsetMap = produceRecords(topic, testData);
+      for (Map.Entry<Class<Object>, List<Long>> entry : dataOffsetMap.entrySet()) {
+        List<Long> offsetList = entry.getValue();
+        for (int i = 0; i < offsetList.size(); i++) {
+          Long offset = offsetList.get(i);
+          // Use DoubleDeserializer to dese string record
+          Record result =
+              kafkaAdminServiceUnderTest.getRecordByOffset(
+                  topic, partition, offset, decoder, avroSchema);
+          System.out.println("result:" + result);
+        }
+      }
+    } catch (ApiException apiException) {
+      assertTrue(
+          apiException
+              .getMessage()
+              .contains(
+                  "Consume "
+                      + topic
+                      + "-"
+                      + partition
+                      + " offset:"
+                      + 0
+                      + " using " + decoder + " exception."));
+    }
+  }
+
+  @Test
+  public void testGetRecordByAvroDeseriliazer() {
+
+  }
+  @Test
+  public void testHealthCheck() {
+    // Setup
+    final HealthCheckResult expectedResult = null;
+
+    // Run the test
+    final HealthCheckResult result = kafkaAdminServiceUnderTest.healthCheck();
+
+    // Verify the results
+//    assertEquals(expectedResult, result);
+  }
+  /*
+  @Test
+  public void testGetConfigInZk() {
+    // Setup
+    final Type type = null;
+    final String name = "name";
+    final Properties expectedResult = new Properties();
+
+    // Run the test
+    final Properties result = kafkaAdminServiceUnderTest.getConfigInZk(type, name);
+
+    // Verify the results
+    assertEquals(expectedResult, result);
+  }
+
+  @Test
+  public void testUpdateBrokerDynConf() {
+    // Setup
+    final int brokerId = 0;
+    final Properties propsToBeUpdated = new Properties();
+    final Properties expectedResult = new Properties();
+
+    // Run the test
+    final Properties result =
+        kafkaAdminServiceUnderTest.updateBrokerDynConf(brokerId, propsToBeUpdated);
+
+    // Verify the results
+    assertEquals(expectedResult, result);
+  }
+
+  @Test
+  public void testRemoveConfigInZk() {
+    // Setup
+    final Type type = null;
+    final String name = "name";
+    final List<String> configKeysToBeRemoved = Arrays.asList();
+
+    // Run the test
+    kafkaAdminServiceUnderTest.removeConfigInZk(type, name, configKeysToBeRemoved);
+
+    // Verify the results
+  }
+
+  @Test
+  public void testDescribeConfig() {
+    // Setup
+    final Type type = null;
+    final String name = "name";
+    final Collection<ConfigEntry> expectedResult = Arrays.asList();
+
+    // Run the test
+    final Collection<ConfigEntry> result = kafkaAdminServiceUnderTest.describeConfig(type, name);
+
+    // Verify the results
+    assertEquals(expectedResult, result);
+  }
+
+  @Test
+  public void testAlterConfig() {
+    // Setup
+    final Type type = null;
+    final String name = "name";
+    final Collection<ConfigEntry> configEntries = Arrays.asList();
+    final boolean expectedResult = false;
+
+    // Run the test
+    final boolean result = kafkaAdminServiceUnderTest.alterConfig(type, name, configEntries);
+
+    // Verify the results
+    assertEquals(expectedResult, result);
+  }
+
+  @Test
+  public void testUpdateTopicConf() {
+    // Setup
+    final String topic = "topic";
+    final Properties props = new Properties();
+    final Collection<CustomConfigEntry> expectedResult = Arrays.asList();
+
+    // Run the test
+    final Collection<CustomConfigEntry> result =
+        kafkaAdminServiceUnderTest.updateTopicConf(topic, props);
+
+    // Verify the results
+    assertEquals(expectedResult, result);
+  }
+
+  @Test
+  public void testGetTopicConf() {
+    // Setup
+    final String topic = "topic";
+    final Collection<CustomConfigEntry> expectedResult = Arrays.asList();
+
+    // Run the test
+    final Collection<CustomConfigEntry> result = kafkaAdminServiceUnderTest.getTopicConf(topic);
+
+    // Verify the results
+    assertEquals(expectedResult, result);
+  }
+
+  @Test
+  public void testGetTopicConfByKey() {
+    // Setup
+    final String topic = "topic";
+    final String key = "key";
+    final Properties expectedResult = new Properties();
+
+    // Run the test
+    final Properties result = kafkaAdminServiceUnderTest.getTopicConfByKey(topic, key);
+
+    // Verify the results
+    assertEquals(expectedResult, result);
+  }
+
+  @Test
+  public void testUpdateTopicConfByKey() {
+    // Setup
+    final String topic = "topic";
+    final String key = "key";
+    final String value = "value";
+    final Collection<CustomConfigEntry> expectedResult = Arrays.asList();
+
+    // Run the test
+    final Collection<CustomConfigEntry> result =
+        kafkaAdminServiceUnderTest.updateTopicConfByKey(topic, key, value);
+
+    // Verify the results
+    assertEquals(expectedResult, result);
+  }
+
+  @Test
+  public void testGetLastCommitTime() {
+    // Setup
+    final String consumerGroup = "consumerGroup";
+    final String topic = "topic";
+    final ConsumerType type = null;
+    final Map<String, Map<Integer, Long>> expectedResult = new HashMap<>();
+
+    // Run the test
+    final Map<String, Map<Integer, Long>> result =
+        kafkaAdminServiceUnderTest.getLastCommitTime(consumerGroup, topic, type);
 
     // Verify the results
     assertEquals(expectedResult, result);
   }
 
 
-    @Test
-    public void testDescribeReplicaLogDirs() {
-      // Setup
-      final List<TopicPartitionReplica> replicas = Arrays.asList();
-      final Map<TopicPartitionReplica, ReplicaLogDirInfo> expectedResult = new HashMap<>();
-
-      // Run the test
-      final Map<TopicPartitionReplica, ReplicaLogDirInfo> result =
-          kafkaAdminServiceUnderTest.describeReplicaLogDirs(replicas);
-
-      // Verify the results
-      assertEquals(expectedResult, result);
-    }
-
-    @Test
-    public void testGetConfigInZk() {
-      // Setup
-      final Type type = null;
-      final String name = "name";
-      final Properties expectedResult = new Properties();
-
-      // Run the test
-      final Properties result = kafkaAdminServiceUnderTest.getConfigInZk(type, name);
-
-      // Verify the results
-      assertEquals(expectedResult, result);
-    }
-
-    @Test
-    public void testUpdateBrokerDynConf() {
-      // Setup
-      final int brokerId = 0;
-      final Properties propsToBeUpdated = new Properties();
-      final Properties expectedResult = new Properties();
-
-      // Run the test
-      final Properties result =
-          kafkaAdminServiceUnderTest.updateBrokerDynConf(brokerId, propsToBeUpdated);
-
-      // Verify the results
-      assertEquals(expectedResult, result);
-    }
-
-    @Test
-    public void testRemoveConfigInZk() {
-      // Setup
-      final Type type = null;
-      final String name = "name";
-      final List<String> configKeysToBeRemoved = Arrays.asList();
-
-      // Run the test
-      kafkaAdminServiceUnderTest.removeConfigInZk(type, name, configKeysToBeRemoved);
-
-      // Verify the results
-    }
-
-    @Test
-    public void testDescribeConfig() {
-      // Setup
-      final Type type = null;
-      final String name = "name";
-      final Collection<ConfigEntry> expectedResult = Arrays.asList();
-
-      // Run the test
-      final Collection<ConfigEntry> result = kafkaAdminServiceUnderTest.describeConfig(type, name);
-
-      // Verify the results
-      assertEquals(expectedResult, result);
-    }
-
-    @Test
-    public void testAlterConfig() {
-      // Setup
-      final Type type = null;
-      final String name = "name";
-      final Collection<ConfigEntry> configEntries = Arrays.asList();
-      final boolean expectedResult = false;
-
-      // Run the test
-      final boolean result = kafkaAdminServiceUnderTest.alterConfig(type, name, configEntries);
-
-      // Verify the results
-      assertEquals(expectedResult, result);
-    }
-
-    @Test
-    public void testUpdateTopicConf() {
-      // Setup
-      final String topic = "topic";
-      final Properties props = new Properties();
-      final Collection<CustomConfigEntry> expectedResult = Arrays.asList();
-
-      // Run the test
-      final Collection<CustomConfigEntry> result =
-          kafkaAdminServiceUnderTest.updateTopicConf(topic, props);
-
-      // Verify the results
-      assertEquals(expectedResult, result);
-    }
-
-    @Test
-    public void testGetTopicConf() {
-      // Setup
-      final String topic = "topic";
-      final Collection<CustomConfigEntry> expectedResult = Arrays.asList();
-
-      // Run the test
-      final Collection<CustomConfigEntry> result = kafkaAdminServiceUnderTest.getTopicConf(topic);
-
-      // Verify the results
-      assertEquals(expectedResult, result);
-    }
-
-    @Test
-    public void testGetTopicConfByKey() {
-      // Setup
-      final String topic = "topic";
-      final String key = "key";
-      final Properties expectedResult = new Properties();
-
-      // Run the test
-      final Properties result = kafkaAdminServiceUnderTest.getTopicConfByKey(topic, key);
-
-      // Verify the results
-      assertEquals(expectedResult, result);
-    }
-
-    @Test
-    public void testUpdateTopicConfByKey() {
-      // Setup
-      final String topic = "topic";
-      final String key = "key";
-      final String value = "value";
-      final Collection<CustomConfigEntry> expectedResult = Arrays.asList();
-
-      // Run the test
-      final Collection<CustomConfigEntry> result =
-          kafkaAdminServiceUnderTest.updateTopicConfByKey(topic, key, value);
-
-      // Verify the results
-      assertEquals(expectedResult, result);
-    }
-
-
-
-    @Test
-    public void testIsOldConsumerGroup() {
-      // Setup
-      final String consumerGroup = "consumerGroup";
-      final boolean expectedResult = false;
-
-      // Run the test
-      final boolean result = kafkaAdminServiceUnderTest.isOldConsumerGroup(consumerGroup);
-
-      // Verify the results
-      assertEquals(expectedResult, result);
-    }
-
-    @Test
-    public void testIsNewConsumerGroup() {
-      // Setup
-      final String consumerGroup = "consumerGroup";
-      final boolean expectedResult = false;
-
-      // Run the test
-      final boolean result = kafkaAdminServiceUnderTest.isNewConsumerGroup(consumerGroup);
-
-      // Verify the results
-      assertEquals(expectedResult, result);
-    }
-
-    @Test
-    public void testDescribeConsumerGroup() {
-      // Setup
-      final String consumerGroup = "consumerGroup";
-      final ConsumerType type = null;
-      final Map<String, List<ConsumerGroupDesc>> expectedResult = new HashMap<>();
-
-      // Run the test
-      final Map<String, List<ConsumerGroupDesc>> result =
-          kafkaAdminServiceUnderTest.describeConsumerGroup(consumerGroup, type);
-
-      // Verify the results
-      assertEquals(expectedResult, result);
-    }
-
-
-
-    @Test
-    public void testDescribeOldConsumerGroup() {
-      // Setup
-      final String consumerGroup = "consumerGroup";
-      final boolean filtered = false;
-      final String topic = "topic";
-      final List<PartitionAssignmentState> expectedResult = Arrays.asList();
-
-      // Run the test
-      final List<PartitionAssignmentState> result =
-          kafkaAdminServiceUnderTest.describeOldConsumerGroup(consumerGroup, filtered, topic);
-
-      // Verify the results
-      assertEquals(expectedResult, result);
-    }
-
-    @Test
-    public void testDescribeNewConsumerGroupByTopic() {
-      // Setup
-      final String consumerGroup = "consumerGroup";
-      final String topic = "topic";
-      final List<ConsumerGroupDesc> expectedResult = Arrays.asList();
-
-      // Run the test
-      final List<ConsumerGroupDesc> result =
-          kafkaAdminServiceUnderTest.describeNewConsumerGroupByTopic(consumerGroup, topic);
-
-      // Verify the results
-      assertEquals(expectedResult, result);
-    }
-
-    @Test
-    public void testDescribeOldConsumerGroupByTopic() {
-      // Setup
-      final String consumerGroup = "consumerGroup";
-      final String topic = "topic";
-      final List<ConsumerGroupDesc> expectedResult = Arrays.asList();
-
-      // Run the test
-      final List<ConsumerGroupDesc> result =
-          kafkaAdminServiceUnderTest.describeOldConsumerGroupByTopic(consumerGroup, topic);
-
-      // Verify the results
-      assertEquals(expectedResult, result);
-    }
-
-    @Test
-    public void testAddPartitions() {
-      // Setup
-      final List<AddPartition> addPartitions = Arrays.asList();
-      final Map<String, GeneralResponse> expectedResult = new HashMap<>();
-
-      // Run the test
-      final Map<String, GeneralResponse> result =
-          kafkaAdminServiceUnderTest.addPartitions(addPartitions);
-
-      // Verify the results
-      assertEquals(expectedResult, result);
-    }
-
-    @Test
-    public void testGenerateReassignPartition() {
-      // Setup
-      final ReassignWrapper reassignWrapper = null;
-      final List<String> expectedResult = Arrays.asList();
-
-      // Run the test
-      final List<String> result =
-          kafkaAdminServiceUnderTest.generateReassignPartition(reassignWrapper);
-
-      // Verify the results
-      assertEquals(expectedResult, result);
-    }
-
-    @Test
-    public void testExecuteReassignPartition() {
-      // Setup
-      final String reassignStr = "reassignStr";
-      final Long interBrokerThrottle = 0L;
-      final Long replicaAlterLogDirsThrottle = 0L;
-      final Long timeoutMs = 0L;
-      final Map<String, Object> expectedResult = new HashMap<>();
-
-      // Run the test
-      final Map<String, Object> result =
-          kafkaAdminServiceUnderTest.executeReassignPartition(
-              reassignStr, interBrokerThrottle, replicaAlterLogDirsThrottle, timeoutMs);
-
-      // Verify the results
-      assertEquals(expectedResult, result);
-    }
-
-    @Test
-    public void testCheckReassignStatusByStr() {
-      // Setup
-      final String reassignStr = "reassignStr";
-      final Map<String, Object> expectedResult = new HashMap<>();
-
-      // Run the test
-      final Map<String, Object> result =
-          kafkaAdminServiceUnderTest.checkReassignStatusByStr(reassignStr);
-
-      // Verify the results
-      assertEquals(expectedResult, result);
-    }
-
-    @Test
-    public void testGetMessage() {
-      // Setup
-      final String topic = "topic";
-      final int partition = 0;
-      final long offset = 0L;
-      final String decoder = "decoder";
-      final String avroSchema = "avroSchema";
-      final String expectedResult = "result";
-
-      // Run the test
-      final String result =
-          kafkaAdminServiceUnderTest.getMessage(topic, partition, offset, decoder, avroSchema);
-
-      // Verify the results
-      assertEquals(expectedResult, result);
-    }
-
-    @Test
-    public void testGetRecordByOffset() {
-      // Setup
-      final String topic = "topic";
-      final int partition = 0;
-      final long offset = 0L;
-      final String decoder = "decoder";
-      final String avroSchema = "avroSchema";
-      final Record expectedResult = null;
-
-      // Run the test
-      final Record result =
-          kafkaAdminServiceUnderTest.getRecordByOffset(topic, partition, offset, decoder, avroSchema);
-
-      // Verify the results
-      assertEquals(expectedResult, result);
-    }
-
-    @Test
-    public void testResetOffset() {
-      // Setup
-      final String topic = "topic";
-      final int partition = 0;
-      final String consumerGroup = "consumerGroup";
-      final ConsumerType type = null;
-      final String offset = "offset";
-      final GeneralResponse expectedResult = null;
-
-      // Run the test
-      final GeneralResponse result =
-          kafkaAdminServiceUnderTest.resetOffset(topic, partition, consumerGroup, type, offset);
-
-      // Verify the results
-      assertEquals(expectedResult, result);
-    }
-
-    @Test
-    public void testGetLastCommitTime() {
-      // Setup
-      final String consumerGroup = "consumerGroup";
-      final String topic = "topic";
-      final ConsumerType type = null;
-      final Map<String, Map<Integer, Long>> expectedResult = new HashMap<>();
-
-      // Run the test
-      final Map<String, Map<Integer, Long>> result =
-          kafkaAdminServiceUnderTest.getLastCommitTime(consumerGroup, topic, type);
-
-      // Verify the results
-      assertEquals(expectedResult, result);
-    }
-
-    @Test
-    public void testDeleteConsumerGroup() {
-      // Setup
-      final String consumerGroup = "consumerGroup";
-      final ConsumerType type = null;
-      final GeneralResponse expectedResult = null;
-
-      // Run the test
-      final GeneralResponse result =
-          kafkaAdminServiceUnderTest.deleteConsumerGroup(consumerGroup, type);
-
-      // Verify the results
-      assertEquals(expectedResult, result);
-    }
-
-    @Test
-    public void testGetBeginningOffset() {
-      // Setup
-      final String topic = "topic";
-      final int partitionId = 0;
-      final long expectedResult = 0L;
-
-      // Run the test
-      final long result = kafkaAdminServiceUnderTest.getBeginningOffset(topic, partitionId);
-
-      // Verify the results
-      assertEquals(expectedResult, result);
-    }
-
-    @Test
-    public void testGetEndOffset() {
-      // Setup
-      final String topic = "topic";
-      final int partitionId = 0;
-      final long expectedResult = 0L;
-
-      // Run the test
-      final long result = kafkaAdminServiceUnderTest.getEndOffset(topic, partitionId);
-
-      // Verify the results
-      assertEquals(expectedResult, result);
-    }
-
-    @Test
-    public void testCountPartition() {
-      // Setup
-      final String topic = "topic";
-      final Map<Integer, Long> expectedResult = new HashMap<>();
-
-      // Run the test
-      final Map<Integer, Long> result = kafkaAdminServiceUnderTest.countPartition(topic);
-
-      // Verify the results
-      assertEquals(expectedResult, result);
-    }
-
-    @Test
-    public void testHealthCheck() {
-      // Setup
-      final HealthCheckResult expectedResult = null;
-
-      // Run the test
-      final HealthCheckResult result = kafkaAdminServiceUnderTest.healthCheck();
-
-      // Verify the results
-      assertEquals(expectedResult, result);
-    }
-    */
+  */
 }

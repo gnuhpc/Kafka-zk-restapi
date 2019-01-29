@@ -5,9 +5,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
-//import static org.testng.Assert.assertFalse;
-//import static org.testng.Assert.assertTrue;
 
+import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -21,7 +20,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import kafka.zk.KafkaZkClient;
 import lombok.extern.log4j.Log4j;
+import org.apache.avro.Schema;
+import org.apache.avro.generic.GenericDatumWriter;
+import org.apache.avro.generic.GenericRecord;
+import org.apache.avro.io.BinaryEncoder;
+import org.apache.avro.io.DatumWriter;
+import org.apache.avro.io.EncoderFactory;
+import org.apache.curator.RetryPolicy;
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.kafka.clients.admin.DescribeReplicaLogDirsResult.ReplicaLogDirInfo;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -39,6 +50,7 @@ import org.apache.kafka.common.requests.DescribeLogDirsResponse.LogDirInfo;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.utils.Bytes;
+import org.apache.kafka.common.utils.Time;
 import org.gnuhpc.bigdata.config.KafkaConfig;
 import org.gnuhpc.bigdata.config.ZookeeperConfig;
 import org.gnuhpc.bigdata.constant.ConsumerType;
@@ -63,6 +75,7 @@ import org.gnuhpc.bigdata.model.TopicBrief;
 import org.gnuhpc.bigdata.model.TopicDetail;
 import org.gnuhpc.bigdata.model.TopicMeta;
 import org.gnuhpc.bigdata.model.TopicPartitionReplicaAssignment;
+import org.gnuhpc.bigdata.service.avro.User;
 import org.gnuhpc.bigdata.utils.KafkaUtils;
 import org.gnuhpc.bigdata.utils.ZookeeperUtils;
 import org.junit.After;
@@ -90,16 +103,17 @@ public class KafkaAdminServiceTest {
   private static final List<Integer> TEST_KAFKA_BOOTSTRAP_SERVERS_ID = Arrays.asList(111, 113, 115);
   private static final int KAFKA_NODES_COUNT = TEST_KAFKA_BOOTSTRAP_SERVERS_ID.size();
   private static final String TEST_ZK = "localhost:2183";
-  private static final int TEST_CONTROLLER_ID = 115;
+  private static final int TEST_CONTROLLER_ID = 111;
   private static final List<String> TEST_KAFKA_LOG_DIRS =
       Arrays.asList(
           "/home/xiangli/bigdata/kafka_2.11-1.1.1/kafka-logs,/home/xiangli/bigdata/kafka_2.11-1.1.1/kafka111_2-logs,/home/xiangli/bigdata/kafka_2.11-1.1.1/kafka111_3-logs",
           "/home/xiangli/bigdata/kafka_2.11-1.1.1/kafka113-logs,/home/xiangli/bigdata/kafka_2.11-1.1.1/kafka113_2-logs,/home/xiangli/bigdata/kafka_2.11-1.1.1/kafka113_3-logs",
           "/home/xiangli/bigdata/kafka_2.11-1.1.1/kafka115-logs,/home/xiangli/bigdata/kafka_2.11-1.1.1/kafka115_2-logs,/home/xiangli/bigdata/kafka_2.11-1.1.1/kafka115_3-logs");
 
-  private static final String FIRST_TOPIC_TO_TEST = "first2";
+  private static final String FIRST_TOPIC_TO_TEST = "first";
   private static final String SECOND_TOPIC_TO_TEST = "second";
   private static final String NON_EXIST_TOPIC_TO_TEST = "nontopic";
+  private static final String HEALTH_CHECK_TOPIC_TO_TEST = "healthtest";
   private static final int TEST_TOPIC_PARTITION_COUNT = 2;
   private static final String FIRST_CONSUMER_GROUP_TO_TEST = "testConsumerGroup1";
   private static final String SECOND_CONSUMER_GROUP_TO_TEST = "testConsumerGroup2";
@@ -110,27 +124,64 @@ public class KafkaAdminServiceTest {
   public static final int GROUP_METADATA_TOPIC_PARTITION_COUNT = 50;
 
   private Set<String> allTopicsInClusterBeforeTest;
+  private static final KafkaZkClient kafkaZkClient =
+      KafkaZkClient.apply(
+          TEST_ZK,
+          false,
+          5000,
+          5000,
+          Integer.MAX_VALUE,
+          Time.SYSTEM,
+          "kafka.zk.rest",
+          "rest");
+
+  private static final RetryPolicy retryPolicy =
+      new ExponentialBackoffRetry(1000, 5, 60000);
+
+  private static CuratorFramework curatorClient = null;
 
   @BeforeClass
-  public static void start() {}
+  public static void start() {
+    RetryPolicy retryPolicy =
+        new ExponentialBackoffRetry(5000, 5, 60000);
+
+    // 2.初始化客户端
+    curatorClient =
+        CuratorFrameworkFactory.builder()
+            .connectString(TEST_ZK)
+            .sessionTimeoutMs(5000)
+            .connectionTimeoutMs(5000)
+            .retryPolicy(retryPolicy)
+            //                .namespace("kafka-rest")        //命名空间隔离
+            .build();
+    curatorClient.start();
+    try {
+      curatorClient.blockUntilConnected(5000, TimeUnit.MILLISECONDS);
+    } catch (InterruptedException interruptedException) {
+      log.warn("Curator Client connect is interrupted." + interruptedException);
+    }
+  }
 
   @Before
   public void setUp() throws InterruptedException {
     initMocks(this);
     when(mockKafkaConfig.getBrokers()).thenReturn(TEST_KAFKA_BOOTSTRAP_SERVERS);
+    when(mockKafkaConfig.getHealthCheckTopic()).thenReturn(HEALTH_CHECK_TOPIC_TO_TEST);
     when(mockZookeeperConfig.getUris()).thenReturn(TEST_ZK);
 
     mockKafkaUtils.setKafkaConfig(mockKafkaConfig);
     mockZookeeperUtils.setZookeeperConfig(mockZookeeperConfig);
+    mockZookeeperUtils.setKafkaZkClient(kafkaZkClient);
+    mockZookeeperUtils.setCuratorClient(curatorClient);
 
     clean();
     allTopicsInClusterBeforeTest = kafkaAdminServiceUnderTest.getAllTopics();
   }
 
-  private void clean() {
+  private void clean() throws InterruptedException {
     // Delete test topics
     kafkaAdminServiceUnderTest.deleteTopicList(
-        Arrays.asList(FIRST_TOPIC_TO_TEST, SECOND_TOPIC_TO_TEST));
+        Arrays.asList(FIRST_TOPIC_TO_TEST, SECOND_TOPIC_TO_TEST, HEALTH_CHECK_TOPIC_TO_TEST));
 
     // Delete test consumers
     GeneralResponse deleteConsumer1Response =
@@ -157,7 +208,9 @@ public class KafkaAdminServiceTest {
 
   @After
   public void clearDirtyData() throws InterruptedException {
-    //    clean();
+    clean();
+
+//    Thread.sleep(10000);
   }
 
   private TopicDetail generateTopicDetail(
@@ -172,6 +225,29 @@ public class KafkaAdminServiceTest {
   private TopicDetail generateTopicDetailByReplicaAssignment(
       String topicName, HashMap<Integer, List<Integer>> replicaAssignments) {
     return TopicDetail.builder().name(topicName).replicasAssignments(replicaAssignments).build();
+  }
+
+  @Test
+  public void testHealthCheckButHealthTopicNonExist() throws InterruptedException {
+    // Run the test
+    final HealthCheckResult healthCheckResult = kafkaAdminServiceUnderTest.healthCheck();
+
+    // Verify the results
+    assertEquals("unknown", healthCheckResult.getStatus());
+    assertTrue(healthCheckResult.msg.contains("Non-Exist"));
+  }
+
+  @Test
+  public void testHealthCheck() {
+    // Set up
+    // Create health check topic
+    createOneTopic(HEALTH_CHECK_TOPIC_TO_TEST, 1, 1);
+
+    // Run the test
+    final HealthCheckResult healthCheckResult = kafkaAdminServiceUnderTest.healthCheck();
+
+    // Verify the results
+    assertEquals("ok", healthCheckResult.getStatus());
   }
 
   @Test
@@ -1572,7 +1648,6 @@ public class KafkaAdminServiceTest {
       } catch (ClassNotFoundException classNotFoundException) {
         log.error("Encoder class not found. " + classNotFoundException);
       }
-      System.out.println("////type:" + type + ", offsetList:" + offsetList);
       dataOffsetMap.put(type, offsetList);
     }
 
@@ -1580,33 +1655,39 @@ public class KafkaAdminServiceTest {
     return dataOffsetMap;
   }
 
-  private List<RecordMetadata> produceRecords(String topic, int recordsCount, String encoder) {
+  private List<Long> produceAvroRecords(String topic, List<byte[]> testData) {
     KafkaProducer kafkaProducer = null;
-    try {
-      kafkaProducer = mockKafkaUtils.createProducer(encoder);
-    } catch (ClassNotFoundException exception) {
-      System.out.println("///exception:" + exception);
-    }
-    List<RecordMetadata> recordMetadataList = new ArrayList<>();
 
-    for (int i = 0; i < recordsCount; i++) {
-      String value = "record" + i;
-      //      ProducerRecord record = new ProducerRecord(topic, new Bytes(value.getBytes()));
-      //      ProducerRecord record = new ProducerRecord(topic, value.getBytes());
-      //      ByteBuffer byteBuffer =
-      // ByteBuffer.allocate(value.getBytes().length).put(value.getBytes());
-      ProducerRecord record = new ProducerRecord(topic, i + 0.01);
-      try {
-        RecordMetadata metadata = (RecordMetadata) kafkaProducer.send(record).get();
-        recordMetadataList.add(metadata);
-        System.out.println("metada:" + metadata.offset());
-      } catch (Exception exception) {
-        log.error("Produce record:" + i + " error." + exception);
+    Class<byte[]> type = byte[].class;
+    List<Long> offsetList = new ArrayList<>();
+    try {
+      kafkaProducer =
+          mockKafkaUtils.createProducer(
+              Serdes.serdeFrom(type).serializer().getClass().getCanonicalName());
+      for (byte[] value : testData) {
+        ProducerRecord record = new ProducerRecord(topic, value);
+        try {
+          RecordMetadata metadata = (RecordMetadata) kafkaProducer.send(record).get();
+          log.info(
+              "Avro record has sent to topic:"
+                  + topic
+                  + ", partition:"
+                  + metadata.partition()
+                  + ", offset:"
+                  + metadata.offset());
+          Long offset = metadata.offset();
+          offsetList.add(offset);
+        } catch (Exception exception) {
+          log.error("Send avro record exception." + exception);
+        }
       }
+    } catch (ClassNotFoundException classNotFoundException) {
+      log.error("Encoder class not found. " + classNotFoundException);
     }
 
     kafkaProducer.close();
-    return recordMetadataList;
+
+    return offsetList;
   }
 
   @Test
@@ -2242,7 +2323,6 @@ public class KafkaAdminServiceTest {
           Record result =
               kafkaAdminServiceUnderTest.getRecordByOffset(
                   topic, partition, offset, decoder, avroSchema);
-          System.out.println("result:" + result);
         }
       }
     } catch (ApiException apiException) {
@@ -2256,25 +2336,58 @@ public class KafkaAdminServiceTest {
                       + partition
                       + " offset:"
                       + 0
-                      + " using " + decoder + " exception."));
+                      + " using "
+                      + decoder
+                      + " exception."));
     }
   }
 
   @Test
-  public void testGetRecordByAvroDeseriliazer() {
+  public void testGetRecordByAvroDeseriliazer() throws InterruptedException {
+    String topic = FIRST_TOPIC_TO_TEST;
 
+    // create first topic
+    createOneTopic();
+
+    String schemaStr =
+        "{\"namespace\": \"com.example.avro.model\",\n"
+            + " \"type\": \"record\",\n"
+            + " \"name\": \"User\",\n"
+            + " \"fields\": [\n"
+            + "     {\"name\": \"name\", \"type\": \"string\"},\n"
+            + "     {\"name\": \"favorite_number\",  \"type\": [\"int\", \"null\"]},\n"
+            + "     {\"name\": \"favorite_color\", \"type\": [\"string\", \"null\"]}\n"
+            + " ]\n"
+            + "}";
+
+    Schema schema = new Schema.Parser().parse(schemaStr);
+
+    User user = new User("cmbc", 1, "green");
+    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+    BinaryEncoder binaryEncoder =
+        EncoderFactory.get().directBinaryEncoder(byteArrayOutputStream, null);
+    DatumWriter<GenericRecord> datumWriter = new GenericDatumWriter<GenericRecord>(schema);
+    byte[] bytes = null;
+    List<Long> offsetList = new ArrayList<>();
+    try {
+      datumWriter.write(user, binaryEncoder);
+      binaryEncoder.flush();
+      bytes = byteArrayOutputStream.toByteArray();
+      offsetList = produceAvroRecords(topic, Arrays.asList(bytes));
+      byteArrayOutputStream.close();
+    } catch (Exception exception) {
+      log.error("exception:" + exception);
+    }
+
+    String decoder = "AvroDeserializer";
+    if (offsetList.size() > 0) {
+      Record result =
+          kafkaAdminServiceUnderTest.getRecordByOffset(
+              topic, 0, offsetList.get(0), decoder, schemaStr);
+      assertEquals(user.toString(), result.getValue());
+    }
   }
-  @Test
-  public void testHealthCheck() {
-    // Setup
-    final HealthCheckResult expectedResult = null;
 
-    // Run the test
-    final HealthCheckResult result = kafkaAdminServiceUnderTest.healthCheck();
-
-    // Verify the results
-//    assertEquals(expectedResult, result);
-  }
   /*
   @Test
   public void testGetConfigInZk() {
@@ -2420,7 +2533,5 @@ public class KafkaAdminServiceTest {
     // Verify the results
     assertEquals(expectedResult, result);
   }
-
-
   */
 }

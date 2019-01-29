@@ -173,7 +173,7 @@ public class KafkaController {
       @PathVariable int partition,
       @PathVariable long offset,
       @RequestParam(required = false) String decoder) {
-    return kafkaAdminService.getRecordByOffset(topic, partition, offset, decoder, "").getValue().toString();
+    return kafkaAdminService.getRecordByOffset(topic, partition, offset, decoder, "").getValue();
   }
 
   @GetMapping(value = "/topics/{topic}")

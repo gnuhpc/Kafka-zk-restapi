@@ -277,6 +277,7 @@ public class ZookeeperUtils {
 
   public CuratorFramework createZkClient() {
     if (this.curatorClient == null) {
+      log.info("///////Curator Client is null");
       // 1.设置重试策略,重试时间计算策略sleepMs = baseSleepTimeMs * Math.max(1, random.nextInt(1 << (retryCount +
       // 1)));
       RetryPolicy retryPolicy =
@@ -315,6 +316,7 @@ public class ZookeeperUtils {
 
   public KafkaZkClient createKafkaZkClient() {
     if (kafkaZkClient == null) {
+      log.info("KafkaZkClient is null. Prepare to create.");
       try {
         kafkaZkClient =
             KafkaZkClient.apply(
@@ -335,6 +337,7 @@ public class ZookeeperUtils {
 
   public ZkUtils getZkUtils() {
     if (zkUtils == null) {
+      log.info("ZkUtils is null. Prepare to create.");
       ZkClient zkClient = new ZkClient(zookeeperConfig.getUris(), SESSION_TIMEOUT, CONNECTION_TIMEOUT, ZKStringSerializer$.MODULE$);
       zkUtils = new ZkUtils(zkClient, new ZkConnection(zookeeperConfig.getUris()), false);
     }

@@ -1,6 +1,7 @@
 package org.gnuhpc.bigdata.utils;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -24,6 +25,7 @@ import org.gnuhpc.bigdata.config.KafkaConfig;
 import org.gnuhpc.bigdata.config.ZookeeperConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
+import scala.collection.JavaConverters;
 
 /** Created by gnuhpc on 2017/7/12. */
 @Log4j
@@ -51,6 +53,7 @@ public class KafkaUtils {
       put("ByteArrayDeserializer", byte[].class);
       put("ByteBufferDeserializer", ByteBuffer.class);
       put("BytesDeserializer", Bytes.class);
+      put("AvroDeserializer", byte[].class);
     }
   };
 

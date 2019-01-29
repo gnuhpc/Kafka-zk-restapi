@@ -84,7 +84,6 @@ import org.apache.kafka.clients.admin.ListTopicsResult;
 import org.apache.kafka.clients.admin.NewPartitions;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.admin.TopicDescription;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -105,7 +104,6 @@ import org.apache.kafka.common.internals.Topic;
 import org.apache.kafka.common.protocol.Errors;
 import org.apache.kafka.common.requests.DescribeLogDirsResponse.LogDirInfo;
 import org.apache.kafka.common.serialization.Serdes;
-import org.apache.kafka.common.serialization.StringDeserializer;
 import org.gnuhpc.bigdata.CollectionConvertor;
 import org.gnuhpc.bigdata.componet.OffsetStorage;
 import org.gnuhpc.bigdata.config.KafkaConfig;
@@ -178,6 +176,8 @@ public class KafkaAdminService {
   private ZkUtils zkUtils;
 
   private org.apache.kafka.clients.admin.AdminClient kafkaAdminClient = null;
+
+  private AdminClient oldAdminClient = null;
 
   private scala.Option<String> none = scala.Option.apply(null);
 
@@ -266,7 +266,6 @@ public class KafkaAdminService {
               });
     }
 
-    System.out.println("//////create results:" + createResults.toString());
     return createResults;
   }
 
@@ -816,14 +815,18 @@ public class KafkaAdminService {
 
     if (type == null || type == ConsumerType.OLD) {
       Set<String> oldConsumerGroupList = listAllOldConsumerGroups();
-      if (oldConsumerGroupList.size() != 0) {
+      if (oldConsumerGroupList == null || oldConsumerGroupList.size() == 0) {
+        result.put("old", new HashSet<>());
+      } else {
         result.put("old", oldConsumerGroupList);
       }
     }
 
     if (type == null || type == ConsumerType.NEW) {
       Set<String> newConsumerGroupList = listAllNewConsumerGroups();
-      if (newConsumerGroupList.size() != 0) {
+      if (newConsumerGroupList == null || newConsumerGroupList.size() == 0) {
+        result.put("new", new HashSet<>());
+      } else {
         result.put("new", newConsumerGroupList);
       }
     }
@@ -1662,8 +1665,6 @@ public class KafkaAdminService {
             scala.collection.mutable.HashMap<TopicPartition, Seq<Object>>,
             scala.collection.Map<TopicPartitionReplica, String>>
         reassignPlan = genReassignPlan(reassignJsonStr);
-    System.out.println("///////reassignStr:" + reassignJsonStr);
-    System.out.println("//////reassignPlan:" + reassignPlan);
     scala.collection.mutable.HashMap<TopicPartition, Seq<Object>> partitionsToBeReassignedMap =
         reassignPlan.getFirst();
     scala.collection.Map<TopicPartitionReplica, String> replicatAssignment =
@@ -1774,23 +1775,27 @@ public class KafkaAdminService {
 
     checkOffsetValid(topic, partition, offset);
 
-    if (avroSchema != null && !avroSchema.isEmpty()) {
-      return getAvroRecordByOffset(topic, partition, offset, avroSchema);
-    }
-
-    if (decoder == null || decoder.isEmpty()) {
-      //default decoder is StringDeserializer
-      decoder = "StringDeserializer";
-    }
-
     if (!kafkaUtils.DESERIALIZER_TYPE_MAP.containsKey(decoder)) {
       throw new ApiException(
           "Bad request. Decoder class:"
               + decoder
               + " not found. ByteArrayDeserializer, ByteBufferDeserializer, BytesDeserializer, "
               + "DoubleDeserializer, ExtendedDeserializer.Wrapper, FloatDeserializer, "
-              + "IntegerDeserializer, LongDeserializer, ShortDeserializer, StringDeserializer "
+              + "IntegerDeserializer, LongDeserializer, ShortDeserializer, StringDeserializer, AvroDeserializer "
               + "are supported.");
+    }
+
+    if (decoder != null && decoder.equals("AvroDeserializer")) {
+      if (avroSchema == null || avroSchema.isEmpty()) {
+        throw new ApiException("Bad request. Schema is needed when choosing AvroDeserializer.");
+      } else {
+        return getAvroRecordByOffset(topic, partition, offset, avroSchema);
+      }
+    }
+
+    if (decoder == null || decoder.isEmpty()) {
+      // default decoder is StringDeserializer
+      decoder = "StringDeserializer";
     }
 
     Class<Object> type = kafkaUtils.DESERIALIZER_TYPE_MAP.get(decoder);
@@ -1807,9 +1812,8 @@ public class KafkaAdminService {
     consumer.assign(Collections.singletonList(tp));
     consumer.seek(tp, offset);
 
-    Record record = Record.builder().topic(topic).type(type).build();
+    Record record = Record.builder().topic(topic).type(type).decoder(decoder).build();
 
-    // ConsumerRecords<String, String> crs = consumer.poll(channelRetryBackoffMs);
     try {
       ConsumerRecords<Object, Object> crs = consumer.poll(3000);
       log.info(
@@ -1821,7 +1825,6 @@ public class KafkaAdminService {
               + partition
               + ", crs.count:"
               + crs.count());
-      System.out.println("+++++++++before");
       if (crs.count() != 0) {
         Iterator<ConsumerRecord<Object, Object>> it = crs.iterator();
         while (it.hasNext()) {
@@ -1830,7 +1833,19 @@ public class KafkaAdminService {
             record.setOffset(offset);
             record.setTimestamp(initCr.timestamp());
             record.setKey(initCr.key());
-            record.setValue(initCr.value());
+            if (decoder.equals("AvroDeserializer")) {
+              byte[] bytes = (byte[]) initCr.value();
+              Schema schema = new Schema.Parser().parse(avroSchema);
+              DatumReader reader = new GenericDatumReader<GenericRecord>(schema);
+              ByteBuffer buffer = ByteBuffer.wrap(bytes);
+              Object object =
+                  reader.read(
+                      null,
+                      DecoderFactory.get().binaryDecoder(buffer.array(), 0, bytes.length, null));
+              record.setValue(object);
+            } else {
+              record.setValue(initCr.value());
+            }
             break;
           }
           log.info(
@@ -1877,6 +1892,15 @@ public class KafkaAdminService {
     long beginningOffset = getBeginningOffset(topic, partition);
     long endOffset = getEndOffset(topic, partition);
 
+    log.info(
+        "Topic:"
+            + topic
+            + ", partition:"
+            + partition
+            + " begin offset:"
+            + beginningOffset
+            + ", end offset:"
+            + endOffset);
     if (beginningOffset == endOffset) {
       throw new ApiException("There is no message in this partition of this topic");
     }
@@ -1887,17 +1911,25 @@ public class KafkaAdminService {
     }
   }
 
-  public Record getAvroRecordByOffset(String topic, int partition, long offset, String avroSchema) throws Exception {
+  public Record getAvroRecordByOffset(String topic, int partition, long offset, String avroSchema) {
     TopicPartition tp = new TopicPartition(topic, partition);
-    KafkaConsumer consumer = kafkaUtils.createNewConsumer(String.valueOf(System.currentTimeMillis()), "org.apache.kafka.common.serialization.ByteArrayDeserializer");
+    KafkaConsumer consumer = null;
+    try {
+      consumer =
+          kafkaUtils.createNewConsumer(
+              String.valueOf(System.currentTimeMillis()),
+              "org.apache.kafka.common.serialization.ByteArrayDeserializer");
+    } catch (Exception exception) {
+      log.error("Create consumer exception." + exception);
+    }
     consumer.assign(Collections.singletonList(tp));
     consumer.seek(tp, offset);
 
-    Record record = Record.builder().topic(topic).build();
+    Record record =
+        Record.builder().topic(topic).type(byte[].class).decoder("AvorDeserializer").build();
 
-    // ConsumerRecords<String, String> crs = consumer.poll(channelRetryBackoffMs);
     try {
-      ConsumerRecords<Object, Object> crs = consumer.poll(3000);
+      ConsumerRecords<byte[], byte[]> crs = consumer.poll(3000);
       log.info(
           "Seek to offset:"
               + offset
@@ -1907,23 +1939,15 @@ public class KafkaAdminService {
               + partition
               + ", crs.count:"
               + crs.count());
-      System.out.println("+++++++++before");
       if (crs.count() != 0) {
-        Iterator<ConsumerRecord<Object, Object>> it = crs.iterator();
+        Iterator<ConsumerRecord<byte[], byte[]>> it = crs.iterator();
         while (it.hasNext()) {
-          ConsumerRecord<Object, Object> initCr = it.next();
+          ConsumerRecord<byte[], byte[]> initCr = it.next();
           if (initCr.offset() == offset) {
             record.setOffset(offset);
             record.setTimestamp(initCr.timestamp());
             record.setKey(initCr.key());
-            byte[] bytes = (byte[])initCr.value();
-            Schema schema = new Schema.Parser().parse(avroSchema);
-            DatumReader reader = new GenericDatumReader<GenericRecord>(schema);
-            ByteBuffer buffer = ByteBuffer.wrap(bytes);
-            Object object =
-                reader.read(
-                    null, DecoderFactory.get().binaryDecoder(buffer.array(), 0, bytes.length, null));
-            record.setValue(object);
+            record.setValue(avroDeserialize(initCr.value(), avroSchema));
             break;
           }
           log.info(
@@ -1952,6 +1976,22 @@ public class KafkaAdminService {
     }
 
     return record;
+  }
+
+  private Object avroDeserialize(byte[] bytes, String avroSchema) {
+    Schema schema = new Schema.Parser().parse(avroSchema);
+    DatumReader reader = new GenericDatumReader<GenericRecord>(schema);
+    ByteBuffer buffer = ByteBuffer.wrap(bytes);
+    Object object = null;
+    try {
+      object =
+          reader.read(
+              null, DecoderFactory.get().binaryDecoder(buffer.array(), 0, bytes.length, null));
+    } catch (IOException exception) {
+      throw new ApiException("Avro Deserialize exception. " + exception);
+    }
+
+    return object;
   }
 
   public GeneralResponse resetOffset(
@@ -2256,6 +2296,12 @@ public class KafkaAdminService {
 
       adminClient.close();
       if (!stringErrorsMap.get(consumerGroup).get().equals(Errors.NONE)) {
+        log.info("Consumer group:"
+            + consumerGroup
+            + " could not be deleted. Error Code:"
+            + stringErrorsMap.get(consumerGroup).get()
+            + ". Error msg:"
+            + stringErrorsMap.get(consumerGroup).get().exception());
         return GeneralResponse.builder()
             .state(GeneralResponseState.failure)
             .msg(
@@ -2268,6 +2314,8 @@ public class KafkaAdminService {
             .build();
       }
     }
+
+    log.info("Consumer group:" + consumerGroup + " has been deleted.");
 
     return GeneralResponse.builder()
         .state(GeneralResponseState.success)
@@ -2339,23 +2387,6 @@ public class KafkaAdminService {
     return -1;
   }
 
-  private KafkaConsumer createNewConsumer(String consumerGroup) {
-    Properties properties = new Properties();
-    properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaConfig.getBrokers());
-    properties.put(ConsumerConfig.GROUP_ID_CONFIG, consumerGroup);
-    properties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
-    properties.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, "30000");
-    properties.put(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, "100000000");
-    properties.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, "5");
-    properties.put(
-        ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getCanonicalName());
-    properties.put(
-        ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
-        StringDeserializer.class.getCanonicalName());
-
-    return new KafkaConsumer(properties);
-  }
-
   public long getEndOffset(String topic, int partitionId) {
     KafkaConsumer consumer = kafkaUtils.createNewConsumer(KafkaUtils.DEFAULTCP);
     TopicPartition tp = new TopicPartition(topic, partitionId);
@@ -2401,7 +2432,8 @@ public class KafkaAdminService {
     String healthCheckTopic = kafkaConfig.getHealthCheckTopic();
     HealthCheckResult healthCheckResult = new HealthCheckResult();
     KafkaProducer producer = kafkaUtils.createProducer();
-    KafkaConsumer consumer = kafkaUtils.createNewConsumerByTopic(healthCheckTopic);
+    int partitionId;
+    long offset;
 
     boolean healthCheckTopicExist = existTopic(healthCheckTopic);
     log.info("HealthCheckTopic:" + healthCheckTopic + " existed:" + healthCheckTopicExist);
@@ -2414,12 +2446,20 @@ public class KafkaAdminService {
       return healthCheckResult;
     }
 
-    String message = "healthcheck_" + System.currentTimeMillis();
+    String message = "health check_" + System.currentTimeMillis();
     ProducerRecord<String, String> record = new ProducerRecord(healthCheckTopic, null, message);
     log.info("Generate message:" + message);
     try {
       RecordMetadata recordMetadata = (RecordMetadata) producer.send(record).get();
-      log.info("Message:" + message + " has been sent to Partition:" + recordMetadata.partition());
+      partitionId = recordMetadata.partition();
+      offset = recordMetadata.offset();
+      log.info(
+          "Message:"
+              + message
+              + " has been sent to Partition:"
+              + partitionId
+              + ", offset:"
+              + offset);
     } catch (Exception e) {
       healthCheckResult.setStatus("error");
       healthCheckResult.setMsg(
@@ -2430,6 +2470,10 @@ public class KafkaAdminService {
       producer.close();
     }
 
+    KafkaConsumer consumer = kafkaUtils.createNewConsumer();
+    TopicPartition topicPartition = new TopicPartition(healthCheckTopic, partitionId);
+    consumer.assign(Arrays.asList(topicPartition));
+    consumer.seek(topicPartition, offset);
     int retries = 30;
     int noRecordsCount = 0;
     while (true) {

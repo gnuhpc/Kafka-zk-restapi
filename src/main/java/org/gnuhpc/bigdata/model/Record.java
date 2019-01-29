@@ -19,6 +19,7 @@ public class Record {
   public Object value = new Object();
   public long timestamp;
   public Class<?> type;
+  String decoder;
 
   public String getValue() {
     try {
@@ -52,8 +53,12 @@ public class Record {
       }
 
       if (byte[].class.isAssignableFrom(type)) {
-        byte[] byteArray = (byte[]) value;
-        return new String(byteArray);
+        if (decoder.equals("AvorDeserializer")) {
+          return value.toString();
+        } else {
+          byte[] byteArray = (byte[]) value;
+          return new String(byteArray);
+        }
       }
 
       if (ByteBuffer.class.isAssignableFrom(type)) {

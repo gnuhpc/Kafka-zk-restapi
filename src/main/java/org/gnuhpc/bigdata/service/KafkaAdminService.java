@@ -442,7 +442,7 @@ public class KafkaAdminService {
     Map<Integer, List<String>> logDirList = new HashMap<>();
 
     Map<Integer, Map<String, LogDirInfo>> logDirInfosByBroker =
-        describeLogDirsByBrokerAndTopic(brokerList, null);
+        describeLogDirsByBrokerAndTopic(brokerList, null,null);
     logDirInfosByBroker
         .entrySet()
         .forEach(
@@ -456,7 +456,7 @@ public class KafkaAdminService {
   }
 
   public Map<Integer, Map<String, LogDirInfo>> describeLogDirsByBrokerAndTopic(
-      List<Integer> brokerList, List<String> topicList) {
+      List<Integer> brokerList, List<String> logDirList, List<String> topicList) {
     org.apache.kafka.clients.admin.AdminClient kafkaAdminClient = createKafkaAdminClient();
 
     List<Integer> brokerIdsInCluster =
@@ -495,6 +495,11 @@ public class KafkaAdminService {
       log.warn("Describe log dirs exception:" + exception);
       throw new ApiException("Describe log dirs exception:" + exception);
     } finally {
+      if (logDirList != null && !logDirList.isEmpty()) {
+        logDirInfosByBroker.entrySet().forEach(e->{
+          e.getValue().entrySet().removeIf(m -> !logDirList.contains(m.getKey()));
+        });
+      }
       if (topicList != null && !topicList.isEmpty()) {
         logDirInfosByBroker
             .entrySet()
@@ -1288,12 +1293,7 @@ public class KafkaAdminService {
     return mapper.getTypeFactory().constructParametricType(collectionClass, elementClasses);
   }
 
-  public List<ConsumerGroupDesc> describeNewConsumerGroupByTopic(
-      String consumerGroup, String topic) {
-    if (!isNewConsumerGroup(consumerGroup)) {
-      throw new ApiException("ConsumerGroup:" + consumerGroup + " non-exist!");
-    }
-
+  private List<ConsumerGroupDesc> getNewConsumerGroupDescByConsumerGroupAndTopic(String consumerGroup, String topic) {
     List<PartitionAssignmentState> partitionAssignmentStateList =
         describeNewConsumerGroup(consumerGroup, true, topic);
 
@@ -1313,14 +1313,30 @@ public class KafkaAdminService {
         .collect(Collectors.toList());
   }
 
-  public List<ConsumerGroupDesc> describeOldConsumerGroupByTopic(
+  public List<ConsumerGroupDesc> describeNewConsumerGroupByTopic(
       String consumerGroup, @TopicExistConstraint String topic) {
-    if (!isOldConsumerGroup(consumerGroup)) {
-      throw new ApiException("ConsumerGroup:" + consumerGroup + " non-exist");
+    if (consumerGroup != null && !isNewConsumerGroup(consumerGroup)) {
+      throw new ApiException("ConsumerGroup:" + consumerGroup + " non-exist!");
     }
 
+    List<ConsumerGroupDesc> consumerGroupDescList = new ArrayList<>();
+    if (consumerGroup == null || consumerGroup.length() == 0) {
+      // To search all consumer groups
+      Set<String> allNewConsumerGroups = listAllNewConsumerGroups();
+
+      for (String cg:allNewConsumerGroups) {
+        consumerGroupDescList.addAll(getNewConsumerGroupDescByConsumerGroupAndTopic(cg, topic));
+      }
+      return consumerGroupDescList;
+    } else {
+      return getNewConsumerGroupDescByConsumerGroupAndTopic(consumerGroup, topic);
+    }
+  }
+
+  private List<ConsumerGroupDesc> getOldConsumerGroupDescByConsumerGroupAndTopic(String consumerGroup, String topic) {
     List<PartitionAssignmentState> partitionAssignmentStateList =
         describeOldConsumerGroup(consumerGroup, true, topic);
+
     ConsumerGroupSummary consumerGroupSummary = null;
 
     return partitionAssignmentStateList
@@ -1331,8 +1347,28 @@ public class KafkaAdminService {
                     consumerGroup,
                     consumerGroupSummary,
                     partitionAssignmentState,
-                    ConsumerType.NEW))
+                    ConsumerType.OLD))
         .collect(Collectors.toList());
+  }
+
+  public List<ConsumerGroupDesc> describeOldConsumerGroupByTopic(
+      String consumerGroup, @TopicExistConstraint String topic) {
+    if (!isOldConsumerGroup(consumerGroup)) {
+      throw new ApiException("ConsumerGroup:" + consumerGroup + " non-exist");
+    }
+
+    List<ConsumerGroupDesc> consumerGroupDescList = new ArrayList<>();
+    if (consumerGroup == null || consumerGroup.length() == 0) {
+      // To search all consumer groups
+      Set<String> allNewConsumerGroups = listAllNewConsumerGroups();
+
+      for (String cg:allNewConsumerGroups) {
+        consumerGroupDescList.addAll(getOldConsumerGroupDescByConsumerGroupAndTopic(cg, topic));
+      }
+      return consumerGroupDescList;
+    } else {
+      return getOldConsumerGroupDescByConsumerGroupAndTopic(consumerGroup, topic);
+    }
   }
 
   public Map<String, GeneralResponse> addPartitions(List<AddPartition> addPartitions) {
@@ -1833,19 +1869,7 @@ public class KafkaAdminService {
             record.setOffset(offset);
             record.setTimestamp(initCr.timestamp());
             record.setKey(initCr.key());
-            if (decoder.equals("AvroDeserializer")) {
-              byte[] bytes = (byte[]) initCr.value();
-              Schema schema = new Schema.Parser().parse(avroSchema);
-              DatumReader reader = new GenericDatumReader<GenericRecord>(schema);
-              ByteBuffer buffer = ByteBuffer.wrap(bytes);
-              Object object =
-                  reader.read(
-                      null,
-                      DecoderFactory.get().binaryDecoder(buffer.array(), 0, bytes.length, null));
-              record.setValue(object);
-            } else {
-              record.setValue(initCr.value());
-            }
+            record.setValue(initCr.value());
             break;
           }
           log.info(

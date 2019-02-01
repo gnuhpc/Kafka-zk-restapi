@@ -87,8 +87,9 @@ public class KafkaController {
   @ApiOperation(value = "Describe log dirs by broker list and topic list")
   public Map<Integer, Map<String, LogDirInfo>> describeLogDirs(
       @RequestParam(required = false) List<Integer> brokerList,
+      @RequestParam(required = false) List<String> logDirList,
       @RequestParam(required = false) List<String> topicList) {
-    return kafkaAdminService.describeLogDirsByBrokerAndTopic(brokerList, topicList);
+    return kafkaAdminService.describeLogDirsByBrokerAndTopic(brokerList, logDirList, topicList);
   }
 
   @GetMapping(value = "/brokers/replicalogdirs")
@@ -292,10 +293,10 @@ public class KafkaController {
     throw new ApiException("New consumer group:" + consumerGroup + " non-exist.");
   }
 
-  @GetMapping(value = "/consumergroups/{consumerGroup}/{type}/topic/{topic}")
+  @GetMapping(value = "/consumergroups/{type}/topic/{topic}")
   @ApiOperation(value = "Describe consumer groups by topic, showing lag and offset")
   public List<ConsumerGroupDesc> describeConsumerGroupByTopic(
-      @ConsumerGroupExistConstraint @PathVariable String consumerGroup,
+      @RequestParam(required = false) String consumerGroup,
       @PathVariable ConsumerType type,
       @PathVariable String topic) {
     if (!Strings.isNullOrEmpty(topic)) {

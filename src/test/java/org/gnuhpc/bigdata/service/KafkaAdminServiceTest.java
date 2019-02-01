@@ -2115,7 +2115,7 @@ public class KafkaAdminServiceTest {
 
     // Run the test
     final Map<Integer, Map<String, LogDirInfo>> result =
-        kafkaAdminServiceUnderTest.describeLogDirsByBrokerAndTopic(brokerList, topicList);
+        kafkaAdminServiceUnderTest.describeLogDirsByBrokerAndTopic(brokerList, null, topicList);
 
     //     Verify the results
     assertTrue(result.containsKey(brokerId));
@@ -2134,6 +2134,38 @@ public class KafkaAdminServiceTest {
       }
     }
     assertTrue(logDirExist);
+  }
+
+  @Test
+  public void testDescribeLogDirsByBrokerLogDirAndTopic() {
+    // Setup
+    final String topic = FIRST_TOPIC_TO_TEST;
+    final List<String> topicList = Arrays.asList(topic);
+
+    int brokerId = TEST_KAFKA_BOOTSTRAP_SERVERS_ID.get(0);
+    final List<Integer> brokerList = Arrays.asList(brokerId);
+    Map<Integer, List<Integer>> replicaAssignment = new HashMap<>();
+    replicaAssignment.put(0, brokerList);
+
+    // Create first topic with 1 partition on broker 111
+    createOneTopic(topic, replicaAssignment);
+
+    TopicPartitionReplica topicPartitionReplica = new TopicPartitionReplica(topic, 0, brokerId);
+    Map<TopicPartitionReplica, ReplicaLogDirInfo> replicaReplicaLogDirInfoMap = kafkaAdminServiceUnderTest.describeReplicaLogDirs(Arrays.asList(topicPartitionReplica));
+    String logDir = replicaReplicaLogDirInfoMap.get(topicPartitionReplica).getCurrentReplicaLogDir();
+
+    // Run the test
+    final Map<Integer, Map<String, LogDirInfo>> result =
+        kafkaAdminServiceUnderTest.describeLogDirsByBrokerAndTopic(brokerList, Arrays.asList(logDir), topicList);
+
+    // Verify the results
+    assertTrue(result.containsKey(brokerId));
+    Map<String, LogDirInfo> logDirInfoMap = result.get(brokerId);
+    assertEquals(1, logDirInfoMap.size());
+    assertTrue(logDirInfoMap.containsKey(logDir));
+    LogDirInfo logDirInfo = logDirInfoMap.get(logDir);
+    TopicPartition topicPartition = new TopicPartition(topic, 0);
+    assertTrue(logDirInfo.replicaInfos.containsKey(topicPartition));
   }
 
   @Test
@@ -2158,7 +2190,7 @@ public class KafkaAdminServiceTest {
     String currentLogDir = result.get(topicPartitionReplica).getCurrentReplicaLogDir();
     final Map<Integer, Map<String, LogDirInfo>> logDirsByBrokerAndTopic =
         kafkaAdminServiceUnderTest.describeLogDirsByBrokerAndTopic(
-            brokerList, Arrays.asList(topic));
+            brokerList, null, Arrays.asList(topic));
     Map<String, LogDirInfo> logDirInfoMap = logDirsByBrokerAndTopic.get(brokerId);
     assertTrue(logDirInfoMap.containsKey(currentLogDir));
     TopicPartition topicPartition = new TopicPartition(topic, 0);

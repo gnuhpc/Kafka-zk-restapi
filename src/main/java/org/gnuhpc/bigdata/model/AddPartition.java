@@ -17,6 +17,5 @@ public class AddPartition {
 
   String topic;
   int numPartitionsAdded;
-//  String replicaAssignment;
   List<List<Integer>> replicaAssignment;
 }

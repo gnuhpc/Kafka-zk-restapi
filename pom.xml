@@ -129,7 +129,7 @@
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-test</artifactId>
-      <scope>test</scope>
+      <!--<scope>test</scope>-->
     </dependency>
 
     <dependency>
@@ -266,12 +266,6 @@
       <artifactId>avro</artifactId>
       <version>1.8.2</version>
     </dependency>
-    <!--<dependency>
-      <groupId>org.testng</groupId>
-      <artifactId>testng</artifactId>
-      <version>RELEASE</version>
-      <scope>test</scope>
-    </dependency>-->
   </dependencies>
 
   <build>

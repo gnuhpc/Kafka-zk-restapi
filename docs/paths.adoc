@@ -161,6 +161,317 @@ GET /kafka/brokers
 * `*/*`
 
 
+[[_listlogdirsusingget]]
+==== List log dirs by broker list
+....
+GET /kafka/brokers/logdirs
+....
+
+
+===== Parameters
+
+[options="header", cols=".^2,.^3,.^9,.^4"]
+|===
+|Type|Name|Description|Schema
+|**Query**|**brokerList** +
+__optional__|brokerList|< integer(int32) > array(multi)
+|===
+
+
+===== Responses
+
+[options="header", cols=".^2,.^14,.^4"]
+|===
+|HTTP Code|Description|Schema
+|**200**|OK|< string, < string > array > map
+|**401**|Unauthorized|No Content
+|**403**|Forbidden|No Content
+|**404**|Not Found|No Content
+|===
+
+
+===== Consumes
+
+* `application/json`
+
+
+===== Produces
+
+* `*/*`
+
+
+[[_describelogdirsusingget]]
+==== Describe log dirs by broker list and topic list
+....
+GET /kafka/brokers/logdirs/detail
+....
+
+
+===== Parameters
+
+[options="header", cols=".^2,.^3,.^9,.^4"]
+|===
+|Type|Name|Description|Schema
+|**Query**|**brokerList** +
+__optional__|brokerList|< integer(int32) > array(multi)
+|**Query**|**logDirList** +
+__optional__|logDirList|< string > array(multi)
+|**Query**|**topicList** +
+__optional__|topicList|< string > array(multi)
+|===
+
+
+===== Responses
+
+[options="header", cols=".^2,.^14,.^4"]
+|===
+|HTTP Code|Description|Schema
+|**200**|OK|< string, < string, <<_logdirinfo,LogDirInfo>> > map > map
+|**401**|Unauthorized|No Content
+|**403**|Forbidden|No Content
+|**404**|Not Found|No Content
+|===
+
+
+===== Consumes
+
+* `application/json`
+
+
+===== Produces
+
+* `*/*`
+
+
+[[_describereplicalogdirsusingget]]
+==== Describe replica log dirs.
+....
+GET /kafka/brokers/replicalogdirs
+....
+
+
+===== Parameters
+
+[options="header", cols=".^2,.^3,.^9,.^4"]
+|===
+|Type|Name|Description|Schema
+|**Query**|**replicas** +
+__required__|replicas|string
+|===
+
+
+===== Responses
+
+[options="header", cols=".^2,.^14,.^4"]
+|===
+|HTTP Code|Description|Schema
+|**200**|OK|< string, <<_replicalogdirinfo,ReplicaLogDirInfo>> > map
+|**401**|Unauthorized|No Content
+|**403**|Forbidden|No Content
+|**404**|Not Found|No Content
+|===
+
+
+===== Consumes
+
+* `application/json`
+
+
+===== Produces
+
+* `*/*`
+
+
+[[_getbrokerconfigusingget]]
+==== Get broker configs, including dynamic configs
+....
+GET /kafka/brokers/{brokerId}/conf
+....
+
+
+===== Parameters
+
+[options="header", cols=".^2,.^3,.^9,.^4"]
+|===
+|Type|Name|Description|Schema
+|**Path**|**brokerId** +
+__required__|brokerId|integer(int32)
+|===
+
+
+===== Responses
+
+[options="header", cols=".^2,.^14,.^4"]
+|===
+|HTTP Code|Description|Schema
+|**200**|OK|< <<_customconfigentry,CustomConfigEntry>> > array
+|**401**|Unauthorized|No Content
+|**403**|Forbidden|No Content
+|**404**|Not Found|No Content
+|===
+
+
+===== Consumes
+
+* `application/json`
+
+
+===== Produces
+
+* `*/*`
+
+
+[[_getbrokerdynconfigusingget]]
+==== Get broker dynamic configs
+....
+GET /kafka/brokers/{brokerId}/dynconf
+....
+
+
+===== Parameters
+
+[options="header", cols=".^2,.^3,.^9,.^4"]
+|===
+|Type|Name|Description|Schema
+|**Path**|**brokerId** +
+__required__|brokerId|integer(int32)
+|===
+
+
+===== Responses
+
+[options="header", cols=".^2,.^14,.^4"]
+|===
+|HTTP Code|Description|Schema
+|**200**|OK|< string, object > map
+|**401**|Unauthorized|No Content
+|**403**|Forbidden|No Content
+|**404**|Not Found|No Content
+|===
+
+
+===== Consumes
+
+* `application/json`
+
+
+===== Produces
+
+* `*/*`
+
+
+[[_updatebrokerdynconfigusingput]]
+==== Update broker configs
+....
+PUT /kafka/brokers/{brokerId}/dynconf
+....
+
+
+===== Parameters
+
+[options="header", cols=".^2,.^3,.^9,.^4"]
+|===
+|Type|Name|Description|Schema
+|**Path**|**brokerId** +
+__required__|brokerId|integer(int32)
+|**Body**|**props** +
+__required__|props|< string, object > map
+|===
+
+
+===== Responses
+
+[options="header", cols=".^2,.^14,.^4"]
+|===
+|HTTP Code|Description|Schema
+|**200**|OK|< string, object > map
+|**201**|Created|No Content
+|**401**|Unauthorized|No Content
+|**403**|Forbidden|No Content
+|**404**|Not Found|No Content
+|===
+
+
+===== Consumes
+
+* `application/json`
+
+
+===== Produces
+
+* `*/*`
+
+
+[[_removebrokerdynconfigusingdelete]]
+==== Remove broker dynamic configs
+....
+DELETE /kafka/brokers/{brokerId}/dynconf
+....
+
+
+===== Parameters
+
+[options="header", cols=".^2,.^3,.^9,.^4"]
+|===
+|Type|Name|Description|Schema
+|**Path**|**brokerId** +
+__required__|brokerId|integer(int32)
+|**Query**|**configKeysToBeRemoved** +
+__required__|configKeysToBeRemoved|< string > array(multi)
+|===
+
+
+===== Responses
+
+[options="header", cols=".^2,.^14,.^4"]
+|===
+|HTTP Code|Description|Schema
+|**200**|OK|No Content
+|**204**|No Content|No Content
+|**401**|Unauthorized|No Content
+|**403**|Forbidden|No Content
+|===
+
+
+===== Consumes
+
+* `application/json`
+
+
+===== Produces
+
+* `*/*`
+
+
+[[_describeclusterusingget]]
+==== Describe cluster, nodes, controller info.
+....
+GET /kafka/cluster
+....
+
+
+===== Responses
+
+[options="header", cols=".^2,.^14,.^4"]
+|===
+|HTTP Code|Description|Schema
+|**200**|OK|<<_clusterinfo,ClusterInfo>>
+|**401**|Unauthorized|No Content
+|**403**|Forbidden|No Content
+|**404**|Not Found|No Content
+|===
+
+
+===== Consumes
+
+* `application/json`
+
+
+===== Produces
+
+* `*/*`
+
+
 [[_getmessageusingget]]
 ==== Get the message from the offset of the partition in the topic, decoder is not supported yet
 ....
@@ -189,7 +500,7 @@ __optional__|decoder|string
 [options="header", cols=".^2,.^14,.^4"]
 |===
 |HTTP Code|Description|Schema
-|**200**|OK|string
+|**200**|OK|<<_record,Record>>
 |**401**|Unauthorized|No Content
 |**403**|Forbidden|No Content
 |**404**|Not Found|No Content
@@ -207,9 +518,9 @@ __optional__|decoder|string
 
 
 [[_deleteoldconsumergroupusingdelete]]
-==== Delete old Consumer Group
+==== Delete Consumer Group
 ....
-DELETE /kafka/consumergroup/{consumergroup}
+DELETE /kafka/consumergroup/{consumergroup}/{type}
 ....
 
 
@@ -220,6 +531,8 @@ DELETE /kafka/consumergroup/{consumergroup}
 |Type|Name|Description|Schema
 |**Path**|**consumergroup** +
 __required__|consumergroup|string
+|**Path**|**type** +
+__required__|type|enum (NEW, OLD)
 |===
 
 
@@ -289,7 +602,7 @@ __required__|type|enum (NEW, OLD)
 
 
 [[_resetoffsetusingput]]
-==== Reset consumer group offset, earliest/latest can be used
+==== Reset consumer group offset, earliest/latest can be used. Support reset by time for new consumer group, pass a parameter that satisfies yyyy-MM-dd HH:mm:ss.SSS to offset.
 ....
 PUT /kafka/consumergroup/{consumergroup}/{type}/topic/{topic}/{partition}/{offset}
 ....
@@ -303,7 +616,7 @@ PUT /kafka/consumergroup/{consumergroup}/{type}/topic/{topic}/{partition}/{offse
 |**Path**|**consumergroup** +
 __required__|consumergroup|string
 |**Path**|**offset** +
-__required__|offset|string
+__optional__|[earliest/latest/{long}/yyyy-MM-dd HH:mm:ss.SSS] can be supported. The date type is only valid for new consumer group.|string
 |**Path**|**partition** +
 __required__|partition|integer(int32)
 |**Path**|**topic** +
@@ -377,8 +690,47 @@ __optional__|type|enum (NEW, OLD)
 * `*/*`
 
 
-[[_describecgusingget]]
-==== Describe consumer groups, showing lag and offset, may be slow if multi topic are listened
+[[_getconsumergroupmetausingget]]
+==== Get the meta data of the specify new consumer group, including state, coordinator, assignmentStrategy, members
+....
+GET /kafka/consumergroups/{consumerGroup}/meta
+....
+
+
+===== Parameters
+
+[options="header", cols=".^2,.^3,.^9,.^4"]
+|===
+|Type|Name|Description|Schema
+|**Path**|**consumerGroup** +
+__required__|consumerGroup|string
+|===
+
+
+===== Responses
+
+[options="header", cols=".^2,.^14,.^4"]
+|===
+|HTTP Code|Description|Schema
+|**200**|OK|<<_consumergroupmeta,ConsumerGroupMeta>>
+|**401**|Unauthorized|No Content
+|**403**|Forbidden|No Content
+|**404**|Not Found|No Content
+|===
+
+
+===== Consumes
+
+* `application/json`
+
+
+===== Produces
+
+* `*/*`
+
+
+[[_describeconsumergroupusingget]]
+==== Describe consumer group, showing lag and offset, may be slow if multi topics are listened
 ....
 GET /kafka/consumergroups/{consumerGroup}/{type}
 ....
@@ -418,7 +770,7 @@ __required__|type|enum (NEW, OLD)
 * `*/*`
 
 
-[[_listtopicbycgusingget]]
+[[_listtopicbyconsumergroupusingget]]
 ==== Get the topics involved of the specify consumer group
 ....
 GET /kafka/consumergroups/{consumerGroup}/{type}/topic
@@ -459,10 +811,10 @@ __required__|type|enum (NEW, OLD)
 * `*/*`
 
 
-[[_describecgbytopicusingget]]
+[[_describeconsumergroupbytopicusingget]]
 ==== Describe consumer groups by topic, showing lag and offset
 ....
-GET /kafka/consumergroups/{consumerGroup}/{type}/topic/{topic}
+GET /kafka/consumergroups/{type}/topic/{topic}
 ....
 
 
@@ -471,12 +823,12 @@ GET /kafka/consumergroups/{consumerGroup}/{type}/topic/{topic}
 [options="header", cols=".^2,.^3,.^9,.^4"]
 |===
 |Type|Name|Description|Schema
-|**Path**|**consumerGroup** +
-__required__|consumerGroup|string
 |**Path**|**topic** +
 __required__|topic|string
 |**Path**|**type** +
 __required__|type|enum (NEW, OLD)
+|**Query**|**consumerGroup** +
+__optional__|consumerGroup|string
 |===
 
 
@@ -486,6 +838,35 @@ __required__|type|enum (NEW, OLD)
 |===
 |HTTP Code|Description|Schema
 |**200**|OK|< <<_consumergroupdesc,ConsumerGroupDesc>> > array
+|**401**|Unauthorized|No Content
+|**403**|Forbidden|No Content
+|**404**|Not Found|No Content
+|===
+
+
+===== Consumes
+
+* `application/json`
+
+
+===== Produces
+
+* `*/*`
+
+
+[[_getcontrolleridusingget]]
+==== Get controller in this cluster
+....
+GET /kafka/controller
+....
+
+
+===== Responses
+
+[options="header", cols=".^2,.^14,.^4"]
+|===
+|HTTP Code|Description|Schema
+|**200**|OK|<<_node,Node>>
 |**401**|Unauthorized|No Content
 |**403**|Forbidden|No Content
 |**404**|Not Found|No Content
@@ -532,7 +913,7 @@ GET /kafka/health
 
 
 [[_addpartitionusingpost]]
-==== Add a partition to the topic
+==== Add partitions to the topics
 ....
 POST /kafka/partitions/add
 ....
@@ -543,8 +924,8 @@ POST /kafka/partitions/add
 [options="header", cols=".^2,.^3,.^9,.^4"]
 |===
 |Type|Name|Description|Schema
-|**Body**|**addPartition** +
-__required__|addPartition|<<_addpartition,AddPartition>>
+|**Body**|**addPartitions** +
+__required__|addPartitions|< <<_addpartition,AddPartition>> > array
 |===
 
 
@@ -553,7 +934,7 @@ __required__|addPartition|<<_addpartition,AddPartition>>
 [options="header", cols=".^2,.^14,.^4"]
 |===
 |HTTP Code|Description|Schema
-|**200**|OK|<<_topicmeta,TopicMeta>>
+|**200**|OK|< string, <<_generalresponse,GeneralResponse>> > map
 |**201**|Created|No Content
 |**401**|Unauthorized|No Content
 |**403**|Forbidden|No Content
@@ -583,8 +964,8 @@ PUT /kafka/partitions/reassign/check
 [options="header", cols=".^2,.^3,.^9,.^4"]
 |===
 |Type|Name|Description|Schema
-|**Body**|**reassignStr** +
-__required__|reassignStr|string
+|**Body**|**reassign** +
+__required__|reassign|<<_reassignmodel,ReassignModel>>
 |===
 
 
@@ -596,7 +977,7 @@ __required__|reassignStr|string
 |**-1**|Reassignment Failed|No Content
 |**0**|Reassignment In Progress|No Content
 |**1**|Reassignment Completed|No Content
-|**200**|OK|< string, integer(int32) > map
+|**200**|OK|<<_reassignstatus,ReassignStatus>>
 |**201**|Created|No Content
 |**401**|Unauthorized|No Content
 |**403**|Forbidden|No Content
@@ -626,8 +1007,14 @@ PUT /kafka/partitions/reassign/execute
 [options="header", cols=".^2,.^3,.^9,.^4"]
 |===
 |Type|Name|Description|Schema
-|**Body**|**reassignStr** +
-__required__|reassignStr|string
+|**Query**|**interBrokerThrottle** +
+__optional__|interBrokerThrottle|integer(int64)
+|**Query**|**replicaAlterLogDirsThrottle** +
+__optional__|replicaAlterLogDirsThrottle|integer(int64)
+|**Query**|**timeoutMs** +
+__optional__|timeoutMs|integer(int64)
+|**Body**|**reassign** +
+__required__|reassign|<<_reassignmodel,ReassignModel>>
 |===
 
 
@@ -636,7 +1023,7 @@ __required__|reassignStr|string
 [options="header", cols=".^2,.^14,.^4"]
 |===
 |HTTP Code|Description|Schema
-|**200**|OK|< string, integer(int32) > map
+|**200**|OK|<<_reassignstatus,ReassignStatus>>
 |**201**|Created|No Content
 |**401**|Unauthorized|No Content
 |**403**|Forbidden|No Content
@@ -676,7 +1063,7 @@ __required__|reassignWrapper|<<_reassignwrapper,ReassignWrapper>>
 [options="header", cols=".^2,.^14,.^4"]
 |===
 |HTTP Code|Description|Schema
-|**200**|OK|< string > array
+|**200**|OK|< <<_reassignmodel,ReassignModel>> > array
 |**201**|Created|No Content
 |**401**|Unauthorized|No Content
 |**403**|Forbidden|No Content
@@ -723,8 +1110,47 @@ GET /kafka/topics
 * `*/*`
 
 
+[[_deletetopiclistusingdelete]]
+==== Delete a topic list (you should enable topic deletion
+....
+DELETE /kafka/topics
+....
+
+
+===== Parameters
+
+[options="header", cols=".^2,.^3,.^9,.^4"]
+|===
+|Type|Name|Description|Schema
+|**Query**|**topicList** +
+__required__|topicList|< string > array(multi)
+|===
+
+
+===== Responses
+
+[options="header", cols=".^2,.^14,.^4"]
+|===
+|HTTP Code|Description|Schema
+|**200**|OK|< string, <<_generalresponse,GeneralResponse>> > map
+|**204**|No Content|No Content
+|**401**|Unauthorized|No Content
+|**403**|Forbidden|No Content
+|===
+
+
+===== Consumes
+
+* `application/json`
+
+
+===== Produces
+
+* `*/*`
+
+
 [[_createtopicusingpost]]
-==== Create a topic
+==== Create topics
 ....
 POST /kafka/topics/create
 ....
@@ -735,10 +1161,8 @@ POST /kafka/topics/create
 [options="header", cols=".^2,.^3,.^9,.^4"]
 |===
 |Type|Name|Description|Schema
-|**Query**|**reassignStr** +
-__optional__|reassignStr|string
-|**Body**|**topic** +
-__required__|topic|<<_topicdetail,TopicDetail>>
+|**Body**|**topicList** +
+__required__|topicList|< <<_topicdetail,TopicDetail>> > array
 |===
 
 
@@ -747,7 +1171,7 @@ __required__|topic|<<_topicdetail,TopicDetail>>
 [options="header", cols=".^2,.^14,.^4"]
 |===
 |HTTP Code|Description|Schema
-|**201**|Created|<<_topicmeta,TopicMeta>>
+|**201**|Created|< string, <<_generalresponse,GeneralResponse>> > map
 |**401**|Unauthorized|No Content
 |**403**|Forbidden|No Content
 |**404**|Not Found|No Content
@@ -803,87 +1227,6 @@ __required__|topic|string
 * `*/*`
 
 
-[[_deletetopicusingdelete]]
-==== Delete a topic (you should enable topic deletion
-....
-DELETE /kafka/topics/{topic}
-....
-
-
-===== Parameters
-
-[options="header", cols=".^2,.^3,.^9,.^4"]
-|===
-|Type|Name|Description|Schema
-|**Path**|**topic** +
-__required__|topic|string
-|===
-
-
-===== Responses
-
-[options="header", cols=".^2,.^14,.^4"]
-|===
-|HTTP Code|Description|Schema
-|**200**|OK|<<_generalresponse,GeneralResponse>>
-|**204**|No Content|No Content
-|**401**|Unauthorized|No Content
-|**403**|Forbidden|No Content
-|===
-
-
-===== Consumes
-
-* `application/json`
-
-
-===== Produces
-
-* `*/*`
-
-
-[[_createtopicconfigusingpost]]
-==== Create topic configs
-....
-POST /kafka/topics/{topic}/conf
-....
-
-
-===== Parameters
-
-[options="header", cols=".^2,.^3,.^9,.^4"]
-|===
-|Type|Name|Description|Schema
-|**Path**|**topic** +
-__required__|topic|string
-|**Body**|**prop** +
-__required__|prop|< string, object > map
-|===
-
-
-===== Responses
-
-[options="header", cols=".^2,.^14,.^4"]
-|===
-|HTTP Code|Description|Schema
-|**200**|OK|< string, object > map
-|**201**|Created|No Content
-|**401**|Unauthorized|No Content
-|**403**|Forbidden|No Content
-|**404**|Not Found|No Content
-|===
-
-
-===== Consumes
-
-* `application/json`
-
-
-===== Produces
-
-* `*/*`
-
-
 [[_gettopicconfigusingget]]
 ==== Get topic configs
 ....
@@ -906,7 +1249,7 @@ __required__|topic|string
 [options="header", cols=".^2,.^14,.^4"]
 |===
 |HTTP Code|Description|Schema
-|**200**|OK|< string, object > map
+|**200**|OK|< <<_customconfigentry,CustomConfigEntry>> > array
 |**401**|Unauthorized|No Content
 |**403**|Forbidden|No Content
 |**404**|Not Found|No Content
@@ -937,8 +1280,8 @@ PUT /kafka/topics/{topic}/conf
 |Type|Name|Description|Schema
 |**Path**|**topic** +
 __required__|topic|string
-|**Body**|**prop** +
-__required__|prop|< string, object > map
+|**Body**|**props** +
+__required__|props|< string, object > map
 |===
 
 
@@ -947,52 +1290,11 @@ __required__|prop|< string, object > map
 [options="header", cols=".^2,.^14,.^4"]
 |===
 |HTTP Code|Description|Schema
-|**200**|OK|< string, object > map
+|**200**|OK|< <<_customconfigentry,CustomConfigEntry>> > array
 |**201**|Created|No Content
 |**401**|Unauthorized|No Content
 |**403**|Forbidden|No Content
 |**404**|Not Found|No Content
-|===
-
-
-===== Consumes
-
-* `application/json`
-
-
-===== Produces
-
-* `*/*`
-
-
-[[_deletetopicconfigusingdelete]]
-==== Delete topic configs
-....
-DELETE /kafka/topics/{topic}/conf
-....
-
-
-===== Parameters
-
-[options="header", cols=".^2,.^3,.^9,.^4"]
-|===
-|Type|Name|Description|Schema
-|**Path**|**topic** +
-__required__|topic|string
-|**Body**|**delProps** +
-__required__|delProps|< string > array
-|===
-
-
-===== Responses
-
-[options="header", cols=".^2,.^14,.^4"]
-|===
-|HTTP Code|Description|Schema
-|**200**|OK|< string, object > map
-|**204**|No Content|No Content
-|**401**|Unauthorized|No Content
-|**403**|Forbidden|No Content
 |===
 
 
@@ -1047,91 +1349,6 @@ __required__|topic|string
 * `*/*`
 
 
-[[_deletetopicconfigbykeyusingdelete]]
-==== Delete a topic config by key
-....
-DELETE /kafka/topics/{topic}/conf/{key}
-....
-
-
-===== Parameters
-
-[options="header", cols=".^2,.^3,.^9,.^4"]
-|===
-|Type|Name|Description|Schema
-|**Path**|**key** +
-__required__|key|string
-|**Path**|**topic** +
-__required__|topic|string
-|===
-
-
-===== Responses
-
-[options="header", cols=".^2,.^14,.^4"]
-|===
-|HTTP Code|Description|Schema
-|**200**|OK|boolean
-|**204**|No Content|No Content
-|**401**|Unauthorized|No Content
-|**403**|Forbidden|No Content
-|===
-
-
-===== Consumes
-
-* `application/json`
-
-
-===== Produces
-
-* `*/*`
-
-
-[[_createtopicconfigbykeyusingpost]]
-==== Create a topic config by key
-....
-POST /kafka/topics/{topic}/conf/{key}={value}
-....
-
-
-===== Parameters
-
-[options="header", cols=".^2,.^3,.^9,.^4"]
-|===
-|Type|Name|Description|Schema
-|**Path**|**key** +
-__required__|key|string
-|**Path**|**topic** +
-__required__|topic|string
-|**Path**|**value** +
-__required__|value|string
-|===
-
-
-===== Responses
-
-[options="header", cols=".^2,.^14,.^4"]
-|===
-|HTTP Code|Description|Schema
-|**200**|OK|< string, object > map
-|**201**|Created|No Content
-|**401**|Unauthorized|No Content
-|**403**|Forbidden|No Content
-|**404**|Not Found|No Content
-|===
-
-
-===== Consumes
-
-* `application/json`
-
-
-===== Produces
-
-* `*/*`
-
-
 [[_updatetopicconfigbykeyusingput]]
 ==== Update a topic config by key
 ....
@@ -1158,8 +1375,47 @@ __required__|value|string
 [options="header", cols=".^2,.^14,.^4"]
 |===
 |HTTP Code|Description|Schema
-|**200**|OK|< string, object > map
+|**200**|OK|< <<_customconfigentry,CustomConfigEntry>> > array
 |**201**|Created|No Content
+|**401**|Unauthorized|No Content
+|**403**|Forbidden|No Content
+|**404**|Not Found|No Content
+|===
+
+
+===== Consumes
+
+* `application/json`
+
+
+===== Produces
+
+* `*/*`
+
+
+[[_gettopicdynconfigusingget]]
+==== Get topic dyn configs
+....
+GET /kafka/topics/{topic}/dynconf
+....
+
+
+===== Parameters
+
+[options="header", cols=".^2,.^3,.^9,.^4"]
+|===
+|Type|Name|Description|Schema
+|**Path**|**topic** +
+__required__|topic|string
+|===
+
+
+===== Responses
+
+[options="header", cols=".^2,.^14,.^4"]
+|===
+|HTTP Code|Description|Schema
+|**200**|OK|< string, object > map
 |**401**|Unauthorized|No Content
 |**403**|Forbidden|No Content
 |**404**|Not Found|No Content
@@ -1208,47 +1464,6 @@ __required__|topic|string
 ===== Consumes
 
 * `application/json`
-
-
-===== Produces
-
-* `*/*`
-
-
-[[_writemessageusingpost]]
-==== Write a message to the topic, for testing purpose
-....
-POST /kafka/topics/{topic}/write
-....
-
-
-===== Parameters
-
-[options="header", cols=".^2,.^3,.^9,.^4"]
-|===
-|Type|Name|Description|Schema
-|**Path**|**topic** +
-__required__|topic|string
-|**Body**|**message** +
-__required__|message|string
-|===
-
-
-===== Responses
-
-[options="header", cols=".^2,.^14,.^4"]
-|===
-|HTTP Code|Description|Schema
-|**201**|Created|<<_generalresponse,GeneralResponse>>
-|**401**|Unauthorized|No Content
-|**403**|Forbidden|No Content
-|**404**|Not Found|No Content
-|===
-
-
-===== Consumes
-
-* `text/plain`
 
 
 ===== Produces
@@ -1501,10 +1716,10 @@ GET /zk/env
 * `*/*`
 
 
-[[_lsusingget]]
-==== List a zookeeper path
+[[_getusingget]]
+==== Get data of a zookeeper path
 ....
-GET /zk/ls/{path}
+GET /zk/get/path
 ....
 
 
@@ -1513,7 +1728,46 @@ GET /zk/ls/{path}
 [options="header", cols=".^2,.^3,.^9,.^4"]
 |===
 |Type|Name|Description|Schema
-|**Path**|**path** +
+|**Query**|**path** +
+__required__|path|string
+|===
+
+
+===== Responses
+
+[options="header", cols=".^2,.^14,.^4"]
+|===
+|HTTP Code|Description|Schema
+|**200**|OK|< string, string > map
+|**401**|Unauthorized|No Content
+|**403**|Forbidden|No Content
+|**404**|Not Found|No Content
+|===
+
+
+===== Consumes
+
+* `application/json`
+
+
+===== Produces
+
+* `*/*`
+
+
+[[_lsusingget]]
+==== List a zookeeper path
+....
+GET /zk/ls/path
+....
+
+
+===== Parameters
+
+[options="header", cols=".^2,.^3,.^9,.^4"]
+|===
+|Type|Name|Description|Schema
+|**Query**|**path** +
 __required__|path|string
 |===
 

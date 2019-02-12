@@ -30,6 +30,7 @@ import org.gnuhpc.bigdata.model.HealthCheckResult;
 import org.gnuhpc.bigdata.model.ReassignModel;
 import org.gnuhpc.bigdata.model.ReassignStatus;
 import org.gnuhpc.bigdata.model.ReassignWrapper;
+import org.gnuhpc.bigdata.model.Record;
 import org.gnuhpc.bigdata.model.TopicBrief;
 import org.gnuhpc.bigdata.model.TopicDetail;
 import org.gnuhpc.bigdata.model.TopicMeta;
@@ -169,12 +170,12 @@ public class KafkaController {
       value =
           "Get the message from the offset of the partition in the topic"
               + ", decoder is not supported yet")
-  public String getMessage(
+  public Record getMessage(
       @PathVariable String topic,
       @PathVariable int partition,
       @PathVariable long offset,
       @RequestParam(required = false) String decoder) {
-    return kafkaAdminService.getRecordByOffset(topic, partition, offset, decoder, "").getValue();
+    return kafkaAdminService.getRecordByOffset(topic, partition, offset, decoder, "");
   }
 
   @GetMapping(value = "/topics/{topic}")

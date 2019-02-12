@@ -1816,7 +1816,7 @@ public class KafkaAdminService {
           "Bad request. Decoder class:"
               + decoder
               + " not found. ByteArrayDeserializer, ByteBufferDeserializer, BytesDeserializer, "
-              + "DoubleDeserializer, ExtendedDeserializer.Wrapper, FloatDeserializer, "
+              + "DoubleDeserializer, FloatDeserializer, "
               + "IntegerDeserializer, LongDeserializer, ShortDeserializer, StringDeserializer, AvroDeserializer "
               + "are supported.");
     }

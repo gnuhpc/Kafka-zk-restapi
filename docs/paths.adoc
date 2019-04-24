@@ -690,6 +690,45 @@ __optional__|type|enum (NEW, OLD)
 * `*/*`
 
 
+[[_getconsumergroupsmetausingget]]
+==== Get the meta data of the specified new consumer groups, including state, coordinator, assignmentStrategy, members
+....
+GET /kafka/consumergroups/meta
+....
+
+
+===== Parameters
+
+[options="header", cols=".^2,.^3,.^9,.^4"]
+|===
+|Type|Name|Description|Schema
+|**Query**|**consumerGroupList** +
+__required__|consumerGroupList|< string > array(multi)
+|===
+
+
+===== Responses
+
+[options="header", cols=".^2,.^14,.^4"]
+|===
+|HTTP Code|Description|Schema
+|**200**|OK|< <<_consumergroupmeta,ConsumerGroupMeta>> > array
+|**401**|Unauthorized|No Content
+|**403**|Forbidden|No Content
+|**404**|Not Found|No Content
+|===
+
+
+===== Consumes
+
+* `application/json`
+
+
+===== Produces
+
+* `*/*`
+
+
 [[_getconsumergroupmetausingget]]
 ==== Get the meta data of the specify new consumer group, including state, coordinator, assignmentStrategy, members
 ....

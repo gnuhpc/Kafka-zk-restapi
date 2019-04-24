@@ -4,6 +4,7 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -292,6 +293,24 @@ public class KafkaController {
     }
 
     throw new ApiException("New consumer group:" + consumerGroup + " non-exist.");
+  }
+
+  @GetMapping(value = "/consumergroups/meta")
+  @ApiOperation(
+      value =
+          "Get the meta data of the specified new consumer groups, including state, coordinator,"
+              + " assignmentStrategy, members")
+  public List<ConsumerGroupMeta> getConsumerGroupsMeta(@RequestParam List<String> consumerGroupList) {
+    List<ConsumerGroupMeta> consumerGroupMetaList = new ArrayList<>();
+    for (String consumerGroup:consumerGroupList) {
+      if (kafkaAdminService.isNewConsumerGroup(consumerGroup)) {
+        consumerGroupMetaList.add(kafkaAdminService.getConsumerGroupMeta(consumerGroup));
+      } else {
+        throw new ApiException("New consumer group:" + consumerGroup + " non-exist.");
+      }
+    }
+
+    return consumerGroupMetaList;
   }
 
   @GetMapping(value = "/consumergroups/{type}/topic/{topic}")

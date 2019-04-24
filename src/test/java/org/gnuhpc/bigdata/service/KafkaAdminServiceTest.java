@@ -99,11 +99,11 @@ public class KafkaAdminServiceTest {
   @InjectMocks private KafkaAdminService kafkaAdminServiceUnderTest;
 
   private static final String TEST_KAFKA_BOOTSTRAP_SERVERS =
-      "localhost:19092,localhost:19093,localhost:19095";
+      "localhost:9092,localhost:9094,localhost:9096";
   private static final List<Integer> TEST_KAFKA_BOOTSTRAP_SERVERS_ID = Arrays.asList(111, 113, 115);
   private static final int KAFKA_NODES_COUNT = TEST_KAFKA_BOOTSTRAP_SERVERS_ID.size();
-  private static final String TEST_ZK = "localhost:2183";
-  private static final int TEST_CONTROLLER_ID = 111;
+  private static final String TEST_ZK = "127.0.0.1:2181";
+  private static final int TEST_CONTROLLER_ID = 0;
   private static final List<String> TEST_KAFKA_LOG_DIRS =
       Arrays.asList(
           "/home/xiangli/bigdata/kafka_2.11-1.1.1/kafka-logs,/home/xiangli/bigdata/kafka_2.11-1.1.1/kafka111_2-logs,/home/xiangli/bigdata/kafka_2.11-1.1.1/kafka111_3-logs",

@@ -300,7 +300,8 @@ public class KafkaController {
       value =
           "Get the meta data of the specified new consumer groups, including state, coordinator,"
               + " assignmentStrategy, members")
-  public List<ConsumerGroupMeta> getConsumerGroupsMeta(@RequestParam List<String> consumerGroupList) {
+  public List<ConsumerGroupMeta> getConsumerGroupsMeta() {
+    Set<String> consumerGroupList = kafkaAdminService.listAllNewConsumerGroups();
     List<ConsumerGroupMeta> consumerGroupMetaList = new ArrayList<>();
     for (String consumerGroup:consumerGroupList) {
       if (kafkaAdminService.isNewConsumerGroup(consumerGroup)) {

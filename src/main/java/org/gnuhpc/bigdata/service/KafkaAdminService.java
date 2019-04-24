@@ -322,12 +322,12 @@ public class KafkaAdminService {
                       isrCount += topicPartitionInfo.isr().size();
                     }
                     if (replicateCount == 0) {
-                      return new TopicBrief(topic, topicDescription.partitions().size(), 0);
+                      return new TopicBrief(topic, topicDescription.partitions().size(), 0, replicateCount);
                     } else {
                       return new TopicBrief(
                           topic,
                           topicDescription.partitions().size(),
-                          ((double) isrCount / replicateCount));
+                          ((double) isrCount / replicateCount), replicateCount);
                     }
                   })
               .collect(toList());
@@ -865,7 +865,7 @@ public class KafkaAdminService {
     return result;
   }
 
-  private Set<String> listAllNewConsumerGroups() {
+  public Set<String> listAllNewConsumerGroups() {
     AdminClient adminClient = kafkaUtils.createAdminClient();
     log.info("Calling the listAllConsumerGroupsFlattened");
     // Send LIST_GROUPS Request to kafka
@@ -996,7 +996,8 @@ public class KafkaAdminService {
     List<MemberDescription> members = new ArrayList<>();
     AdminClient adminClient = kafkaUtils.createAdminClient();
 
-    ConsumerGroupSummary consumerGroupSummary = adminClient.describeConsumerGroup(consumerGroup, 0);
+    ConsumerGroupSummary consumerGroupSummary = adminClient.describeConsumerGroup(consumerGroup,
+        kafkaAdminClientGetTimeoutMs);
     List<ConsumerSummary> consumerSummaryList =
         CollectionConvertor.optionListConvertJavaList(consumerGroupSummary.consumers().get());
 

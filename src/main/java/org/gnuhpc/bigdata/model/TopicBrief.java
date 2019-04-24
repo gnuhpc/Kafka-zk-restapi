@@ -12,4 +12,5 @@ public class TopicBrief {
   private String topic;
   private int numPartition;
   private double isrRate;
+  private int replicationFactor;
 }

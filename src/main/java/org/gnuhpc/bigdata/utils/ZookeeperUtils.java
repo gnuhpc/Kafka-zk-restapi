@@ -3,6 +3,7 @@ package org.gnuhpc.bigdata.utils;
 import com.google.common.base.Charsets;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -82,7 +83,8 @@ public class ZookeeperUtils {
       throws ServiceNotAvailableException {
     Socket socket;
     try {
-      socket = new Socket(InetAddress.getByName(host), port);
+      socket = new Socket();
+      socket.connect(new InetSocketAddress(host, port), CONNECTION_TIMEOUT);
     } catch (IOException e) {
       throw new ServiceNotAvailableException(
           "zookeeper",

@@ -16,7 +16,6 @@ import org.springframework.stereotype.Service;
 @Service
 @Log4j
 public class ZookeeperService {
-
   @Autowired private ZookeeperUtils zookeeperUtils;
 
   public Map<HostAndPort, ZkServerStat> stat() {

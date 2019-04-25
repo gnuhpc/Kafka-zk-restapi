@@ -1,8 +1,6 @@
 package org.gnuhpc.bigdata.utils;
 
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -25,17 +23,20 @@ import org.gnuhpc.bigdata.config.KafkaConfig;
 import org.gnuhpc.bigdata.config.ZookeeperConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
-import scala.collection.JavaConverters;
 
-/** Created by gnuhpc on 2017/7/12. */
+/**
+ * Created by gnuhpc on 2017/7/12.
+ */
 @Log4j
 @Getter
 @Setter
 @Configuration
 public class KafkaUtils {
 
-  @Autowired private KafkaConfig kafkaConfig;
-  @Autowired private ZookeeperConfig zookeeperConfig;
+  @Autowired
+  private KafkaConfig kafkaConfig;
+  @Autowired
+  private ZookeeperConfig zookeeperConfig;
 
 
   private KafkaProducer producer;
@@ -126,17 +127,17 @@ public class KafkaUtils {
           ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
           Class.forName(decoder).getCanonicalName());
     }
-    return new KafkaConsumer(properties);
+    KafkaConsumer kafkaConsumer = new KafkaConsumer(properties);
+    return kafkaConsumer;
   }
 
   public KafkaConsumer createNewConsumerByTopic(String topic) {
     Properties properties = new Properties();
     properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, getKafkaConfig().getBrokers());
     properties.put(ConsumerConfig.GROUP_ID_CONFIG, DEFAULTCP);
-    properties.put(
-        ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getCanonicalName());
-    properties.put(
-        ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
+    properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
+        StringDeserializer.class.getCanonicalName());
+    properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
         StringDeserializer.class.getCanonicalName());
     KafkaConsumer kafkaConsumer = new KafkaConsumer(properties);
     kafkaConsumer.subscribe(Collections.singletonList(topic));
@@ -147,11 +148,9 @@ public class KafkaUtils {
   public KafkaProducer createProducer() {
     Properties prop = new Properties();
     prop.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaConfig.getBrokers());
-    prop.setProperty(
-        ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG,
+    prop.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG,
         "org.apache.kafka.common.serialization.StringSerializer");
-    prop.setProperty(
-        ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
+    prop.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
         "org.apache.kafka.common.serialization.StringSerializer");
     prop.setProperty(ProducerConfig.RETRIES_CONFIG, "3");
     prop.setProperty(ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG, "10000");
@@ -191,7 +190,7 @@ public class KafkaUtils {
 
     return producer;
   }
-  
+
   public Node getLeader(String topic, int partitionId) {
     KafkaConsumer consumer = createNewConsumer(DEFAULTCP);
     List<PartitionInfo> tmList = consumer.partitionsFor(topic);

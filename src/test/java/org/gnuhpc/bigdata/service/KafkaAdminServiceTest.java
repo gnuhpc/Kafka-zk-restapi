@@ -99,16 +99,23 @@ public class KafkaAdminServiceTest {
   @InjectMocks private KafkaAdminService kafkaAdminServiceUnderTest;
 
   private static final String TEST_KAFKA_BOOTSTRAP_SERVERS =
-      "localhost:9092,localhost:9094,localhost:9096";
-  private static final List<Integer> TEST_KAFKA_BOOTSTRAP_SERVERS_ID = Arrays.asList(111, 113, 115);
+      "localhost:19092,localhost:19094,localhost:19096";
+  private static final List<Integer> TEST_KAFKA_BOOTSTRAP_SERVERS_ID = Arrays.asList(10, 11, 12);
   private static final int KAFKA_NODES_COUNT = TEST_KAFKA_BOOTSTRAP_SERVERS_ID.size();
   private static final String TEST_ZK = "127.0.0.1:2181";
-  private static final int TEST_CONTROLLER_ID = 0;
+  private static final int TEST_CONTROLLER_ID = 10;
+//  private static final List<String> TEST_KAFKA_LOG_DIRS =
+//      Arrays.asList(
+//          "/home/xiangli/bigdata/kafka_2.11-1.1.1/kafka-logs,/home/xiangli/bigdata/kafka_2.11-1.1.1/kafka111_2-logs,/home/xiangli/bigdata/kafka_2.11-1.1.1/kafka111_3-logs",
+//          "/home/xiangli/bigdata/kafka_2.11-1.1.1/kafka113-logs,/home/xiangli/bigdata/kafka_2.11-1.1.1/kafka113_2-logs,/home/xiangli/bigdata/kafka_2.11-1.1.1/kafka113_3-logs",
+//          "/home/xiangli/bigdata/kafka_2.11-1.1.1/kafka115-logs,/home/xiangli/bigdata/kafka_2.11-1.1.1/kafka115_2-logs,/home/xiangli/bigdata/kafka_2.11-1.1.1/kafka115_3-logs");
+
   private static final List<String> TEST_KAFKA_LOG_DIRS =
       Arrays.asList(
-          "/home/xiangli/bigdata/kafka_2.11-1.1.1/kafka-logs,/home/xiangli/bigdata/kafka_2.11-1.1.1/kafka111_2-logs,/home/xiangli/bigdata/kafka_2.11-1.1.1/kafka111_3-logs",
-          "/home/xiangli/bigdata/kafka_2.11-1.1.1/kafka113-logs,/home/xiangli/bigdata/kafka_2.11-1.1.1/kafka113_2-logs,/home/xiangli/bigdata/kafka_2.11-1.1.1/kafka113_3-logs",
-          "/home/xiangli/bigdata/kafka_2.11-1.1.1/kafka115-logs,/home/xiangli/bigdata/kafka_2.11-1.1.1/kafka115_2-logs,/home/xiangli/bigdata/kafka_2.11-1.1.1/kafka115_3-logs");
+          "/Users/wenqiao/work/bigdata/kafka_2.11-1.1.1/data",
+          "/Users/wenqiao/work/bigdata/kafka_2.11-1.1.1_2/data",
+          "/Users/wenqiao/work/bigdata/kafka_2.11-1.1.1_3/data");
+
 
   private static final String FIRST_TOPIC_TO_TEST = "first";
   private static final String SECOND_TOPIC_TO_TEST = "second";
@@ -2100,22 +2107,23 @@ public class KafkaAdminServiceTest {
   }
 
   @Test
-  public void testDescribeLogDirsByBrokerAndTopic() {
+  public void testDescribeLogDirsByBrokerAndTopicPartition() {
     // Setup
     final String topic = FIRST_TOPIC_TO_TEST;
-    final List<String> topicList = Arrays.asList(topic);
+    final Map<String, List<Integer>> topicPartitionMap = new HashMap<>();
+    topicPartitionMap.put(topic, Arrays.asList(0));
 
     int brokerId = TEST_KAFKA_BOOTSTRAP_SERVERS_ID.get(0);
     final List<Integer> brokerList = Arrays.asList(brokerId);
     Map<Integer, List<Integer>> replicaAssignment = new HashMap<>();
     replicaAssignment.put(0, brokerList);
 
-    // Create first topic with 1 partition on broker 111
+    // Create first topic with 1 partition on first broker
     createOneTopic(topic, replicaAssignment);
 
     // Run the test
     final Map<Integer, Map<String, LogDirInfo>> result =
-        kafkaAdminServiceUnderTest.describeLogDirsByBrokerAndTopic(brokerList, null, topicList);
+        kafkaAdminServiceUnderTest.describeLogDirsByBrokerAndTopic(brokerList, null, topicPartitionMap);
 
     //     Verify the results
     assertTrue(result.containsKey(brokerId));
@@ -2137,17 +2145,19 @@ public class KafkaAdminServiceTest {
   }
 
   @Test
-  public void testDescribeLogDirsByBrokerLogDirAndTopic() {
+  public void testDescribeLogDirsByBrokerLogDirAndTopicPartition() {
     // Setup
     final String topic = FIRST_TOPIC_TO_TEST;
-    final List<String> topicList = Arrays.asList(topic);
+    final Map<String, List<Integer>> topicPartitionMap = new HashMap<>();
+    topicPartitionMap.put(topic, Arrays.asList(0));
 
     int brokerId = TEST_KAFKA_BOOTSTRAP_SERVERS_ID.get(0);
     final List<Integer> brokerList = Arrays.asList(brokerId);
     Map<Integer, List<Integer>> replicaAssignment = new HashMap<>();
     replicaAssignment.put(0, brokerList);
+    replicaAssignment.put(1, brokerList);
 
-    // Create first topic with 1 partition on broker 111
+    // Create first topic with 2 partition on first broker
     createOneTopic(topic, replicaAssignment);
 
     TopicPartitionReplica topicPartitionReplica = new TopicPartitionReplica(topic, 0, brokerId);
@@ -2156,7 +2166,42 @@ public class KafkaAdminServiceTest {
 
     // Run the test
     final Map<Integer, Map<String, LogDirInfo>> result =
-        kafkaAdminServiceUnderTest.describeLogDirsByBrokerAndTopic(brokerList, Arrays.asList(logDir), topicList);
+        kafkaAdminServiceUnderTest.describeLogDirsByBrokerAndTopic(brokerList, Arrays.asList(logDir), topicPartitionMap);
+
+    // Verify the results
+    assertTrue(result.containsKey(brokerId));
+    Map<String, LogDirInfo> logDirInfoMap = result.get(brokerId);
+    assertEquals(1, logDirInfoMap.size());
+    assertTrue(logDirInfoMap.containsKey(logDir));
+    LogDirInfo logDirInfo = logDirInfoMap.get(logDir);
+    TopicPartition topicPartition = new TopicPartition(topic, 0);
+    assertTrue(logDirInfo.replicaInfos.containsKey(topicPartition));
+    TopicPartition topicPartition1 = new TopicPartition(topic, 1);
+    assertFalse(logDirInfo.replicaInfos.containsKey(topicPartition1));
+  }
+
+  @Test
+  public void testDescribeLogDirsByBrokerLogDirAndNullTopicPartition() {
+    // Setup
+    final String topic = FIRST_TOPIC_TO_TEST;
+    final Map<String, List<Integer>> topicPartitionMap = new HashMap<>();
+    topicPartitionMap.put(topic, null);
+
+    int brokerId = TEST_KAFKA_BOOTSTRAP_SERVERS_ID.get(0);
+    final List<Integer> brokerList = Arrays.asList(brokerId);
+    Map<Integer, List<Integer>> replicaAssignment = new HashMap<>();
+    replicaAssignment.put(0, brokerList);
+
+    // Create first topic with 1 partition on first broker
+    createOneTopic(topic, replicaAssignment);
+
+    TopicPartitionReplica topicPartitionReplica = new TopicPartitionReplica(topic, 0, brokerId);
+    Map<TopicPartitionReplica, ReplicaLogDirInfo> replicaReplicaLogDirInfoMap = kafkaAdminServiceUnderTest.describeReplicaLogDirs(Arrays.asList(topicPartitionReplica));
+    String logDir = replicaReplicaLogDirInfoMap.get(topicPartitionReplica).getCurrentReplicaLogDir();
+
+    // Run the test
+    final Map<Integer, Map<String, LogDirInfo>> result =
+        kafkaAdminServiceUnderTest.describeLogDirsByBrokerAndTopic(brokerList, Arrays.asList(logDir), topicPartitionMap);
 
     // Verify the results
     assertTrue(result.containsKey(brokerId));
@@ -2177,7 +2222,7 @@ public class KafkaAdminServiceTest {
     Map<Integer, List<Integer>> replicaAssignment = new HashMap<>();
     replicaAssignment.put(0, brokerList);
 
-    // Create first topic with 1 partition on broker 111
+    // Create first topic with 1 partition on first broker
     createOneTopic(topic, replicaAssignment);
 
     TopicPartitionReplica topicPartitionReplica = new TopicPartitionReplica(topic, 0, brokerId);
@@ -2190,7 +2235,7 @@ public class KafkaAdminServiceTest {
     String currentLogDir = result.get(topicPartitionReplica).getCurrentReplicaLogDir();
     final Map<Integer, Map<String, LogDirInfo>> logDirsByBrokerAndTopic =
         kafkaAdminServiceUnderTest.describeLogDirsByBrokerAndTopic(
-            brokerList, null, Arrays.asList(topic));
+            brokerList, null, null);
     Map<String, LogDirInfo> logDirInfoMap = logDirsByBrokerAndTopic.get(brokerId);
     assertTrue(logDirInfoMap.containsKey(currentLogDir));
     TopicPartition topicPartition = new TopicPartition(topic, 0);

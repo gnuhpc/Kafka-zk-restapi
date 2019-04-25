@@ -456,7 +456,7 @@ public class KafkaAdminService {
   }
 
   public Map<Integer, Map<String, LogDirInfo>> describeLogDirsByBrokerAndTopic(
-      List<Integer> brokerList, List<String> logDirList, List<String> topicList) {
+      List<Integer> brokerList, List<String> logDirList, Map<String, List<Integer>> topicPartitionMap) {
     org.apache.kafka.clients.admin.AdminClient kafkaAdminClient = createKafkaAdminClient();
 
     List<Integer> brokerIdsInCluster =
@@ -500,7 +500,7 @@ public class KafkaAdminService {
           e.getValue().entrySet().removeIf(m -> !logDirList.contains(m.getKey()));
         });
       }
-      if (topicList != null && !topicList.isEmpty()) {
+      if (topicPartitionMap != null && !topicPartitionMap.isEmpty()) {
         logDirInfosByBroker
             .entrySet()
             .forEach(
@@ -510,9 +510,10 @@ public class KafkaAdminService {
                       .forEach(
                           m -> {
                             m.getValue()
-                                .replicaInfos
-                                .entrySet()
-                                .removeIf(t -> !topicList.contains(t.getKey().topic()));
+                                .replicaInfos.entrySet()
+                                .removeIf(t -> !topicPartitionMap.keySet().contains(t.getKey().topic()) ||
+                                    (topicPartitionMap.get(t.getKey().topic()) != null &&
+                                        !topicPartitionMap.get(t.getKey().topic()).contains(t.getKey().partition())));
                           });
                 });
       }

@@ -172,14 +172,18 @@ public class KafkaController {
   @GetMapping(value = "/consumer/{topic}/{partition}/{offset}")
   @ApiOperation(
       value =
-          "Get the message from the offset of the partition in the topic"
-              + ", decoder is not supported yet")
-  public Record getMessage(
+          "Get the message from the offset of the partition in the topic")
+  public List<Record> getMessage(
       @PathVariable String topic,
       @PathVariable int partition,
       @PathVariable long offset,
-      @RequestParam(required = false) String decoder) {
-    return kafkaAdminService.getRecordByOffset(topic, partition, offset, decoder, "");
+      @RequestParam(required = false) int maxRecords,
+      @RequestParam(required = false, defaultValue = "StringDeserializer") String keyDecoder,
+      @RequestParam(required = false, defaultValue = "StringDeserializer") String valueDecoder,
+      @RequestParam(required = false) String avroSchema,
+      @RequestParam(required = false, defaultValue = "30000") long fetchTimeoutMs) throws ApiException {
+    return kafkaAdminService.getRecordsByOffset(topic, partition, offset, maxRecords, keyDecoder,
+        valueDecoder, avroSchema, fetchTimeoutMs);
   }
 
   @GetMapping(value = "/topics/{topic}")
@@ -264,6 +268,12 @@ public class KafkaController {
       })
   public ReassignStatus checkReassignPartitions(@RequestBody ReassignModel reassign) {
     return kafkaAdminService.checkReassignStatus(reassign);
+  }
+
+  @PutMapping(value = "/partitions/reassign/stop")
+  @ApiOperation(value = "Stop the partition reassignment process")
+  public GeneralResponse stopReassignPartitions() {
+    return kafkaAdminService.stopReassignPartitions();
   }
 
   @GetMapping(value = "/consumergroups")

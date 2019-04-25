@@ -5,23 +5,28 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.log4j.Log4j;
 import org.apache.kafka.common.errors.ApiException;
 import org.apache.kafka.common.utils.Bytes;
+import org.gnuhpc.bigdata.utils.KafkaUtils;
 
 @Data
 @Getter
 @Setter
 @Builder
+@Log4j
 public class Record {
   public String topic;
   public long offset;
   public Object key = new Object();
   public Object value = new Object();
   public long timestamp;
-  public Class<?> type;
-  String decoder;
+  String keyDecoder;
+  String valueDecoder;
 
-  public String getValue() {
+  public String getValueByDecoder(String decoder, Object value) {
+    if (value == null) return null;
+    Class<?> type = KafkaUtils.DESERIALIZER_TYPE_MAP.get(decoder);
     try {
       if (String.class.isAssignableFrom(type)) {
         return value.toString();
@@ -53,7 +58,7 @@ public class Record {
       }
 
       if (byte[].class.isAssignableFrom(type)) {
-        if (decoder.equals("AvorDeserializer")) {
+        if (decoder.equals("AvroDeserializer")) {
           return value.toString();
         } else {
           byte[] byteArray = (byte[]) value;
@@ -74,6 +79,16 @@ public class Record {
             + "String, Short, Integer, Long, Float, Double, ByteArray, ByteBuffer, Bytes");
   }
 
+  public String getValue() {
+    log.info("getValue for value:" + value + " by decoder:" + valueDecoder);
+    return getValueByDecoder(valueDecoder, value);
+  }
+
+  public String getKey() {
+    log.info("getKeyValue for key:" + key + " by decoder:" + keyDecoder);
+    return getValueByDecoder(keyDecoder, key);
+  }
+
   @Override
   public String toString() {
     if (value != null) {
@@ -82,13 +97,15 @@ public class Record {
           + ", offset:"
           + offset
           + ", key:"
-          + key
+          + getKey()
           + ", value:"
           + getValue()
           + ", timestamp:"
           + timestamp
-          + ", type:"
-          + type;
+          + ", keyDecoder:"
+          + keyDecoder
+          + ", valueDecoder:"
+          + valueDecoder;
     } else {
       return "topic:"
           + topic
@@ -100,8 +117,10 @@ public class Record {
           + value
           + ", timestamp:"
           + timestamp
-          + ", type:"
-          + type;
+          + ", keyDecoder:"
+          + keyDecoder
+          + ", valueDecoder:"
+          + valueDecoder;
     }
   }
 }

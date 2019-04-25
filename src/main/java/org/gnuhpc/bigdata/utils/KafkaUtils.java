@@ -16,6 +16,7 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.Node;
 import org.apache.kafka.common.PartitionInfo;
+import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.kafka.common.utils.Bytes;
@@ -55,6 +56,21 @@ public class KafkaUtils {
       put("ByteBufferDeserializer", ByteBuffer.class);
       put("BytesDeserializer", Bytes.class);
       put("AvroDeserializer", byte[].class);
+    }
+  };
+
+  public static final Map<String, Class<Object>> SERIALIZER_TYPE_MAP = new HashMap() {
+    {
+      put("StringSerializer", String.class);
+      put("ShortSerializer", Short.class);
+      put("IntegerSerializer", Integer.class);
+      put("LongSerializer", Long.class);
+      put("FloatSerializer", Float.class);
+      put("DoubleSerializer", Double.class);
+      put("ByteArraySerializer", byte[].class);
+      put("ByteBufferSerializer", ByteBuffer.class);
+      put("BytesSerializer", Bytes.class);
+      put("AvroSerializer", byte[].class);
     }
   };
 
@@ -104,29 +120,42 @@ public class KafkaUtils {
     return new KafkaConsumer(properties);
   }
 
-  public KafkaConsumer createNewConsumer(String consumerGroup, String decoder)
+  public KafkaConsumer createNewConsumer(String consumerGroup, String keyDecoder,
+      String valueDecoder, int maxRecords)
       throws ClassNotFoundException {
     Properties properties = new Properties();
+    if (keyDecoder == null || keyDecoder.isEmpty()) {
+      properties.put(
+          ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
+          StringDeserializer.class.getCanonicalName());
+    } else {
+      Class<Object> keyType = KafkaUtils.DESERIALIZER_TYPE_MAP.get(keyDecoder);
+      String keyDese = Serdes.serdeFrom(keyType).deserializer().getClass().getCanonicalName();
+      properties.put(
+          ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
+          Class.forName(keyDese).getCanonicalName());
+    }
+
+    if (valueDecoder == null || valueDecoder.isEmpty()) {
+      properties.put(
+          ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
+          StringDeserializer.class.getCanonicalName());
+    } else {
+      Class<Object> valueType = KafkaUtils.DESERIALIZER_TYPE_MAP.get(valueDecoder);
+      String valDese = Serdes.serdeFrom(valueType).deserializer().getClass().getCanonicalName();
+      properties.put(
+          ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
+          Class.forName(valDese).getCanonicalName());
+    }
+
     properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, getKafkaConfig().getBrokers());
     properties.put(ConsumerConfig.GROUP_ID_CONFIG, consumerGroup);
     properties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
     properties.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, "30000");
     properties.put(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, "100000000");
-    properties.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, "5");
-    if (decoder == null || decoder.isEmpty()) {
-      properties.put(
-          ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
-          StringDeserializer.class.getCanonicalName());
-      properties.put(
-          ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
-          StringDeserializer.class.getCanonicalName());
-    } else {
-      properties.put(
-          ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, Class.forName(decoder).getCanonicalName());
-      properties.put(
-          ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
-          Class.forName(decoder).getCanonicalName());
-    }
+    properties.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, maxRecords);
+
+    log.info("Consumer properties:" + properties);
     KafkaConsumer kafkaConsumer = new KafkaConsumer(properties);
     return kafkaConsumer;
   }
@@ -159,33 +188,31 @@ public class KafkaUtils {
     return producer;
   }
 
-  public KafkaProducer createProducer(String encoder) throws ClassNotFoundException {
+  public KafkaProducer createProducer(String keyEncoder, String valueEncoder) throws ClassNotFoundException {
     Properties prop = new Properties();
     prop.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaConfig.getBrokers());
-    prop.setProperty(
-        ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG,
-        "org.apache.kafka.common.serialization.StringSerializer");
-    prop.setProperty(
-        ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
-        "org.apache.kafka.common.serialization.StringSerializer");
-    prop.setProperty(ProducerConfig.RETRIES_CONFIG, "3");
-    prop.setProperty(ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG, "10000");
-    producer = new KafkaProducer(prop);
-
-    if (encoder == null || encoder.isEmpty()) {
+    if (keyEncoder == null || keyEncoder.isEmpty()) {
+      prop.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getCanonicalName());
+    } else {
+      Class<Object> keyType = KafkaUtils.SERIALIZER_TYPE_MAP.get(keyEncoder);
+      String keySe = Serdes.serdeFrom(keyType).serializer().getClass().getCanonicalName();
       prop.put(
           ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG,
-          StringSerializer.class.getCanonicalName());
-      prop.put(
-          ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
-          StringSerializer.class.getCanonicalName());
-    } else {
-      prop.put(
-          ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, Class.forName(encoder).getCanonicalName());
-      prop.put(
-          ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
-          Class.forName(encoder).getCanonicalName());
+          Class.forName(keySe).getCanonicalName());
     }
+
+    if (valueEncoder == null || valueEncoder.isEmpty()) {
+      prop.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getCanonicalName());
+    } else {
+      Class<Object> valueType = KafkaUtils.SERIALIZER_TYPE_MAP.get(valueEncoder);
+      String valSe = Serdes.serdeFrom(valueType).serializer().getClass().getCanonicalName();
+      prop.put(
+          ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
+          Class.forName(valSe).getCanonicalName());
+    }
+
+    prop.setProperty(ProducerConfig.RETRIES_CONFIG, "3");
+    prop.setProperty(ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG, "10000");
     producer = new KafkaProducer(prop);
 
     return producer;

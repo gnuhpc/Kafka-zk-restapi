@@ -91,12 +91,18 @@ import org.mockito.Spy;
 @FixMethodOrder(MethodSorters.JVM)
 @Log4j
 public class KafkaAdminServiceTest {
-  @Mock private static KafkaConfig mockKafkaConfig;
-  @Mock private static ZookeeperConfig mockZookeeperConfig;
-  @Spy private ZookeeperUtils mockZookeeperUtils = new ZookeeperUtils();
-  @Spy private KafkaUtils mockKafkaUtils = new KafkaUtils();
 
-  @InjectMocks private KafkaAdminService kafkaAdminServiceUnderTest;
+  @Mock
+  private static KafkaConfig mockKafkaConfig;
+  @Mock
+  private static ZookeeperConfig mockZookeeperConfig;
+  @Spy
+  private ZookeeperUtils mockZookeeperUtils = new ZookeeperUtils();
+  @Spy
+  private KafkaUtils mockKafkaUtils = new KafkaUtils();
+
+  @InjectMocks
+  private KafkaAdminService kafkaAdminServiceUnderTest;
 
   private static final String TEST_KAFKA_BOOTSTRAP_SERVERS =
       "localhost:19092,localhost:19094,localhost:19096";
@@ -564,6 +570,7 @@ public class KafkaAdminServiceTest {
   }
 
   class ConsumerRunnable implements Runnable {
+
     private final KafkaConsumer consumer;
 
     public ConsumerRunnable(String groupId, String clientId, List<String> topicList) {
@@ -583,6 +590,7 @@ public class KafkaAdminServiceTest {
   }
 
   class ConsumerGroup {
+
     private List<ConsumerRunnable> consumers;
     private List<Thread> threadList;
 
@@ -922,7 +930,9 @@ public class KafkaAdminServiceTest {
   }
 
   private boolean isCollectionEqual(Collection collection1, Collection collection2) {
-    if (collection1.size() != collection2.size()) return false;
+    if (collection1.size() != collection2.size()) {
+      return false;
+    }
 
     Iterator iterator = collection2.iterator();
     while (iterator.hasNext()) {
@@ -1630,6 +1640,16 @@ public class KafkaAdminServiceTest {
     return recordMetadataList;
   }
 
+  private String getEncoder(Class<Object> type) {
+    for (Map.Entry<String, Class<Object>> entry:KafkaUtils.SERIALIZER_TYPE_MAP.entrySet()) {
+      if (entry.getValue().equals(type)) {
+        return entry.getKey();
+      }
+    }
+
+    return null;
+  }
+
   private Map<Class<Object>, List<Long>> produceRecords(
       String topic, Map<Class<Object>, List<Object>> testData) {
     Map<Class<Object>, List<Long>> dataOffsetMap = new HashMap<>();
@@ -1640,8 +1660,7 @@ public class KafkaAdminServiceTest {
       List<Long> offsetList = new ArrayList<>();
       try {
         kafkaProducer =
-            mockKafkaUtils.createProducer(
-                Serdes.serdeFrom(type).serializer().getClass().getCanonicalName());
+            mockKafkaUtils.createProducer(null, getEncoder(type));
         for (Object value : test.getValue()) {
           ProducerRecord record = new ProducerRecord(topic, value);
           try {
@@ -1669,8 +1688,7 @@ public class KafkaAdminServiceTest {
     List<Long> offsetList = new ArrayList<>();
     try {
       kafkaProducer =
-          mockKafkaUtils.createProducer(
-              Serdes.serdeFrom(type).serializer().getClass().getCanonicalName());
+          mockKafkaUtils.createProducer(null, "AvroSerializer");
       for (byte[] value : testData) {
         ProducerRecord record = new ProducerRecord(topic, value);
         try {
@@ -1695,6 +1713,25 @@ public class KafkaAdminServiceTest {
     kafkaProducer.close();
 
     return offsetList;
+  }
+
+  private RecordMetadata produceRecord(String topic, double key, String value) throws Exception{
+    final String keySerializer = "DoubleSerializer";
+    final String valueSerializer = "StringSerializer";
+    KafkaProducer kafkaProducer = mockKafkaUtils.createProducer(keySerializer, valueSerializer);
+    RecordMetadata metadata = null;
+
+    ProducerRecord<String, String> record = new ProducerRecord(topic, key, value);
+    try {
+      metadata = (RecordMetadata) kafkaProducer.send(record).get();
+      log.info("Record(key:" + key + ", value:" + value + ") has been sent to topic:" +
+          metadata.topic() + ", partition:" + metadata.partition() + ", offset:" + metadata.offset());
+    } catch (Exception exception) {
+      log.error("Produce record:" + 0 + " error." + exception);
+    }
+
+    kafkaProducer.close();
+    return metadata;
   }
 
   @Test
@@ -1736,7 +1773,9 @@ public class KafkaAdminServiceTest {
     consumer.subscribe(Arrays.asList(topic));
     while (true) {
       ConsumerRecords<String, String> messages = consumer.poll(100);
-      if (messages.count() == 0) break;
+      if (messages.count() == 0) {
+        break;
+      }
       assertEquals(recordsCount, messages.count());
       int i = 0;
       for (ConsumerRecord<String, String> message : messages) {
@@ -1789,7 +1828,9 @@ public class KafkaAdminServiceTest {
     consumer.subscribe(Arrays.asList(topic));
     while (true) {
       ConsumerRecords<String, String> messages = consumer.poll(100);
-      if (messages.count() == 0) break;
+      if (messages.count() == 0) {
+        break;
+      }
       assertEquals(recordsCount, messages.count());
       int i = 0;
       for (ConsumerRecord<String, String> message : messages) {
@@ -1841,7 +1882,9 @@ public class KafkaAdminServiceTest {
     consumer.subscribe(Arrays.asList(topic));
     while (true) {
       ConsumerRecords<String, String> messages = consumer.poll(100);
-      if (messages.count() == 0) break;
+      if (messages.count() == 0) {
+        break;
+      }
       assertEquals(recordsCount - Long.parseLong(offset), messages.count());
       int i = 0;
       for (ConsumerRecord<String, String> message : messages) {
@@ -1935,7 +1978,9 @@ public class KafkaAdminServiceTest {
     consumer.subscribe(Arrays.asList(topic));
     while (true) {
       ConsumerRecords<String, String> messages = consumer.poll(100);
-      if (messages.count() == 0) break;
+      if (messages.count() == 0) {
+        break;
+      }
       assertEquals(recordsCount - recordIndexToReset, messages.count());
       int i = 0;
       for (ConsumerRecord<String, String> message : messages) {
@@ -2123,7 +2168,8 @@ public class KafkaAdminServiceTest {
 
     // Run the test
     final Map<Integer, Map<String, LogDirInfo>> result =
-        kafkaAdminServiceUnderTest.describeLogDirsByBrokerAndTopic(brokerList, null, topicPartitionMap);
+        kafkaAdminServiceUnderTest
+            .describeLogDirsByBrokerAndTopic(brokerList, null, topicPartitionMap);
 
     //     Verify the results
     assertTrue(result.containsKey(brokerId));
@@ -2161,12 +2207,15 @@ public class KafkaAdminServiceTest {
     createOneTopic(topic, replicaAssignment);
 
     TopicPartitionReplica topicPartitionReplica = new TopicPartitionReplica(topic, 0, brokerId);
-    Map<TopicPartitionReplica, ReplicaLogDirInfo> replicaReplicaLogDirInfoMap = kafkaAdminServiceUnderTest.describeReplicaLogDirs(Arrays.asList(topicPartitionReplica));
-    String logDir = replicaReplicaLogDirInfoMap.get(topicPartitionReplica).getCurrentReplicaLogDir();
+    Map<TopicPartitionReplica, ReplicaLogDirInfo> replicaReplicaLogDirInfoMap = kafkaAdminServiceUnderTest
+        .describeReplicaLogDirs(Arrays.asList(topicPartitionReplica));
+    String logDir = replicaReplicaLogDirInfoMap.get(topicPartitionReplica)
+        .getCurrentReplicaLogDir();
 
     // Run the test
     final Map<Integer, Map<String, LogDirInfo>> result =
-        kafkaAdminServiceUnderTest.describeLogDirsByBrokerAndTopic(brokerList, Arrays.asList(logDir), topicPartitionMap);
+        kafkaAdminServiceUnderTest
+            .describeLogDirsByBrokerAndTopic(brokerList, Arrays.asList(logDir), topicPartitionMap);
 
     // Verify the results
     assertTrue(result.containsKey(brokerId));
@@ -2196,12 +2245,15 @@ public class KafkaAdminServiceTest {
     createOneTopic(topic, replicaAssignment);
 
     TopicPartitionReplica topicPartitionReplica = new TopicPartitionReplica(topic, 0, brokerId);
-    Map<TopicPartitionReplica, ReplicaLogDirInfo> replicaReplicaLogDirInfoMap = kafkaAdminServiceUnderTest.describeReplicaLogDirs(Arrays.asList(topicPartitionReplica));
-    String logDir = replicaReplicaLogDirInfoMap.get(topicPartitionReplica).getCurrentReplicaLogDir();
+    Map<TopicPartitionReplica, ReplicaLogDirInfo> replicaReplicaLogDirInfoMap = kafkaAdminServiceUnderTest
+        .describeReplicaLogDirs(Arrays.asList(topicPartitionReplica));
+    String logDir = replicaReplicaLogDirInfoMap.get(topicPartitionReplica)
+        .getCurrentReplicaLogDir();
 
     // Run the test
     final Map<Integer, Map<String, LogDirInfo>> result =
-        kafkaAdminServiceUnderTest.describeLogDirsByBrokerAndTopic(brokerList, Arrays.asList(logDir), topicPartitionMap);
+        kafkaAdminServiceUnderTest
+            .describeLogDirsByBrokerAndTopic(brokerList, Arrays.asList(logDir), topicPartitionMap);
 
     // Verify the results
     assertTrue(result.containsKey(brokerId));
@@ -2335,6 +2387,8 @@ public class KafkaAdminServiceTest {
     final String topic = FIRST_TOPIC_TO_TEST;
     final int partition = 0;
     final String avroSchema = "avroSchema";
+    final int maxRecords = 1;
+    final long fetchTimeoutMs = 30000;
 
     // Create first topic
     createOneTopic(topic, 1, 1);
@@ -2349,9 +2403,11 @@ public class KafkaAdminServiceTest {
         for (int i = 0; i < offsetList.size(); i++) {
           Long offset = offsetList.get(i);
           String decoder = serde.deserializer().getClass().getSimpleName();
-          Record result =
-              kafkaAdminServiceUnderTest.getRecordByOffset(
-                  topic, partition, offset, decoder, avroSchema);
+          List<Record> result =
+              kafkaAdminServiceUnderTest.getRecordsByOffset(
+                  topic, partition, offset, maxRecords, decoder, decoder, avroSchema,
+                  fetchTimeoutMs);
+
           Object exceptedValue =
               serde
                   .deserializer()
@@ -2359,17 +2415,44 @@ public class KafkaAdminServiceTest {
                       topic, serde.serializer().serialize(topic, testData.get(type).get(i)));
           if (type.equals(ByteBuffer.class)) {
             ByteBuffer byteBuffer = (ByteBuffer) exceptedValue;
-            assertEquals(new String(byteBuffer.array()), result.getValue());
+            assertEquals(new String(byteBuffer.array()), result.get(0).getValue());
           } else if (type.equals(byte[].class)) {
-            assertEquals(new String((byte[]) exceptedValue), result.getValue());
+            assertEquals(new String((byte[]) exceptedValue), result.get(0).getValue());
           } else {
-            assertEquals(exceptedValue.toString(), result.getValue());
+            assertEquals(exceptedValue.toString(), result.get(0).getValue());
           }
         }
       }
     } catch (Exception exception) {
       log.error("Catch exception." + exception);
     }
+  }
+
+  @Test
+  public void testGetRecordByOffsetWithDifferentKeyValueDecoder() throws Exception {
+    final String keyDecoder = "DoubleDeserializer";
+    final String valueDecoder = "StringDeserializer";
+    final double key = 0.01;
+    final String value = "test";
+
+    // Setup
+    final String topic = FIRST_TOPIC_TO_TEST;
+    final int partition = 0;
+    final String avroSchema = "";
+    final int maxRecords = 1;
+    final long fetchTimeoutMs = 30000;
+
+    // Create first topic
+    createOneTopic(topic, 1, 1);
+
+    produceRecord(topic, key, value);
+    List<Record> result = kafkaAdminServiceUnderTest.getRecordsByOffset(
+        topic, partition, 0, maxRecords, keyDecoder, valueDecoder, avroSchema,
+        fetchTimeoutMs);
+
+    assertEquals(1, result.size());
+    assertEquals(String.valueOf(key), result.get(0).getKey());
+    assertEquals(value, result.get(0).getValue());
   }
 
   @Test
@@ -2384,6 +2467,8 @@ public class KafkaAdminServiceTest {
     final String topic = FIRST_TOPIC_TO_TEST;
     final int partition = 0;
     final String avroSchema = "avroSchema";
+    final int maxRecords = 1;
+    final long fetchTimeoutMs = 30000;
 
     // Create first topic
     createOneTopic(topic, 1, 1);
@@ -2397,9 +2482,10 @@ public class KafkaAdminServiceTest {
         for (int i = 0; i < offsetList.size(); i++) {
           Long offset = offsetList.get(i);
           // Use DoubleDeserializer to dese string record
-          Record result =
-              kafkaAdminServiceUnderTest.getRecordByOffset(
-                  topic, partition, offset, decoder, avroSchema);
+          List<Record> result =
+              kafkaAdminServiceUnderTest.getRecordsByOffset(
+                  topic, partition, offset, maxRecords, decoder, decoder, avroSchema,
+                  fetchTimeoutMs);
         }
       }
     } catch (ApiException apiException) {
@@ -2413,7 +2499,7 @@ public class KafkaAdminServiceTest {
                       + partition
                       + " offset:"
                       + 0
-                      + " using "
+                      + " using keyDecoder:" + decoder + ", valueDecoder:"
                       + decoder
                       + " exception."));
     }
@@ -2424,7 +2510,7 @@ public class KafkaAdminServiceTest {
     String topic = FIRST_TOPIC_TO_TEST;
 
     // create first topic
-    createOneTopic();
+    createOneTopic(topic, 1, 1);
 
     String schemaStr =
         "{\"namespace\": \"com.example.avro.model\",\n"
@@ -2458,10 +2544,11 @@ public class KafkaAdminServiceTest {
 
     String decoder = "AvroDeserializer";
     if (offsetList.size() > 0) {
-      Record result =
-          kafkaAdminServiceUnderTest.getRecordByOffset(
-              topic, 0, offsetList.get(0), decoder, schemaStr);
-      assertEquals(user.toString(), result.getValue());
+      List<Record> result =
+          kafkaAdminServiceUnderTest.getRecordsByOffset(
+              topic, 0, offsetList.get(0), 1, null, decoder, schemaStr, 30000);
+      assertEquals(1, result.size());
+      assertEquals(user.toString(), result.get(0).getValue());
     }
   }
 

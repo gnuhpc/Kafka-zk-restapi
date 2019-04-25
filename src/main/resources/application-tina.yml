@@ -8,7 +8,7 @@ kafka:
     topic: "health"
 
 zookeeper:
-  uris: 127.0.0.1:2183,127.0.0.1:2182
+  uris: 127.0.0.1:2181
 
 jmx:
   kafka:

@@ -92,8 +92,6 @@ public class KafkaController {
       @RequestParam(required = false) List<Integer> brokerList,
       @RequestParam(required = false) List<String> logDirList,
       @RequestParam(required = false) Map<String, List<Integer>> topicPartitionMap) {
-    topicPartitionMap.clear();
-    topicPartitionMap.put("__consumer_offsets", Arrays.asList(15, 16, 48));
     return kafkaAdminService.describeLogDirsByBrokerAndTopic(brokerList, logDirList, topicPartitionMap);
   }
 
@@ -311,7 +309,7 @@ public class KafkaController {
   @GetMapping(value = "/consumergroups/meta")
   @ApiOperation(
       value =
-          "Get the meta data of the specified new consumer groups, including state, coordinator,"
+          "Get all the meta data of new consumer groups, including state, coordinator,"
               + " assignmentStrategy, members")
   public List<ConsumerGroupMeta> getConsumerGroupsMeta() {
     Set<String> consumerGroupList = kafkaAdminService.listAllNewConsumerGroups();

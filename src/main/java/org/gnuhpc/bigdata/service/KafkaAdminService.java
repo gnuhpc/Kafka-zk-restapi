@@ -1843,6 +1843,7 @@ public class KafkaAdminService {
       log.info("Delete zk path /admin/reassign_partitions failed.");
     }
 
+    kafkaZkClient.close();
     return response;
   }
 

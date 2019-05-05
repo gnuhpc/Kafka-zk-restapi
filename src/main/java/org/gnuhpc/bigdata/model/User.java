@@ -1,17 +1,16 @@
 package org.gnuhpc.bigdata.model;
 
+import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.validator.constraints.NotBlank;
-import org.hibernate.validator.constraints.NotEmpty;
-
-import javax.validation.constraints.NotNull;
 
 @Getter
 @Setter
 @AllArgsConstructor
 public class User {
+
   @NotNull(message = "Username can not be null.")
   @NotBlank(message = "Username can not be blank.")
   private String username;

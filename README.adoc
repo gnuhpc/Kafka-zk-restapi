@@ -8,13 +8,17 @@ Kafka/ZK REST API is to provide the production-ready endpoints to perform some a
 
 // tag::base-t[]
 .Following features are provided:
+* cluster/nodes/controller info describe
 * Broker List
-* Topic create/delete/describe
-* Topic config create/update/delete/list
-* Topic partition add and reassign
-* Consumer group(old zookeeper based/new kafka based) list/describe
-* Offset check/reset
+* Broker config get/update, dynamic config get/update/delete
+* Log dirs describe, filtered by brokers/topic/partition/logdirs
+* Topic create/delete/describe/list
+* Topic config create/update/list
+* Topic partition add and reassign, replicas movement between log directories is supported
+* Consumer group list/describe/delete
 * Consumer Group Lag check
+* Offset reset by earliest/latest/timestamp
+* Contents view of message by different decoder, avro is also supported
 * Collect JMX metrics from brokers that expose JMX metrics +
   More details refer to https://github.com/gnuhpc/Kafka-zk-restapi/blob/master/docs/JMXCollector.adoc[JMXCollector API Specification]
 * Secure the REST API with Spring Security
@@ -82,7 +86,7 @@ Step 3: Use user controller API to add user to security file security/security.y
 * No need to restart server after adding new user or update user info. Timing thread introduced in Step 1 will refresh the user list according to your settings.
 
 === Support Kafka Version Information
-Currently, this rest api (master branch) supports Kafka 0.10.x brokers. The master branch is the most active branch. We're going to get down to the work of supporting the Kafka 1.x version.
+Currently, this rest api (master branch) supports Kafka 1.1.1 brokers. The master branch is the most active branch.
 
 *For 0.11.x, please checkout the branch 0.11.x by calling the command:*
 
@@ -96,8 +100,7 @@ __BasePath__ : /
 You can access Swagger-UI by accessing http://127.0.0.1:8121/api
 
 
-=== https://github.com/gnuhpc/Kafka-zk-restapi/blob/master/docs/paths.adoc[API LIST for 0.10]
-=== https://github.com/gnuhpc/Kafka-zk-restapi/blob/0.11.x/docs/paths.adoc[API LIST for 0.11.x]
+=== https://github.com/gnuhpc/Kafka-zk-restapi/blob/master/docs/paths.adoc[API LIST for 1.1.1]
 
 
 * kafka-controller : Kafka Api
@@ -106,13 +109,12 @@ You can access Swagger-UI by accessing http://127.0.0.1:8121/api
 * user-controller : User management Api
 
 
-=== https://github.com/gnuhpc/Kafka-zk-restapi/blob/master/docs/definitions.adoc[Data Model Definitions for 0.10]
-=== https://github.com/gnuhpc/Kafka-zk-restapi/blob/0.11.x/docs/definitions.adoc[Data Model Definitions for 0.11.x]
+=== https://github.com/gnuhpc/Kafka-zk-restapi/blob/master/docs/definitions.adoc[Data Model Definitions for 1.1.1]
 
 
 === Version information
 [%hardbreaks]
-__Version__ : 0.1.0
+__Version__ : 1.1.1
 
 
 === Contact information

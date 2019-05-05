@@ -1,6 +1,8 @@
 package org.gnuhpc.bigdata.controller;
 
-import org.gnuhpc.bigdata.exception.ErrorJson;
+import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import org.gnuhpc.bigdata.exception.RestErrorResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -13,39 +15,38 @@ import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import springfox.documentation.annotations.ApiIgnore;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.util.Map;
-
 @RestController
 @ApiIgnore
 public class CustomErrorController implements ErrorController {
-    private static final String PATH = "/error";
 
-    @Value("${server.debug}")
-    private boolean debug;
+  private static final String PATH = "/error";
 
-    @Autowired
-    private ErrorAttributes errorAttributes;
+  @Value("${server.debug}")
+  private boolean debug;
 
-    @RequestMapping(value = PATH)
-    public RestErrorResponse error(HttpServletRequest request, HttpServletResponse response) {
-        // Appropriate HTTP response code (e.g. 404 or 500) is automatically set by Spring.
-        // Here we just define response body.
-        //return new ErrorJson(response.getStatus(), getErrorAttributes(request, debug));
-      return new RestErrorResponse(HttpStatus.valueOf(response.getStatus()), response.getStatus(),
-              (String)getErrorAttributes(request, debug).get("message"),
-              (String)getErrorAttributes(request, debug).get("trace"),
-              "");
-    }
+  @Autowired private ErrorAttributes errorAttributes;
 
-    @Override
-    public String getErrorPath() {
-        return PATH;
-    }
+  @RequestMapping(value = PATH)
+  public RestErrorResponse error(HttpServletRequest request, HttpServletResponse response) {
+    // Appropriate HTTP response code (e.g. 404 or 500) is automatically set by Spring.
+    // Here we just define response body.
+    // return new ErrorJson(response.getStatus(), getErrorAttributes(request, debug));
+    return new RestErrorResponse(
+        HttpStatus.valueOf(response.getStatus()),
+        response.getStatus(),
+        (String) getErrorAttributes(request, debug).get("message"),
+        (String) getErrorAttributes(request, debug).get("trace"),
+        "");
+  }
 
-    private Map<String, Object> getErrorAttributes(HttpServletRequest request, boolean includeStackTrace) {
-        RequestAttributes requestAttributes = new ServletRequestAttributes(request);
-        return errorAttributes.getErrorAttributes(requestAttributes, includeStackTrace);
-    }
+  @Override
+  public String getErrorPath() {
+    return PATH;
+  }
+
+  private Map<String, Object> getErrorAttributes(
+      HttpServletRequest request, boolean includeStackTrace) {
+    RequestAttributes requestAttributes = new ServletRequestAttributes(request);
+    return errorAttributes.getErrorAttributes(requestAttributes, includeStackTrace);
+  }
 }

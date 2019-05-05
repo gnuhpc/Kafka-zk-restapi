@@ -9,8 +9,9 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableScheduling
 @Log4j
 public class KafkaRestSpringbootApplication {
-	public static void main(String[] args) {
-	    log.info("+++++++++Kafka-zk Rest Application starting++++++++++");
-		SpringApplication.run(KafkaRestSpringbootApplication.class, args);
-	}
+
+  public static void main(String[] args) {
+    log.info("+++++++++Kafka-zk Rest Application starting++++++++++");
+    SpringApplication.run(KafkaRestSpringbootApplication.class, args);
+  }
 }

@@ -1,45 +1,54 @@
 package org.gnuhpc.bigdata.model;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.Set;
 import lombok.Getter;
 import lombok.Setter;
-import com.fasterxml.jackson.annotation.JsonCreator;
-
-import java.util.*;
 
 @Getter
 @Setter
 public class JMXConfiguration {
+
   private JMXFilter include;
   private JMXFilter exclude;
 
   /**
    * Access JMXConfiguration elements more easily
    *
-   * Also provides helper methods to extract common information among JMXFilters.
+   * <p>Also provides helper methods to extract common information among JMXFilters.
    */
   @JsonCreator
-  public JMXConfiguration(@JsonProperty("include") JMXFilter include, @JsonProperty("exclude") JMXFilter exclude) {
+  public JMXConfiguration(
+      @JsonProperty("include") JMXFilter include, @JsonProperty("exclude") JMXFilter exclude) {
     this.include = include;
     this.exclude = exclude;
   }
 
-  private Boolean hasInclude(){
+  private Boolean hasInclude() {
     return getInclude() != null;
   }
 
   /**
    * JMXFilter a configuration list to keep the ones with `include` JMXFilters.
    *
-   * @param configurationList         the configuration list to JMXFilter
-   *
-   * @return                          a configuration list
+   * @param configurationList the configuration list to JMXFilter
+   * @return a configuration list
    */
-  private static LinkedList<JMXConfiguration> getIncludeConfigurationList(LinkedList<JMXConfiguration> configurationList){
-    LinkedList<JMXConfiguration> includeConfigList = new LinkedList<JMXConfiguration>(configurationList);
+  private static LinkedList<JMXConfiguration> getIncludeConfigurationList(
+      LinkedList<JMXConfiguration> configurationList) {
+    LinkedList<JMXConfiguration> includeConfigList =
+        new LinkedList<JMXConfiguration>(configurationList);
     Iterator<JMXConfiguration> confItr = includeConfigList.iterator();
 
-    while(confItr.hasNext()) {
+    while (confItr.hasNext()) {
       JMXConfiguration conf = confItr.next();
       if (!conf.hasInclude()) {
         confItr.remove();
@@ -51,12 +60,13 @@ public class JMXConfiguration {
   /**
    * Extract `include` JMXFilters from the configuration list and index then by domain name.
    *
-   * @param configurationList         the configuration list to process
-   *
-   * @return                          JMXFilters by domain name
+   * @param configurationList the configuration list to process
+   * @return JMXFilters by domain name
    */
-  private static HashMap<String, LinkedList<JMXFilter>> getIncludeJMXFiltersByDomain(LinkedList<JMXConfiguration> configurationList){
-    HashMap<String, LinkedList<JMXFilter>> includeJMXFiltersByDomain = new HashMap<String, LinkedList<JMXFilter>>();
+  private static HashMap<String, LinkedList<JMXFilter>> getIncludeJMXFiltersByDomain(
+      LinkedList<JMXConfiguration> configurationList) {
+    HashMap<String, LinkedList<JMXFilter>> includeJMXFiltersByDomain =
+        new HashMap<String, LinkedList<JMXFilter>>();
 
     for (JMXConfiguration conf : configurationList) {
       JMXFilter JMXFilter = conf.getInclude();
@@ -70,7 +80,8 @@ public class JMXConfiguration {
           String[] splitBeanName = beanName.split(":");
           String domain = splitBeanName[0];
           String rawBeanParameters = splitBeanName[1];
-          HashMap<String, String> beanParametersHash = JMXAttribute.getBeanParametersHash(rawBeanParameters);
+          HashMap<String, String> beanParametersHash =
+              JMXAttribute.getBeanParametersHash(rawBeanParameters);
           beanParametersHash.put("domain", domain);
           JMXFilters.add(new JMXFilter(beanParametersHash));
         }
@@ -78,7 +89,7 @@ public class JMXConfiguration {
         JMXFilters.add(JMXFilter);
       }
 
-      for (JMXFilter f: JMXFilters) {
+      for (JMXFilter f : JMXFilters) {
         //  Retrieve the existing JMXFilters for the domain, add the new JMXFilters
         LinkedList<JMXFilter> domainJMXFilters;
         String domainName = f.getDomain();
@@ -99,26 +110,26 @@ public class JMXConfiguration {
   /**
    * Extract, among JMXFilters, bean key parameters in common.
    *
-   * @param JMXFiltersByDomain       JMXFilters by domain name
-   *
-   * @return                      common bean key parameters by domain name
+   * @param JMXFiltersByDomain JMXFilters by domain name
+   * @return common bean key parameters by domain name
    */
-  private static HashMap<String, Set<String>> getCommonBeanKeysByDomain(HashMap<String, LinkedList<JMXFilter>> JMXFiltersByDomain){
-    HashMap<String, Set<String>> beanKeysIntersectionByDomain = new HashMap<String,Set<String>>();
+  private static HashMap<String, Set<String>> getCommonBeanKeysByDomain(
+      HashMap<String, LinkedList<JMXFilter>> JMXFiltersByDomain) {
+    HashMap<String, Set<String>> beanKeysIntersectionByDomain = new HashMap<String, Set<String>>();
 
     for (Map.Entry<String, LinkedList<JMXFilter>> JMXFiltersEntry : JMXFiltersByDomain.entrySet()) {
       String domainName = JMXFiltersEntry.getKey();
-      LinkedList<JMXFilter> mJMXFilters= JMXFiltersEntry.getValue();
+      LinkedList<JMXFilter> mJMXFilters = JMXFiltersEntry.getValue();
 
       // Compute keys intersection
       Set<String> keysIntersection = new HashSet<String>(mJMXFilters.getFirst().keySet());
 
-      for (JMXFilter f: mJMXFilters) {
+      for (JMXFilter f : mJMXFilters) {
         keysIntersection.retainAll(f.keySet());
       }
 
       // Remove special parameters
-      for(String param : JMXAttribute.getExcludedBeanParams()){
+      for (String param : JMXAttribute.getExcludedBeanParams()) {
         keysIntersection.remove(param);
       }
       beanKeysIntersectionByDomain.put(domainName, keysIntersection);
@@ -128,18 +139,22 @@ public class JMXConfiguration {
   }
 
   /**
-   * Build a map of common bean keys->values, with the specified bean keys, among the given JMXFilters.
+   * Build a map of common bean keys->values, with the specified bean keys, among the given
+   * JMXFilters.
    *
-   * @param beanKeysByDomain      bean keys by domain name
-   * @param JMXFiltersByDomain       JMXFilters by domain name
-   *
-   * @return                      bean pattern (keys->values) by domain name
+   * @param beanKeysByDomain bean keys by domain name
+   * @param JMXFiltersByDomain JMXFilters by domain name
+   * @return bean pattern (keys->values) by domain name
    */
-  private static HashMap<String, LinkedHashMap<String, String>> getCommonScopeByDomain(HashMap<String, Set<String>> beanKeysByDomain, HashMap<String, LinkedList<JMXFilter>> JMXFiltersByDomain){
+  private static HashMap<String, LinkedHashMap<String, String>> getCommonScopeByDomain(
+      HashMap<String, Set<String>> beanKeysByDomain,
+      HashMap<String, LinkedList<JMXFilter>> JMXFiltersByDomain) {
     // Compute a common scope a among JMXFilters by domain name
-    HashMap<String, LinkedHashMap<String, String>> commonScopeByDomain = new HashMap<String, LinkedHashMap<String, String>>();
+    HashMap<String, LinkedHashMap<String, String>> commonScopeByDomain =
+        new HashMap<String, LinkedHashMap<String, String>>();
 
-    for (Map.Entry<String, Set<String>> commonParametersByDomainEntry : beanKeysByDomain.entrySet()) {
+    for (Map.Entry<String, Set<String>> commonParametersByDomainEntry :
+        beanKeysByDomain.entrySet()) {
       String domainName = commonParametersByDomainEntry.getKey();
       Set<String> commonParameters = commonParametersByDomainEntry.getValue();
       LinkedList<JMXFilter> JMXFilters = JMXFiltersByDomain.get(domainName);
@@ -153,12 +168,12 @@ public class JMXConfiguration {
         for (JMXFilter f : JMXFilters) {
           ArrayList<String> parameterValues = f.getParameterValues(parameter);
 
-          if (parameterValues.size() != 1 || (commonValue != null && !commonValue.equals(parameterValues.get(0)))) {
+          if (parameterValues.size() != 1
+              || (commonValue != null && !commonValue.equals(parameterValues.get(0)))) {
             hasCommonValue = false;
             break;
           }
           commonValue = parameterValues.get(0);
-
         }
         if (hasCommonValue) {
           commonScope.put(parameter, commonValue);
@@ -173,48 +188,57 @@ public class JMXConfiguration {
   /**
    * Stringify a bean pattern.
    *
-   * @param domain                domain name
-   * @param beanScope             map of bean keys-> values
-   *
-   * @return                      string pattern identifying the bean scope
+   * @param domain domain name
+   * @param beanScope map of bean keys-> values
+   * @return string pattern identifying the bean scope
    */
-  private static String beanScopeToString(String domain, LinkedHashMap<String, String> beanScope){
-    String result = "";
+  private static String beanScopeToString(String domain, LinkedHashMap<String, String> beanScope) {
+    StringBuffer resultBuf = new StringBuffer();
 
     // Domain
     domain = (domain != null) ? domain : "*";
-    result += domain + ":";
+    resultBuf.append(domain);
+    resultBuf.append(":");
 
     // Scope parameters
     for (Map.Entry<String, String> beanScopeEntry : beanScope.entrySet()) {
       String param = beanScopeEntry.getKey();
       String value = beanScopeEntry.getValue();
 
-      result += param + "=" + value + ",";
+      resultBuf.append(param);
+      resultBuf.append("=");
+      resultBuf.append(value);
+      resultBuf.append(",");
     }
-    result += "*";
 
-    return result;
+    resultBuf.append("*");
+
+    return resultBuf.toString();
   }
 
   /**
    * Find, among the JMXConfiguration list, a potential common bean pattern by domain name.
    *
-   * @param JMXConfigurationList         the JMXConfiguration list to process
-   *
-   * @return                          common bean pattern strings
+   * @param JMXConfigurationList the JMXConfiguration list to process
+   * @return common bean pattern strings
    */
-  public static LinkedList<String> getGreatestCommonScopes(LinkedList<JMXConfiguration> JMXConfigurationList){
+  public static LinkedList<String> getGreatestCommonScopes(
+      LinkedList<JMXConfiguration> JMXConfigurationList) {
     LinkedList<String> result = new LinkedList<String>();
     if (JMXConfigurationList == null || JMXConfigurationList.isEmpty()) {
       return result;
     }
-    LinkedList<JMXConfiguration> includeConfigList = getIncludeConfigurationList(JMXConfigurationList);
-    HashMap<String, LinkedList<JMXFilter>> includeJMXFiltersByDomain = getIncludeJMXFiltersByDomain(includeConfigList);
-    HashMap<String, Set<String>> parametersIntersectionByDomain = getCommonBeanKeysByDomain(includeJMXFiltersByDomain);
-    HashMap<String, LinkedHashMap<String, String>> commonBeanScopeByDomain = getCommonScopeByDomain(parametersIntersectionByDomain, includeJMXFiltersByDomain);
+    LinkedList<JMXConfiguration> includeConfigList =
+        getIncludeConfigurationList(JMXConfigurationList);
+    HashMap<String, LinkedList<JMXFilter>> includeJMXFiltersByDomain =
+        getIncludeJMXFiltersByDomain(includeConfigList);
+    HashMap<String, Set<String>> parametersIntersectionByDomain =
+        getCommonBeanKeysByDomain(includeJMXFiltersByDomain);
+    HashMap<String, LinkedHashMap<String, String>> commonBeanScopeByDomain =
+        getCommonScopeByDomain(parametersIntersectionByDomain, includeJMXFiltersByDomain);
 
-    for (Map.Entry<String, LinkedHashMap<String, String>> beanScopeEntry: commonBeanScopeByDomain.entrySet()) {
+    for (Map.Entry<String, LinkedHashMap<String, String>> beanScopeEntry :
+        commonBeanScopeByDomain.entrySet()) {
       String domain = beanScopeEntry.getKey();
       LinkedHashMap<String, String> beanScope = beanScopeEntry.getValue();
 

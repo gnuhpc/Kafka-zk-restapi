@@ -1,28 +1,28 @@
 package org.gnuhpc.bigdata.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Set;
+import java.util.regex.Pattern;
 import lombok.Getter;
 import lombok.Setter;
-
-import java.util.*;
-import java.util.regex.Pattern;
 
 @Getter
 @Setter
 public class JMXFilter {
+
   HashMap<String, Object> filter;
   Pattern domainRegex;
   ArrayList<Pattern> beanRegexes = null;
-  //ArrayList<String> excludeTags = null;
-  //HashMap<String, String> additionalTags = null;
+  // ArrayList<String> excludeTags = null;
+  // HashMap<String, String> additionalTags = null;
 
   /**
-   * A simple class to manipulate include/exclude filter elements more easily
-   * A filter may contain:
-   * - A domain (key: 'domain') or a domain regex (key: 'domain_regex')
-   * - Bean names (key: 'bean' or 'bean_name') or bean regexes (key: 'bean_regex')
-   * - Attributes (key: 'attribute')
-   * - Additional bean parameters (other keys)
+   * A simple class to manipulate include/exclude filter elements more easily A filter may contain:
+   * - A domain (key: 'domain') or a domain regex (key: 'domain_regex') - Bean names (key: 'bean' or
+   * 'bean_name') or bean regexes (key: 'bean_regex') - Attributes (key: 'attribute') - Additional
+   * bean parameters (other keys)
    */
   @JsonCreator
   @SuppressWarnings("unchecked")
@@ -44,7 +44,7 @@ public class JMXFilter {
     return filter.keySet();
   }
 
-  @SuppressWarnings({ "unchecked", "serial" })
+  @SuppressWarnings({"unchecked", "serial"})
   private static ArrayList<String> toStringArrayList(final Object toCast) {
     // Return object as an ArrayList wherever it's defined as
     // list or not
@@ -64,18 +64,19 @@ public class JMXFilter {
     return (ArrayList<String>) toCast;
   }
 
-
   public ArrayList<String> getBeanNames() {
-    if (isEmptyBeanName()){
+    if (isEmptyBeanName()) {
       return new ArrayList<String>();
     }
-    final Object beanNames = (filter.get("bean") != null) ? filter.get("bean") : filter.get("bean_name");
+    final Object beanNames =
+        (filter.get("bean") != null) ? filter.get("bean") : filter.get("bean_name");
     // Return bean names as an ArrayList wherever it's defined as
     // list or not
     //
     // ### Example
     // bean:
-    //                  - org.apache.cassandra.db:type=Caches,keyspace=system,cache=HintsColumnFamilyKeyCache
+    //                  -
+    // org.apache.cassandra.db:type=Caches,keyspace=system,cache=HintsColumnFamilyKeyCache
     //                  - org.datadog.jmxfetch.test:type=type=SimpleTestJavaApp
     // ### OR
     // bean: org.datadog.jmxfetch.test:type=type=SimpleTestJavaApp
@@ -98,7 +99,7 @@ public class JMXFilter {
     // a list or not
 
     if (this.beanRegexes == null) {
-      if (filter.get("bean_regex") == null){
+      if (filter.get("bean_regex") == null) {
         this.beanRegexes = new ArrayList<Pattern>();
       } else {
         final Object beanRegexNames = filter.get("bean_regex");

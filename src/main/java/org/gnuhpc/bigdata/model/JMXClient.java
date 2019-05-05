@@ -1,27 +1,32 @@
 package org.gnuhpc.bigdata.model;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.SocketTimeoutException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
+import javax.management.remote.JMXConnector;
+import javax.management.remote.JMXConnectorFactory;
+import javax.management.remote.JMXServiceURL;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.log4j.Log4j;
 import org.gnuhpc.bigdata.config.JMXConfig;
 import org.gnuhpc.bigdata.exception.CollectorException;
 
-import javax.management.remote.JMXConnector;
-import javax.management.remote.JMXConnectorFactory;
-import javax.management.remote.JMXServiceURL;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.SocketTimeoutException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.*;
-
-import static com.google.common.base.Preconditions.checkNotNull;
-
 @Getter
 @Setter
 @Log4j
 public class JMXClient {
+
   private String ip;
   private String port;
   private JMXConnector jmxConnector = null;
@@ -41,11 +46,14 @@ public class JMXClient {
     String[] ipAndPort = host.split(":");
     this.ip = ipAndPort[0];
     this.port = ipAndPort[1];
-    this.jmxServiceURL = new StringBuilder().append(JMXConfig.JMX_PROTOCOL)
+    this.jmxServiceURL =
+        new StringBuilder()
+            .append(JMXConfig.JMX_PROTOCOL)
             .append(this.ip)
             .append(":")
             .append(this.port)
-            .append("/jmxrmi").toString();
+            .append("/jmxrmi")
+            .toString();
   }
 
   public JMXConnector connect() throws CollectorException {
@@ -53,11 +61,17 @@ public class JMXClient {
       JMXServiceURL jmxServiceURL = new JMXServiceURL(this.jmxServiceURL);
       jmxConnector = JMXConnectorFactory.connect(jmxServiceURL, jmxEnv);
     } catch (MalformedURLException e) {
-      throw new CollectorException(String.format("%s occurred. URL: %s. Reason: %s",
-              e.getClass().getCanonicalName(), this.jmxServiceURL, e.getCause()), e);
+      throw new CollectorException(
+          String.format(
+              "%s occurred. URL: %s. Reason: %s",
+              e.getClass().getCanonicalName(), this.jmxServiceURL, e.getCause()),
+          e);
     } catch (IOException e) {
-      throw new CollectorException(String.format("%s occurred. URL: %s. Reason: %s",
-              e.getClass().getCanonicalName(), this.jmxServiceURL, e.getCause()), e);
+      throw new CollectorException(
+          String.format(
+              "%s occurred. URL: %s. Reason: %s",
+              e.getClass().getCanonicalName(), this.jmxServiceURL, e.getCause()),
+          e);
     }
     return jmxConnector;
   }
@@ -72,22 +86,24 @@ public class JMXClient {
     BlockingQueue<Object> mailbox = new ArrayBlockingQueue<Object>(1);
 
     ExecutorService executor = Executors.newSingleThreadExecutor(daemonThreadFactory);
-    executor.submit(() -> {
-      try {
-        JMXConnector connector = JMXConnectorFactory.connect(url, jmxEnv);
-        if (!mailbox.offer(connector)) {
-          connector.close();
-        }
-      } catch (Throwable t) {
-        mailbox.offer(t);
-      }
-    });
+    executor.submit(
+        () -> {
+          try {
+            JMXConnector connector = JMXConnectorFactory.connect(url, jmxEnv);
+            if (!mailbox.offer(connector)) {
+              connector.close();
+            }
+          } catch (Throwable t) {
+            mailbox.offer(t);
+          }
+        });
     Object result;
     try {
       result = mailbox.poll(JMX_TIMEOUT, TimeUnit.SECONDS);
       if (result == null) {
-        if (!mailbox.offer(""))
+        if (!mailbox.offer("")) {
           result = mailbox.take();
+        }
       }
     } catch (InterruptedException e) {
       throw e;
@@ -119,6 +135,7 @@ public class JMXClient {
   }
 
   private static class DaemonThreadFactory implements ThreadFactory {
+
     public Thread newThread(Runnable r) {
       Thread t = Executors.defaultThreadFactory().newThread(r);
       t.setDaemon(true);

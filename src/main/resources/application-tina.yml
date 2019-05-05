@@ -1,5 +1,5 @@
 kafka:
-  brokers: localhost:19092,localhost:19093,localhost:19095
+  brokers: localhost:19092,localhost:19094,localhost:19096
   offset:
     topic: "__consumer_offsets"
     partitions: 50
@@ -8,7 +8,7 @@ kafka:
     topic: "health"
 
 zookeeper:
-  uris: 127.0.0.1:2183,127.0.0.1:2182
+  uris: 127.0.0.1:2181
 
 jmx:
   kafka:
@@ -38,4 +38,7 @@ spring:
       enabled: detect
   aop:
     auto: true
+
+
+
 

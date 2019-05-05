@@ -1,44 +1,43 @@
 package org.gnuhpc.bigdata.componet;
 
-import kafka.common.OffsetAndMetadata;
-import kafka.coordinator.GroupTopicPartition;
-import lombok.Data;
-import org.springframework.stereotype.Component;
-
-import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import kafka.common.OffsetAndMetadata;
+import kafka.coordinator.group.GroupTopicPartition;
+import lombok.Data;
+import org.springframework.stereotype.Component;
 
 @Component
 @Data
 public class OffsetStorage {
-    private static Map<String, Map<GroupTopicPartition,OffsetAndMetadata>> consumerOffsets = new ConcurrentHashMap<>();
 
-    public Map<String, Map<GroupTopicPartition, OffsetAndMetadata>> getMap() {
-        return consumerOffsets;
-    }
+  private static Map<String, Map<GroupTopicPartition, OffsetAndMetadata>> consumerOffsets =
+      new ConcurrentHashMap<>();
 
-    public void put(String consumerGroup,
-                    Map<GroupTopicPartition,OffsetAndMetadata> offsetMap){
-        if (offsetMap != null) {
-            consumerOffsets.put(consumerGroup, offsetMap);
-        }
-    }
+  public Map<String, Map<GroupTopicPartition, OffsetAndMetadata>> getMap() {
+    return consumerOffsets;
+  }
 
-    public void clear(){
-        consumerOffsets.clear();
+  public void put(String consumerGroup, Map<GroupTopicPartition, OffsetAndMetadata> offsetMap) {
+    if (offsetMap != null) {
+      consumerOffsets.put(consumerGroup, offsetMap);
     }
+  }
 
-    public Map get(String consumerGroup){
-        return consumerOffsets.get(consumerGroup);
-    }
+  public void clear() {
+    consumerOffsets.clear();
+  }
 
-    public void remove(String consumerGroup){
-        consumerOffsets.remove(consumerGroup);
-    }
+  public Map get(String consumerGroup) {
+    return consumerOffsets.get(consumerGroup);
+  }
 
-    @Override
-    public String toString() {
-        return consumerOffsets.toString();
-    }
+  public void remove(String consumerGroup) {
+    consumerOffsets.remove(consumerGroup);
+  }
+
+  @Override
+  public String toString() {
+    return consumerOffsets.toString();
+  }
 }

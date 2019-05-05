@@ -4,14 +4,22 @@ import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
-import com.google.common.base.Strings;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.module.scala.DefaultScalaModule;
 import com.google.common.collect.ImmutableMap;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonDeserializer;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -20,79 +28,123 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.function.Function;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 import kafka.admin.AdminClient;
+import kafka.admin.AdminClient.ConsumerGroupSummary;
+import kafka.admin.AdminClient.ConsumerSummary;
 import kafka.admin.AdminUtils;
-import kafka.admin.RackAwareMode;
+import kafka.admin.ConsumerGroupCommand;
 import kafka.admin.ReassignPartitionsCommand;
-import kafka.admin.ReassignmentStatus;
-import kafka.admin.TopicCommand;
+import kafka.admin.ReassignPartitionsCommand.Throttle;
 import kafka.api.PartitionOffsetRequestInfo;
 import kafka.cluster.Broker;
-import kafka.common.OffsetAndMetadata;
-import kafka.common.Topic;
 import kafka.common.TopicAndPartition;
-import kafka.coordinator.GroupOverview;
-import kafka.coordinator.GroupTopicPartition;
+import kafka.coordinator.group.GroupOverview;
+import kafka.coordinator.group.GroupTopicPartition;
 import kafka.javaapi.OffsetRequest;
 import kafka.javaapi.OffsetResponse;
 import kafka.javaapi.consumer.SimpleConsumer;
+import kafka.log.LogConfig;
 import kafka.server.ConfigType;
-import kafka.utils.ZKGroupTopicDirs;
 import kafka.utils.ZkUtils;
+import kafka.zk.AdminZkClient;
+import kafka.zk.KafkaZkClient;
 import lombok.extern.log4j.Log4j;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.avro.Schema;
+import org.apache.avro.generic.GenericDatumReader;
+import org.apache.avro.generic.GenericRecord;
+import org.apache.avro.io.DatumReader;
+import org.apache.avro.io.DecoderFactory;
 import org.apache.curator.framework.CuratorFramework;
+import org.apache.kafka.clients.admin.AdminClientConfig;
+import org.apache.kafka.clients.admin.AlterConfigsResult;
+import org.apache.kafka.clients.admin.Config;
+import org.apache.kafka.clients.admin.ConfigEntry;
+import org.apache.kafka.clients.admin.CreatePartitionsResult;
+import org.apache.kafka.clients.admin.CreateTopicsOptions;
+import org.apache.kafka.clients.admin.CreateTopicsResult;
+import org.apache.kafka.clients.admin.DeleteTopicsResult;
+import org.apache.kafka.clients.admin.DescribeClusterOptions;
+import org.apache.kafka.clients.admin.DescribeClusterResult;
+import org.apache.kafka.clients.admin.DescribeConfigsResult;
+import org.apache.kafka.clients.admin.DescribeLogDirsOptions;
+import org.apache.kafka.clients.admin.DescribeLogDirsResult;
+import org.apache.kafka.clients.admin.DescribeReplicaLogDirsOptions;
+import org.apache.kafka.clients.admin.DescribeReplicaLogDirsResult;
+import org.apache.kafka.clients.admin.DescribeReplicaLogDirsResult.ReplicaLogDirInfo;
+import org.apache.kafka.clients.admin.DescribeTopicsResult;
+import org.apache.kafka.clients.admin.KafkaAdminClient;
+import org.apache.kafka.clients.admin.ListTopicsOptions;
+import org.apache.kafka.clients.admin.ListTopicsResult;
+import org.apache.kafka.clients.admin.NewPartitions;
+import org.apache.kafka.clients.admin.NewTopic;
+import org.apache.kafka.clients.admin.TopicDescription;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.consumer.OffsetAndTimestamp;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
+import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.Node;
-import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.TopicPartitionInfo;
+import org.apache.kafka.common.TopicPartitionReplica;
+import org.apache.kafka.common.config.ConfigResource;
+import org.apache.kafka.common.config.ConfigResource.Type;
 import org.apache.kafka.common.errors.ApiException;
 import org.apache.kafka.common.errors.InvalidTopicException;
-import org.apache.kafka.common.requests.MetadataResponse;
+import org.apache.kafka.common.internals.Topic;
+import org.apache.kafka.common.protocol.Errors;
+import org.apache.kafka.common.requests.DescribeLogDirsResponse.LogDirInfo;
 import org.gnuhpc.bigdata.CollectionConvertor;
 import org.gnuhpc.bigdata.componet.OffsetStorage;
 import org.gnuhpc.bigdata.config.KafkaConfig;
+import org.gnuhpc.bigdata.constant.ConsumerGroupState;
 import org.gnuhpc.bigdata.constant.ConsumerType;
 import org.gnuhpc.bigdata.constant.GeneralResponseState;
+import org.gnuhpc.bigdata.constant.ReassignmentState;
 import org.gnuhpc.bigdata.model.AddPartition;
 import org.gnuhpc.bigdata.model.BrokerInfo;
+import org.gnuhpc.bigdata.model.ClusterInfo;
 import org.gnuhpc.bigdata.model.ConsumerGroupDesc;
-import org.gnuhpc.bigdata.model.ConsumerGroupDescFactory;
+import org.gnuhpc.bigdata.model.ConsumerGroupMeta;
+import org.gnuhpc.bigdata.model.CustomConfigEntry;
+import org.gnuhpc.bigdata.model.CustomTopicPartitionInfo;
 import org.gnuhpc.bigdata.model.GeneralResponse;
 import org.gnuhpc.bigdata.model.HealthCheckResult;
+import org.gnuhpc.bigdata.model.MemberDescription;
+import org.gnuhpc.bigdata.model.PartitionAssignmentState;
+import org.gnuhpc.bigdata.model.ReassignModel;
+import org.gnuhpc.bigdata.model.ReassignStatus;
 import org.gnuhpc.bigdata.model.ReassignWrapper;
+import org.gnuhpc.bigdata.model.Record;
 import org.gnuhpc.bigdata.model.TopicBrief;
 import org.gnuhpc.bigdata.model.TopicDetail;
 import org.gnuhpc.bigdata.model.TopicMeta;
-import org.gnuhpc.bigdata.model.TopicPartitionInfo;
-import org.gnuhpc.bigdata.task.FetchOffSetFromZKResult;
-import org.gnuhpc.bigdata.task.FetchOffsetFromZKTask;
+import org.gnuhpc.bigdata.model.TwoTuple;
 import org.gnuhpc.bigdata.utils.KafkaUtils;
 import org.gnuhpc.bigdata.utils.ZookeeperUtils;
 import org.gnuhpc.bigdata.validator.ConsumerGroupExistConstraint;
 import org.gnuhpc.bigdata.validator.TopicExistConstraint;
-import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
-import scala.Option;
+import scala.Function0;
 import scala.Tuple2;
 import scala.collection.JavaConverters;
 import scala.collection.Seq;
+import scala.collection.mutable.ListBuffer;
+import scala.runtime.AbstractFunction0;
+import scala.runtime.BoxedUnit;
 
-/** Created by gnuhpc on 2017/7/17. */
+/**
+ * Created by gnuhpc on 2017/7/17.
+ */
 @Service
 @Log4j
 @Validated
@@ -100,445 +152,779 @@ public class KafkaAdminService {
 
   private static final int channelSocketTimeoutMs = 600;
   private static final int channelRetryBackoffMs = 600;
+  private static final long kafkaAdminClientGetTimeoutMs = 120000;
+  private static final long kafkaAdminClientAlterTimeoutMs = 120000;
   private static final String CONSUMERPATHPREFIX = "/consumers/";
   private static final String OFFSETSPATHPREFIX = "/offsets/";
-  @Autowired private ZookeeperUtils zookeeperUtils;
+  public static final String LeaderReplicationThrottledRateProp =
+      "leader.replication.throttled.rate";
+  public static final String FollowerReplicationThrottledRateProp =
+      "follower.replication.throttled.rate";
+  public static final String ReplicaAlterLogDirsIoMaxBytesPerSecondProp =
+      "replica.alter.log.dirs.io.max.bytes.per.second";
 
-  @Autowired private KafkaUtils kafkaUtils;
+  @Autowired
+  private ZookeeperUtils zookeeperUtils;
 
-  @Autowired private KafkaConfig kafkaConfig;
+  @Autowired
+  private KafkaUtils kafkaUtils;
 
-  @Autowired private OffsetStorage storage;
+  @Autowired
+  private KafkaConfig kafkaConfig;
+
+  @Autowired
+  private OffsetStorage storage;
 
   // For AdminUtils use
   private ZkUtils zkUtils;
 
-  // For zookeeper connection
-  private CuratorFramework zkClient;
+  private org.apache.kafka.clients.admin.AdminClient kafkaAdminClient = null;
 
-  // For Json serialized
-  private Gson gson;
+  private AdminClient oldAdminClient = null;
 
-  private scala.Option<String> NONE = scala.Option.apply(null);
+  private scala.Option<String> none = scala.Option.apply(null);
 
   @PostConstruct
   private void init() {
-    this.zkUtils = zookeeperUtils.getZkUtils();
-    this.zkClient = zookeeperUtils.getCuratorClient();
-    GsonBuilder builder = new GsonBuilder();
-    builder.registerTypeAdapter(
-        DateTime.class,
-        (JsonDeserializer<DateTime>)
-            (jsonElement, type, jsonDeserializationContext) ->
-                new DateTime(jsonElement.getAsJsonPrimitive().getAsLong()));
-
-    this.gson = builder.create();
   }
 
-  public TopicMeta createTopic(TopicDetail topic, String reassignStr) {
-    if (existTopic(topic.getName())) {
-      throw new InvalidTopicException("Topic:" + topic.getName() + " already exist.");
-    }
-    if (StringUtils.isEmpty(topic.getName())) {
-      throw new InvalidTopicException("Empty topic name");
-    }
-
-    if (Topic.hasCollisionChars(topic.getName())) {
-      throw new InvalidTopicException("Invalid topic name");
+  private org.apache.kafka.clients.admin.AdminClient createKafkaAdminClient() {
+    if (this.kafkaAdminClient == null) {
+      Properties adminClientProp = new Properties();
+      adminClientProp.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaConfig.getBrokers());
+      this.kafkaAdminClient = KafkaAdminClient.create(adminClientProp);
     }
 
-    if (Strings.isNullOrEmpty(reassignStr) && topic.getPartitions() <= 0) {
-      throw new InvalidTopicException("Number of partitions must be larger than 0");
-    }
-    Topic.validate(topic.getName());
+    return this.kafkaAdminClient;
+  }
 
-    if (Strings.isNullOrEmpty(reassignStr)) {
+  public HashMap<String, GeneralResponse> createTopic(List<TopicDetail> topicList) {
+    List<NewTopic> newTopicList = new ArrayList<>();
+    HashMap<String, GeneralResponse> createResults = new HashMap<>();
+
+    for (TopicDetail topic : topicList) {
+      NewTopic newTopic;
+      Map<Integer, List<Integer>> replicasAssignments = topic.getReplicasAssignments();
+
       try {
-        AdminUtils.createTopic(
-            zkUtils,
-            topic.getName(),
-            topic.getPartitions(),
-            topic.getFactor(),
-            topic.getProp(),
-            RackAwareMode.Enforced$.MODULE$);
-      } catch (Exception exception) {
-        throw new ApiException("Create topic exception." + exception);
-      }
-    } else {
-      List<String> argsList = new ArrayList<>();
-      argsList.add("--topic");
-      argsList.add(topic.getName());
+        Topic.validate(topic.getName());
 
-      if (topic.getProp().stringPropertyNames().size() != 0) {
-        argsList.add("--config");
-
-        for (String key : topic.getProp().stringPropertyNames()) {
-          argsList.add(key + "=" + topic.getProp().get(key));
+        if (Topic.hasCollisionChars(topic.getName())) {
+          throw new InvalidTopicException("Invalid topic name, it contains '.' or '_'.");
         }
-      }
-      argsList.add("--replica-assignment");
-      argsList.add(reassignStr);
-
-      try {
-        TopicCommand.createTopic(
-            zkUtils,
-            new TopicCommand.TopicCommandOptions(argsList.stream().toArray(String[]::new)));
       } catch (Exception exception) {
-        throw new ApiException("Create topic exception." + exception);
+        GeneralResponse generalResponse =
+            GeneralResponse.builder()
+                .state(GeneralResponseState.failure)
+                .msg(exception.getMessage())
+                .build();
+        createResults.put(topic.getName(), generalResponse);
+        continue;
       }
+
+      if (replicasAssignments != null && !replicasAssignments.isEmpty()) {
+        newTopic = new NewTopic(topic.getName(), replicasAssignments);
+      } else {
+        newTopic = new NewTopic(topic.getName(), topic.getPartitions(), (short) topic.getFactor());
+      }
+
+      if (topic.getProp() != null) {
+        newTopic.configs((Map) topic.getProp());
+      }
+
+      newTopicList.add(newTopic);
     }
+
+    org.apache.kafka.clients.admin.AdminClient kafkaAdminClient = createKafkaAdminClient();
+
+    CreateTopicsOptions createTopicsOptions = new CreateTopicsOptions();
+    createTopicsOptions.timeoutMs((int) kafkaAdminClientAlterTimeoutMs);
+    CreateTopicsResult createTopicsResult =
+        kafkaAdminClient.createTopics(newTopicList, createTopicsOptions);
 
     try {
-      // Wait for a second for metadata propergating
-      Thread.sleep(3000);
-    } catch (InterruptedException e) {
-      e.printStackTrace();
+      createTopicsResult.all().get(kafkaAdminClientGetTimeoutMs, TimeUnit.MILLISECONDS);
+    } catch (Exception exception) {
+      log.warn("Create topic exception:" + exception);
+    } finally {
+      createTopicsResult
+          .values()
+          .forEach(
+              (topicName, result) -> {
+                GeneralResponse generalResponse;
+                if (result.isDone() && !result.isCompletedExceptionally()) {
+                  TopicMeta topicMeta = describeTopic(topicName);
+                  generalResponse =
+                      GeneralResponse.builder()
+                          .state(GeneralResponseState.success)
+                          .data(topicMeta)
+                          .build();
+                } else {
+                  generalResponse =
+                      GeneralResponse.builder()
+                          .state(GeneralResponseState.failure)
+                          .msg(result.toString())
+                          .build();
+                }
+                createResults.put(topicName, generalResponse);
+              });
     }
-    return describeTopic(topic.getName());
+
+    return createResults;
   }
 
   public List<String> listTopics() {
-    return CollectionConvertor.seqConvertJavaList(zkUtils.getAllTopics());
+    List<String> topicNamesList = new ArrayList<String>();
+    topicNamesList.addAll(getAllTopics());
+
+    return topicNamesList;
+  }
+
+  public Set<String> getAllTopics() {
+    Set<String> topicNames;
+    org.apache.kafka.clients.admin.AdminClient kafkaAdminClient = createKafkaAdminClient();
+    ListTopicsOptions options = new ListTopicsOptions();
+    // includes internal topics such as __consumer_offsets
+    options.listInternal(true);
+
+    ListTopicsResult topics = kafkaAdminClient.listTopics(options);
+    try {
+      topicNames = topics.names().get(kafkaAdminClientGetTimeoutMs, TimeUnit.MILLISECONDS);
+      log.info("Current topics in this cluster: " + topicNames);
+    } catch (Exception exception) {
+      log.warn("List topic exception : " + exception);
+      throw new ApiException("List topic exception : " + exception);
+    }
+
+    return topicNames;
   }
 
   public List<TopicBrief> listTopicBrief() {
-    KafkaConsumer consumer = kafkaUtils.createNewConsumer();
-    Map<String, List<PartitionInfo>> topicMap = consumer.listTopics();
-    List<TopicBrief> result =
-        topicMap
-            .entrySet()
-            .parallelStream()
-            .map(
-                e -> {
-                  String topic = e.getKey();
-                  long replicateCount =
-                      e.getValue()
-                          .parallelStream()
-                          .flatMap(pi -> Arrays.stream(pi.replicas()))
-                          .count();
-                  long isrCount =
-                      e.getValue()
-                          .parallelStream()
-                          .flatMap(pi -> Arrays.stream(pi.inSyncReplicas()))
-                          .count();
-                  if (replicateCount == 0) {
-                    return new TopicBrief(topic, e.getValue().size(), 0);
-                  } else {
-                    return new TopicBrief(
-                        topic, e.getValue().size(), ((double) isrCount / replicateCount));
-                  }
-                })
-            .collect(toList());
+    org.apache.kafka.clients.admin.AdminClient kafkaAdminClient = createKafkaAdminClient();
 
-    consumer.close();
+    DescribeTopicsResult describeTopicsResult = kafkaAdminClient.describeTopics(listTopics());
+    Map<String, TopicDescription> topicMap;
+    List<TopicBrief> result;
+    try {
+      topicMap =
+          describeTopicsResult.all().get(kafkaAdminClientGetTimeoutMs, TimeUnit.MILLISECONDS);
+      result =
+          topicMap
+              .entrySet()
+              .parallelStream()
+              .map(
+                  e -> {
+                    String topic = e.getKey();
+                    TopicDescription topicDescription = e.getValue();
+                    List<org.apache.kafka.common.TopicPartitionInfo> topicPartitionInfoList =
+                        topicDescription.partitions();
+                    int replicateCount = 0;
+                    int isrCount = 0;
+                    for (org.apache.kafka.common.TopicPartitionInfo topicPartitionInfo :
+                        topicPartitionInfoList) {
+                      replicateCount += topicPartitionInfo.replicas().size();
+                      isrCount += topicPartitionInfo.isr().size();
+                    }
+                    if (replicateCount == 0) {
+                      return new TopicBrief(topic, topicDescription.partitions().size(), 0,
+                          replicateCount);
+                    } else {
+                      return new TopicBrief(
+                          topic,
+                          topicDescription.partitions().size(),
+                          ((double) isrCount / replicateCount), replicateCount);
+                    }
+                  })
+              .collect(toList());
+    } catch (Exception exception) {
+      log.warn("Describe all topics exception:" + exception);
+      throw new ApiException("Describe all topics exception:" + exception);
+    }
 
     return result;
   }
 
   public boolean existTopic(String topicName) {
-    return AdminUtils.topicExists(zkUtils, topicName);
+    KafkaZkClient kafkaZkClient = zookeeperUtils.createKafkaZkClient();
+    boolean exists = kafkaZkClient.topicExists(topicName);
+
+    return exists;
+  }
+
+  public ClusterInfo describeCluster() {
+    //    Map<String, Object> clusterDetail = new HashMap<>();
+    ClusterInfo clusterInfo = new ClusterInfo();
+
+    org.apache.kafka.clients.admin.AdminClient kafkaAdminClient = createKafkaAdminClient();
+    DescribeClusterOptions describeClusterOptions =
+        new DescribeClusterOptions().timeoutMs((int) kafkaAdminClientGetTimeoutMs);
+
+    DescribeClusterResult describeClusterResult =
+        kafkaAdminClient.describeCluster(describeClusterOptions);
+
+    KafkaFuture<String> clusterIdFuture = describeClusterResult.clusterId();
+    KafkaFuture<Node> controllerFuture = describeClusterResult.controller();
+    KafkaFuture<Collection<Node>> nodesFuture = describeClusterResult.nodes();
+    String clusterId = "";
+    Node controller = null;
+    Collection<Node> nodes = new ArrayList<>();
+
+    try {
+      clusterId = clusterIdFuture.get(kafkaAdminClientGetTimeoutMs, TimeUnit.MILLISECONDS);
+      controller = controllerFuture.get(kafkaAdminClientGetTimeoutMs, TimeUnit.MILLISECONDS);
+      nodes = nodesFuture.get(kafkaAdminClientGetTimeoutMs, TimeUnit.MILLISECONDS);
+    } catch (Exception exception) {
+      log.warn("Describe cluster exception:" + exception);
+      throw new ApiException("Describe cluster exception:" + exception);
+    } finally {
+      if (clusterIdFuture.isDone() && !clusterIdFuture.isCompletedExceptionally()) {
+        //        clusterDetail.put("clusterId", clusterId);
+        clusterInfo.setClusterId(clusterId);
+      }
+      if (controllerFuture.isDone() && !controllerFuture.isCompletedExceptionally()) {
+        //        clusterDetail.put("controllerId", controller);
+        clusterInfo.setController(controller);
+      }
+      if (nodesFuture.isDone() && !nodesFuture.isCompletedExceptionally()) {
+        //        clusterDetail.put("nodes", nodes);
+        clusterInfo.setNodes(nodes);
+      }
+    }
+
+    return clusterInfo;
   }
 
   public List<BrokerInfo> listBrokers() {
+    CuratorFramework zkClient = zookeeperUtils.createZkClient();
+    KafkaZkClient kafkaZkClient = zookeeperUtils.createKafkaZkClient();
     List<Broker> brokerList =
-        CollectionConvertor.seqConvertJavaList(zkUtils.getAllBrokersInCluster());
-    return brokerList
-        .parallelStream()
-        .collect(Collectors.toMap(Broker::id, Broker::rack))
+        CollectionConvertor.seqConvertJavaList(kafkaZkClient.getAllBrokersInCluster());
+
+    List<BrokerInfo> brokerInfoList =
+        brokerList
+            .parallelStream()
+            .collect(Collectors.toMap(Broker::id, Broker::rack))
+            .entrySet()
+            .parallelStream()
+            .map(
+                entry -> {
+                  String brokerInfoStr = null;
+                  try {
+                    // TODO replace zkClient with kafkaZKClient
+                    brokerInfoStr =
+                        new String(
+                            zkClient
+                                .getData()
+                                .forPath(ZkUtils.BrokerIdsPath() + "/" + entry.getKey()));
+                  } catch (Exception e) {
+                    e.printStackTrace();
+                  }
+                  BrokerInfo brokerInfo;
+                  try {
+                    ObjectMapper objectMapper = new ObjectMapper();
+                    brokerInfo = objectMapper.readValue(brokerInfoStr, BrokerInfo.class);
+                  } catch (Exception exception) {
+                    throw new ApiException("List broker exception." + exception);
+                  }
+                  if (entry.getValue().isEmpty()) {
+                    brokerInfo.setRack("");
+                  } else {
+                    brokerInfo.setRack(entry.getValue().get());
+                  }
+                  brokerInfo.setId(entry.getKey());
+                  return brokerInfo;
+                })
+            .collect(toList());
+
+    return brokerInfoList;
+  }
+
+  public Node getController() {
+    return describeCluster().getController();
+  }
+
+  public Map<Integer, List<String>> listLogDirsByBroker(List<Integer> brokerList) {
+    Map<Integer, List<String>> logDirList = new HashMap<>();
+
+    Map<Integer, Map<String, LogDirInfo>> logDirInfosByBroker =
+        describeLogDirsByBrokerAndTopic(brokerList, null, null);
+    logDirInfosByBroker
         .entrySet()
-        .parallelStream()
-        .map(
-            entry -> {
-              String brokerInfoStr = null;
-              try {
-                brokerInfoStr =
-                    new String(
-                        zkClient.getData().forPath(ZkUtils.BrokerIdsPath() + "/" + entry.getKey()));
-              } catch (Exception e) {
-                e.printStackTrace();
-              }
-              BrokerInfo brokerInfo = gson.fromJson(brokerInfoStr, BrokerInfo.class);
-              if (entry.getValue().isEmpty()) brokerInfo.setRack("");
-              else {
-                brokerInfo.setRack(entry.getValue().get());
-              }
-              brokerInfo.setId(entry.getKey());
-              return brokerInfo;
-            })
-        .collect(toList());
+        .forEach(
+            e -> {
+              List<String> dirList = e.getValue().keySet().stream().collect(Collectors.toList());
+              Collections.sort(dirList);
+              logDirList.put(e.getKey(), dirList);
+            });
+
+    return logDirList;
+  }
+
+  public Map<Integer, Map<String, LogDirInfo>> describeLogDirsByBrokerAndTopic(
+      List<Integer> brokerList, List<String> logDirList,
+      Map<String, List<Integer>> topicPartitionMap) {
+    org.apache.kafka.clients.admin.AdminClient kafkaAdminClient = createKafkaAdminClient();
+
+    List<Integer> brokerIdsInCluster =
+        listBrokers().stream().map(brokerInfo -> brokerInfo.getId()).collect(Collectors.toList());
+
+    if (brokerList == null || brokerList.isEmpty()) {
+      brokerList = brokerIdsInCluster;
+    } else {
+      for (int brokerId : brokerList) {
+        if (!brokerIdsInCluster.contains(brokerId)) {
+          throw new ApiException("Bad Request. Broker Id:" + brokerId + " non-exist.");
+        }
+      }
+    }
+    // Delete reason: we want to delete the topic data that no longer found on zk, we can still use
+    // this
+    //    function to get the topic log dir
+    //    if (topicList != null && !topicList.isEmpty()) {
+    //      for (String topic : topicList) {
+    //        if (!existTopic(topic)) {
+    //          throw new ApiException("Bad Request. Topic:" + topic + " non-exist.");
+    //        }
+    //      }
+    //    }
+
+    DescribeLogDirsOptions describeLogDirsOptions =
+        new DescribeLogDirsOptions().timeoutMs((int) kafkaAdminClientGetTimeoutMs);
+    DescribeLogDirsResult describeLogDirsResult =
+        kafkaAdminClient.describeLogDirs(brokerList, describeLogDirsOptions);
+    Map<Integer, Map<String, LogDirInfo>> logDirInfosByBroker = new HashMap<>();
+
+    try {
+      logDirInfosByBroker =
+          describeLogDirsResult.all().get(kafkaAdminClientGetTimeoutMs, TimeUnit.MILLISECONDS);
+    } catch (Exception exception) {
+      log.warn("Describe log dirs exception:" + exception);
+      throw new ApiException("Describe log dirs exception:" + exception);
+    } finally {
+      log.info("After describe log dir, result is:" + logDirInfosByBroker);
+      if (logDirList != null && !logDirList.isEmpty()) {
+        logDirInfosByBroker.entrySet().forEach(e -> {
+          e.getValue().entrySet().removeIf(m -> !logDirList.contains(m.getKey()));
+        });
+      }
+      log.info("After describe log dir filtered by logdirList, result is:" + logDirInfosByBroker);
+      if (topicPartitionMap != null && !topicPartitionMap.isEmpty()) {
+        logDirInfosByBroker
+            .entrySet()
+            .forEach(
+                e -> {
+                  e.getValue()
+                      .entrySet()
+                      .forEach(
+                          m -> {
+                            m.getValue()
+                                .replicaInfos.entrySet()
+                                .removeIf(
+                                    t -> !topicPartitionMap.keySet().contains(t.getKey().topic()) ||
+                                        (topicPartitionMap.get(t.getKey().topic()) != null &&
+                                            !topicPartitionMap.get(t.getKey().topic())
+                                                .contains(t.getKey().partition())));
+                          });
+                });
+      }
+    }
+
+    log.info("After describe log dir filtered by topicPartitionMap, result is:" + logDirInfosByBroker);
+    logDirInfosByBroker.entrySet().forEach(e->e.getValue().entrySet().removeIf(m->m.getValue().replicaInfos.isEmpty()));
+    logDirInfosByBroker.entrySet().removeIf(e->e.getValue().isEmpty());
+
+    return logDirInfosByBroker;
+  }
+
+  public ReplicaLogDirInfo describeReplicaLogDir(TopicPartitionReplica topicPartitionReplica) {
+    Map<TopicPartitionReplica, ReplicaLogDirInfo> replicaLogDirInfoMap =
+        describeReplicaLogDirs(Collections.singletonList(topicPartitionReplica));
+
+    return replicaLogDirInfoMap.get(topicPartitionReplica);
+  }
+
+  public Map<TopicPartitionReplica, ReplicaLogDirInfo> describeReplicaLogDirs(
+      List<TopicPartitionReplica> replicas) {
+    org.apache.kafka.clients.admin.AdminClient kafkaAdminClient = createKafkaAdminClient();
+    Map<TopicPartitionReplica, ReplicaLogDirInfo> replicaLogDirInfoMap;
+
+    DescribeReplicaLogDirsOptions describeReplicaLogDirsOptions =
+        new DescribeReplicaLogDirsOptions().timeoutMs((int) kafkaAdminClientGetTimeoutMs);
+    DescribeReplicaLogDirsResult describeReplicaLogDirsResult =
+        kafkaAdminClient.describeReplicaLogDirs(replicas, describeReplicaLogDirsOptions);
+
+    try {
+      replicaLogDirInfoMap =
+          describeReplicaLogDirsResult
+              .all()
+              .get(kafkaAdminClientGetTimeoutMs, TimeUnit.MILLISECONDS);
+    } catch (Exception exception) {
+      log.warn("Describe replica log dirs exception:" + exception);
+      throw new ApiException("Describe replica log dirs exception:" + exception);
+    }
+
+    return replicaLogDirInfoMap;
+  }
+
+  public Collection<CustomConfigEntry> getBrokerConf(int brokerId) {
+    String broker = String.valueOf(brokerId);
+    Properties dynamicProps = getConfigInZk(Type.BROKER, broker);
+
+    Collection<ConfigEntry> configs = describeConfig(Type.BROKER, String.valueOf(brokerId));
+
+    return mergeConfigs(configs, dynamicProps);
+  }
+
+  public Properties getConfigInZk(ConfigResource.Type type, String name) {
+    KafkaZkClient kafkaZkClient = zookeeperUtils.createKafkaZkClient();
+    AdminZkClient adminZkClient = new AdminZkClient(kafkaZkClient);
+    Properties properties = new Properties();
+
+    if (type.equals(Type.BROKER)) {
+      properties = adminZkClient.fetchEntityConfig(ConfigType.Broker(), name);
+    } else if (type.equals(Type.TOPIC)) {
+      properties = adminZkClient.fetchEntityConfig(ConfigType.Topic(), name);
+    }
+
+    return properties;
+  }
+
+  private Collection<CustomConfigEntry> mergeConfigs(
+      Collection<ConfigEntry> configs, Properties dynamicProps) {
+    Collection<CustomConfigEntry> mergedConfigs = new ArrayList<>();
+    CustomConfigEntry newConfigEntry;
+
+    for (ConfigEntry entry : configs) {
+      String key = entry.name();
+      String value = entry.value();
+      if (dynamicProps.containsKey(key)) {
+        value = dynamicProps.getProperty(key);
+      }
+      newConfigEntry =
+          new CustomConfigEntry(
+              key, value, entry.isSensitive(), entry.isReadOnly(), entry.source());
+      mergedConfigs.add(newConfigEntry);
+    }
+
+    return mergedConfigs;
+  }
+
+  private void validateConfigs(
+      Type type, String name, Properties props, List<String> keysToBeChecked) {
+    for (Object configKey : keysToBeChecked) {
+      if (!props.containsKey(configKey)) {
+        throw new ApiException(type.name() + ":" + name + " has no such property:" + configKey);
+      }
+    }
+  }
+
+  public Properties updateBrokerDynConf(int brokerId, Properties propsToBeUpdated) {
+    Properties props = getConfigInZk(Type.BROKER, String.valueOf(brokerId));
+    KafkaZkClient kafkaZkClient = zookeeperUtils.createKafkaZkClient();
+    AdminZkClient adminZkClient = new AdminZkClient(kafkaZkClient);
+
+    for (String key : propsToBeUpdated.stringPropertyNames()) {
+      if (props.containsKey(key)) {
+        props.setProperty(key, propsToBeUpdated.getProperty(key));
+      } else {
+        props.put(key, propsToBeUpdated.getProperty(key));
+      }
+    }
+
+    adminZkClient.changeBrokerConfig(
+        JavaConverters.asScalaBufferConverter(Collections.singletonList((Object) brokerId))
+            .asScala()
+            .toSeq(),
+        props);
+
+    return getConfigInZk(Type.BROKER, String.valueOf(brokerId));
+  }
+
+  public void removeConfigInZk(Type type, String name, List<String> configKeysToBeRemoved) {
+    KafkaZkClient kafkaZkClient = zookeeperUtils.createKafkaZkClient();
+    AdminZkClient adminZkClient = new AdminZkClient(kafkaZkClient);
+
+    Properties props = getConfigInZk(type, name);
+
+    validateConfigs(Type.BROKER, String.valueOf(name), props, configKeysToBeRemoved);
+
+    props.entrySet().removeIf(entry -> configKeysToBeRemoved.contains(entry.getKey()));
+
+    if (type.equals(Type.BROKER)) {
+      int brokerId = Integer.parseInt(name);
+      adminZkClient.changeBrokerConfig(
+          JavaConverters.asScalaBufferConverter(Collections.singletonList((Object) brokerId))
+              .asScala()
+              .toSeq(),
+          props);
+    } else if (type.equals(Type.TOPIC)) {
+      adminZkClient.changeTopicConfig(name, props);
+    }
+  }
+
+  public TopicDescription getTopicDescription(@TopicExistConstraint String topicName) {
+    TopicDescription topicDescription = null;
+    org.apache.kafka.clients.admin.AdminClient kafkaAdminClient = createKafkaAdminClient();
+
+    DescribeTopicsResult describeTopicsResult =
+        kafkaAdminClient.describeTopics(Collections.singletonList(topicName));
+    try {
+      Map<String, TopicDescription> topicMap =
+          describeTopicsResult.all().get(kafkaAdminClientGetTimeoutMs, TimeUnit.MILLISECONDS);
+      if (topicMap.containsKey(topicName)) {
+        topicDescription = topicMap.get(topicName);
+      }
+    } catch (Exception exception) {
+      log.info("Get topic description exception:" + exception);
+    }
+    return topicDescription;
   }
 
   public TopicMeta describeTopic(@TopicExistConstraint String topicName) {
-    KafkaConsumer consumer = kafkaUtils.createNewConsumer();
     TopicMeta topicMeta = new TopicMeta(topicName);
-    List<PartitionInfo> tmList = consumer.partitionsFor(topicName);
-    topicMeta.setPartitionCount(tmList.size());
-    topicMeta.setReplicationFactor(tmList.get(0).replicas().length);
-    topicMeta.setTopicCustomConfigs(getTopicPropsFromZk(topicName));
-    topicMeta.setTopicPartitionInfos(
-        tmList
-            .parallelStream()
-            .map(
-                tm -> {
-                  TopicPartitionInfo topicPartitionInfo = new TopicPartitionInfo();
-                  topicPartitionInfo.setLeader(tm.leader().host());
-                  topicPartitionInfo.setIsr(
-                      Arrays.stream(tm.inSyncReplicas())
-                          .map(node -> node.host())
-                          .collect(toList()));
-                  topicPartitionInfo.setPartitionId(tm.partition());
-                  topicPartitionInfo.setReplicas(
-                      Arrays.stream(tm.replicas()).map(node -> node.host()).collect(toList()));
-                  topicPartitionInfo.setIn_sync();
-                  topicPartitionInfo.setStartOffset(
-                      getBeginningOffset(tm.leader(), tm.topic(), tm.partition()));
-                  topicPartitionInfo.setEndOffset(
-                      getEndOffset(tm.leader(), tm.topic(), tm.partition()));
-                  topicPartitionInfo.setMessageAvailable();
-                  return topicPartitionInfo;
-                })
-            .collect(toList()));
-
-    Collections.sort(topicMeta.getTopicPartitionInfos());
-
-    consumer.close();
+    TopicDescription topicDescription = getTopicDescription(topicName);
+    if (topicDescription != null) {
+      List<TopicPartitionInfo> tmList = topicDescription.partitions();
+      topicMeta.setInternal(topicDescription.isInternal());
+      topicMeta.setPartitionCount(topicDescription.partitions().size());
+      topicMeta.setReplicationFactor(tmList.get(0).replicas().size());
+      topicMeta.setTopicPartitionInfos(
+          tmList
+              .parallelStream()
+              .map(
+                  tm -> {
+                    CustomTopicPartitionInfo customTopicPartitionInfo =
+                        new CustomTopicPartitionInfo();
+                    customTopicPartitionInfo.setTopicPartitionInfo(tm);
+                    customTopicPartitionInfo.setIn_sync();
+                    if (tm.leader() != null) {
+                      customTopicPartitionInfo.setStartOffset(
+                          getBeginningOffset(topicName, tm.partition()));
+                      customTopicPartitionInfo.setEndOffset(
+                          getEndOffset(topicName, tm.partition()));
+                    } else {
+                      customTopicPartitionInfo.setStartOffset(-1);
+                      customTopicPartitionInfo.setEndOffset(-1);
+                    }
+                    customTopicPartitionInfo.setMessageAvailable();
+                    return customTopicPartitionInfo;
+                  })
+              .collect(toList()));
+      Collections.sort(topicMeta.getTopicPartitionInfos());
+    }
 
     return topicMeta;
   }
 
-  public GeneralResponse deleteTopic(@TopicExistConstraint String topic) {
-    log.warn("Delete topic " + topic);
-    AdminUtils.deleteTopic(zkUtils, topic);
+  public Map<String, GeneralResponse> deleteTopicList(List<String> topicList) {
+    org.apache.kafka.clients.admin.AdminClient kafkaAdminClient = createKafkaAdminClient();
+    HashMap<String, GeneralResponse> deleteResults = new HashMap<>();
 
-    return new GeneralResponse(GeneralResponseState.success, topic + " has been deleted.");
+    List<String> topicListToBeDeleted = new ArrayList<>(topicList);
+
+    log.warn("Delete topic " + topicList);
+    for (int i = 0; i < topicList.size(); i++) {
+      String topic = topicList.get(i);
+      try {
+        if (Topic.isInternal(topic)) {
+          throw new ApiException(
+              "Topic " + topic + " is a kafka internal topic and is not allowed to be deleted.");
+        }
+        if (!existTopic(topic)) {
+          throw new ApiException("Topic " + topic + " non-exists.");
+        }
+      } catch (Exception exception) {
+        topicListToBeDeleted.remove(topic);
+        GeneralResponse generalResponse =
+            GeneralResponse.builder()
+                .state(GeneralResponseState.failure)
+                .msg(exception.getMessage())
+                .build();
+        deleteResults.put(topic, generalResponse);
+      }
+    }
+
+    DeleteTopicsResult deleteTopicsResult = kafkaAdminClient.deleteTopics(topicListToBeDeleted);
+    try {
+      deleteTopicsResult.all().get(kafkaAdminClientGetTimeoutMs, TimeUnit.MILLISECONDS);
+    } catch (Exception exception) {
+      log.warn("Delete topic exception:" + exception);
+    } finally {
+      deleteTopicsResult
+          .values()
+          .forEach(
+              (topic, result) -> {
+                GeneralResponse generalResponse;
+                if (result.isDone() && !result.isCompletedExceptionally()) {
+                  generalResponse =
+                      GeneralResponse.builder().state(GeneralResponseState.success).build();
+                } else {
+                  generalResponse =
+                      GeneralResponse.builder()
+                          .state(GeneralResponseState.failure)
+                          .msg(result.toString())
+                          .build();
+                }
+                deleteResults.put(topic, generalResponse);
+              });
+    }
+
+    return deleteResults;
   }
 
-  public Properties createTopicConf(@TopicExistConstraint String topic, Properties prop) {
-    Properties configs = getTopicPropsFromZk(topic);
-    configs.putAll(prop);
-    AdminUtils.changeTopicConfig(zkUtils, topic, configs);
-    log.info("Create config for topic: " + topic + "Configs:" + configs);
-    return getTopicPropsFromZk(topic);
+  public Collection<ConfigEntry> describeConfig(ConfigResource.Type type, String name) {
+    Map<ConfigResource, Config> configs;
+    org.apache.kafka.clients.admin.AdminClient kafkaAdminClient = createKafkaAdminClient();
+    ConfigResource configResource = new ConfigResource(type, name);
+
+    DescribeConfigsResult ret =
+        kafkaAdminClient.describeConfigs(Collections.singleton(configResource));
+    try {
+      configs = ret.all().get(kafkaAdminClientGetTimeoutMs, TimeUnit.MILLISECONDS);
+    } catch (Exception exception) {
+      log.warn("Describe config type:" + type + ", name:" + name + " exception:" + exception);
+      throw new ApiException("Describe config exception:" + exception.getLocalizedMessage());
+    }
+
+    return configs.get(configResource).entries();
   }
 
-  public Properties deleteTopicConf(@TopicExistConstraint String topic, List<String> deleteProps) {
-    // compile the final set of configs
-    Properties configs = getTopicPropsFromZk(topic);
-    deleteProps.stream().forEach(config -> configs.remove(config));
-    AdminUtils.changeTopicConfig(zkUtils, topic, configs);
-    log.info("Delete config for topic: " + topic);
-    return getTopicPropsFromZk(topic);
+  public boolean alterConfig(
+      ConfigResource.Type type, String name, Collection<ConfigEntry> configEntries) {
+    org.apache.kafka.clients.admin.AdminClient kafkaAdminClient = createKafkaAdminClient();
+    Config config = new Config(configEntries);
+    AlterConfigsResult alterConfigsResult =
+        kafkaAdminClient.alterConfigs(
+            Collections.singletonMap(new ConfigResource(type, name), config));
+
+    try {
+      alterConfigsResult.all().get(kafkaAdminClientAlterTimeoutMs, TimeUnit.MILLISECONDS);
+    } catch (Exception exception) {
+      log.warn("Alter config type:" + type + ", name:" + name + " exception:" + exception);
+      return false;
+    }
+
+    return true;
   }
 
-  public Properties updateTopicConf(@TopicExistConstraint String topic, Properties prop) {
-    AdminUtils.changeTopicConfig(zkUtils, topic, prop);
-    return getTopicPropsFromZk(topic);
+  public Collection<CustomConfigEntry> updateTopicConf(
+      @TopicExistConstraint String topic, Properties props) {
+    Collection<ConfigEntry> configEntries =
+        props
+            .entrySet()
+            .stream()
+            .map(e -> new ConfigEntry(e.getKey().toString(), e.getValue().toString()))
+            .collect(Collectors.toList());
+    alterConfig(ConfigResource.Type.TOPIC, topic, configEntries);
+
+    return getTopicConf(topic);
   }
 
-  public Properties getTopicConf(@TopicExistConstraint String topic) {
-    return getTopicPropsFromZk(topic);
+  public Collection<CustomConfigEntry> getTopicConf(@TopicExistConstraint String topic) {
+    Properties dynamicProps = getConfigInZk(Type.TOPIC, topic);
+
+    Collection<ConfigEntry> configs = describeConfig(Type.TOPIC, String.valueOf(topic));
+
+    return mergeConfigs(configs, dynamicProps);
   }
 
   public Properties getTopicConfByKey(@TopicExistConstraint String topic, String key) {
-    String value =
-        String.valueOf(AdminUtils.fetchEntityConfig(zkUtils, ConfigType.Topic(), topic).get(key));
+    Collection<ConfigEntry> configEntries = describeConfig(ConfigResource.Type.TOPIC, topic);
     Properties returnProps = new Properties();
-    if (!value.equals("null")) {
-      returnProps.setProperty(key, value);
-      return returnProps;
-    } else return null;
-  }
-
-  public boolean deleteTopicConfByKey(@TopicExistConstraint String topic, String key) {
-    Properties configs = getTopicPropsFromZk(topic);
-    configs.remove(key);
-    AdminUtils.changeTopicConfig(zkUtils, topic, configs);
-    return getTopicPropsFromZk(topic).get(key) == null;
-  }
-
-  public Properties updateTopicConfByKey(
-      @TopicExistConstraint String topic, String key, String value) {
-    Properties props = getTopicConf(topic);
-    props.setProperty(key, value);
-    String validValue = String.valueOf(updateTopicConf(topic, props).get(key));
-    if (!validValue.equals("null") && validValue.equals(value)) {
-      return props;
-    } else {
-      throw new ApiException("Update Topic Config failed: " + key + ":" + value);
-    }
-  }
-
-  public Properties createTopicConfByKey(
-      @TopicExistConstraint String topic, String key, String value) {
-    Properties props = new Properties();
-    props.setProperty(key, value);
-    String validValue = String.valueOf(createTopicConf(topic, props).get(key));
-    if (!validValue.equals("null") && validValue.equals(value)) {
-      return props;
-    } else {
-      throw new ApiException("Update Topic Config failed: " + key + ":" + value);
-    }
-  }
-
-  public TopicMeta addPartition(@TopicExistConstraint String topic, AddPartition addPartition) {
-    List<MetadataResponse.PartitionMetadata> partitionMataData =
-        AdminUtils.fetchTopicMetadataFromZk(topic, zkUtils).partitionMetadata();
-    int numPartitions = partitionMataData.size();
-    int numReplica = partitionMataData.get(0).replicas().size();
-    List<Integer> brokerIdList =
-        listBrokers().stream().map(broker -> broker.getId()).collect(toList());
-    List partitionIdList =
-        partitionMataData.stream().map(p -> String.valueOf(p.partition())).collect(toList());
-    String assignmentStr = addPartition.getReplicaAssignment();
-    String toBeSetReplicaAssignmentStr = "";
-
-    if (assignmentStr != null && !assignmentStr.equals("")) {
-      // Check out of index ids in replica assignment string
-      String[] ids = addPartition.getReplicaAssignment().split(",|:");
-      if (Arrays.stream(ids).filter(id -> brokerIdList.contains(id)).count() != 0) {
-        throw new InvalidTopicException(
-            "Topic " + topic + ": manual reassignment str has wrong id!");
+    for (ConfigEntry entry : configEntries) {
+      if (entry.name().equals(key)) {
+        returnProps.put(key, entry.value());
+        return returnProps;
       }
-
-      // Check if any ids duplicated in one partition in replica assignment
-      String[] assignPartitions = addPartition.getReplicaAssignment().split(",");
-      if (Arrays.stream(assignPartitions)
-              .filter(
-                  p ->
-                      Arrays.stream(p.split(":")).collect(Collectors.toSet()).size()
-                          != p.split(":").length)
-              .count()
-          != 0) {
-        throw new InvalidTopicException(
-            "Topic " + topic + ": manual reassignment str has duplicated id in one partition!");
-      }
-
-      String replicaStr = Strings.repeat("0:", numReplica).replaceFirst(".$", ",");
-      toBeSetReplicaAssignmentStr =
-          Strings.repeat(replicaStr, numPartitions) + addPartition.getReplicaAssignment();
-    } else {
-      toBeSetReplicaAssignmentStr = "";
     }
 
-    AdminUtils.addPartitions(
-        zkUtils,
-        topic,
-        addPartition.getNumPartitionsAdded() + numPartitions,
-        toBeSetReplicaAssignmentStr,
-        true,
-        RackAwareMode.Enforced$.MODULE$);
-
-    return describeTopic(topic);
+    return null;
   }
 
-  // Return <Current partition replica assignment, Proposed partition reassignment>
-  public List<String> generateReassignPartition(ReassignWrapper reassignWrapper) {
-    Seq brokerSeq =
-        JavaConverters.asScalaBufferConverter(reassignWrapper.getBrokers()).asScala().toSeq();
-    // <Proposed partition reassignment，Current partition replica assignment>
-    Tuple2 resultTuple2 =
-        ReassignPartitionsCommand.generateAssignment(
-            zkUtils, brokerSeq, reassignWrapper.generateReassignJsonString(), false);
-    List<String> result = new ArrayList<>();
-    result.add(
-        zkUtils.formatAsReassignmentJson(
-            (scala.collection.Map<TopicAndPartition, Seq<Object>>) resultTuple2._2()));
-    result.add(
-        zkUtils.formatAsReassignmentJson(
-            (scala.collection.Map<TopicAndPartition, Seq<Object>>) resultTuple2._1()));
+  public Collection<CustomConfigEntry> updateTopicConfByKey(
+      @TopicExistConstraint String topic, String key, String value) {
+    alterConfig(
+        ConfigResource.Type.TOPIC, topic, Collections.singletonList(new ConfigEntry(key, value)));
+
+    return getTopicConf(topic);
+  }
+
+  public Map<String, Set<String>> listAllConsumerGroups(ConsumerType type) {
+    Map<String, Set<String>> result = new HashMap<>();
+
+    if (type == null || type == ConsumerType.OLD) {
+      Set<String> oldConsumerGroupList = listAllOldConsumerGroups();
+      if (oldConsumerGroupList == null || oldConsumerGroupList.size() == 0) {
+        result.put("old", new HashSet<>());
+      } else {
+        result.put("old", oldConsumerGroupList);
+      }
+    }
+
+    if (type == null || type == ConsumerType.NEW) {
+      Set<String> newConsumerGroupList = listAllNewConsumerGroups();
+      if (newConsumerGroupList == null || newConsumerGroupList.size() == 0) {
+        result.put("new", new HashSet<>());
+      } else {
+        result.put("new", newConsumerGroupList);
+      }
+    }
 
     return result;
   }
 
-  public Map<TopicAndPartition, Integer> executeReassignPartition(String reassignStr) {
-    ReassignPartitionsCommand.executeAssignment(zkUtils, reassignStr);
-    return checkReassignStatus(reassignStr);
-  }
-
-  public Map<TopicAndPartition, Integer> checkReassignStatus(String reassignStr) {
-    Map<TopicAndPartition, Seq<Object>> partitionsToBeReassigned =
-        JavaConverters.mapAsJavaMapConverter(zkUtils.parsePartitionReassignmentData(reassignStr))
-            .asJava();
-
-    Map<TopicAndPartition, Seq<Object>> partitionsBeingReassigned =
-        JavaConverters.mapAsJavaMapConverter(zkUtils.getPartitionsBeingReassigned())
-            .asJava()
-            .entrySet()
-            .stream()
-            .collect(Collectors.toMap(Map.Entry::getKey, data -> data.getValue().newReplicas()));
-
-    java.util.Map<TopicAndPartition, ReassignmentStatus> reassignedPartitionsStatus =
-        partitionsToBeReassigned
-            .entrySet()
-            .stream()
-            .collect(
-                Collectors.toMap(
-                    Map.Entry::getKey,
-                    pbr ->
-                        ReassignPartitionsCommand.checkIfPartitionReassignmentSucceeded(
-                            zkUtils,
-                            pbr.getKey(),
-                            pbr.getValue(),
-                            JavaConverters.mapAsScalaMapConverter(partitionsToBeReassigned)
-                                .asScala(),
-                            JavaConverters.mapAsScalaMapConverter(partitionsBeingReassigned)
-                                .asScala())));
-
-    return reassignedPartitionsStatus
-        .entrySet()
-        .stream()
-        .collect(Collectors.toMap(Map.Entry::getKey, r -> r.getValue().status()));
-  }
-
-  private Set<String> listAllOldConsumerGroups() {
-    log.info("Finish getting old consumers");
-    return CollectionConvertor.seqConvertJavaList(zkUtils.getConsumerGroups())
-        .stream()
-        .collect(toSet());
-  }
-
-  private Set<String> listOldConsumerGroupsByTopic(@TopicExistConstraint String topic)
-      throws Exception {
-
-    List<String> consumersFromZk = zkClient.getChildren().forPath(ZkUtils.ConsumersPath());
-    Set<String> cList = new HashSet<>();
-
-    for (String consumer : consumersFromZk) {
-      String path = ZkUtils.ConsumersPath() + "/" + consumer + "/offsets";
-      if (zkClient.checkExists().forPath(path) != null) {
-        if (zkClient.getChildren().forPath(path).size() != 0) {
-          if (!Strings.isNullOrEmpty(topic)) {
-            if (zkClient.getChildren().forPath(path).stream().filter(p -> p.equals(topic)).count()
-                != 0) cList.add(consumer);
-          } else {
-            cList.add(consumer);
-          }
-        }
-      }
-    }
-
-    return cList;
-
-    // May cause keeperexception, deprecated
-    // return
-    // JavaConverters.asJavaCollectionConverter(zkUtils.getAllConsumerGroupsForTopic(topic)).asJavaCollection().stream().collect(toList());
-  }
-
-  private Set<String> listAllNewConsumerGroups() {
+  public Set<String> listAllNewConsumerGroups() {
     AdminClient adminClient = kafkaUtils.createAdminClient();
     log.info("Calling the listAllConsumerGroupsFlattened");
+    // Send LIST_GROUPS Request to kafka
     Set activeGroups =
         CollectionConvertor.seqConvertJavaList(adminClient.listAllConsumerGroupsFlattened())
             .stream()
             .map(GroupOverview::groupId)
             .collect(toSet());
-    log.info("Checking the groups in storage");
-    Set usedTobeGroups =
-        storage.getMap().entrySet().stream().map(Map.Entry::getKey).collect(toSet());
-    activeGroups.addAll(usedTobeGroups);
+
     log.info("Finish getting new consumers");
     adminClient.close();
     return activeGroups;
+  }
+
+  private Set<String> listAllOldConsumerGroups() {
+    log.info("Finish getting old consumers");
+    KafkaZkClient kafkaZkClient = zookeeperUtils.createKafkaZkClient();
+
+    Set<String> oldConsumerGroups =
+        CollectionConvertor.seqConvertJavaList(kafkaZkClient.getChildren(ZkUtils.ConsumersPath()))
+            .stream()
+            .collect(toSet());
+
+    return oldConsumerGroups;
+  }
+
+  public Map<String, Set<String>> listConsumerGroupsByTopic(
+      @TopicExistConstraint String topic, ConsumerType type) {
+    Map<String, Set<String>> result = new HashMap<>();
+
+    if (type == null || type == ConsumerType.OLD) {
+      Set<String> oldConsumerGroupList = new HashSet<>();
+      try {
+        oldConsumerGroupList = listOldConsumerGroupsByTopic(topic);
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+      if (oldConsumerGroupList.size() != 0) {
+        result.put("old", oldConsumerGroupList);
+      }
+    }
+
+    if (type == null || type == ConsumerType.NEW) {
+      Set<String> newConsumerGroupList = listNewConsumerGroupsByTopic(topic);
+
+      if (newConsumerGroupList.size() != 0) {
+        result.put("new", newConsumerGroupList);
+      }
+    }
+
+    return result;
   }
 
   private Set<String> listNewConsumerGroupsByTopic(@TopicExistConstraint String topic) {
@@ -546,208 +932,931 @@ public class KafkaAdminService {
     Set<String> consumersList = listAllNewConsumerGroups();
 
     for (String c : consumersList) {
-      AdminClient adminClient = kafkaUtils.createAdminClient();
-
-      List<AdminClient.ConsumerSummary> consumerSummaryList =
-          CollectionConvertor.listConvertJavaList(adminClient.describeConsumerGroup(c));
-      Set<String> topicSet =
-          consumerSummaryList
-              .stream()
-              .flatMap(cs -> CollectionConvertor.listConvertJavaList(cs.assignment()).stream())
-              .map(TopicPartition::topic)
-              .filter(t -> t.equals(topic))
-              .distinct()
-              .collect(toSet());
-
-      if (topicSet.size() != 0) {
+      List<String> topics = getTopicListByConsumerGroup(c);
+      if (topics.contains(topic)) {
         result.add(c);
       }
-      adminClient.close();
     }
+
     return result;
   }
 
-  public List<ConsumerGroupDesc> describeOldCGByTopic(
-      String consumerGroup, @TopicExistConstraint String topic) {
-    if (!isOldConsumerGroup(consumerGroup)) {
-      throw new RuntimeException(consumerGroup + " non-exist");
-    }
-    List<ConsumerGroupDesc> cgdList = new ArrayList<>();
-    Map<Integer, Long> fetchOffSetFromZKResultList = new HashMap<>();
+  private Set<String> listOldConsumerGroupsByTopic(@TopicExistConstraint String topic) {
+    KafkaZkClient kafkaZkClient = zookeeperUtils.createKafkaZkClient();
 
-    List<String> topicList =
-        CollectionConvertor.seqConvertJavaList(zkUtils.getTopicsByConsumerGroup(consumerGroup));
-    if (topicList.size() == 0) {
-      log.info("No topic for the consumer group, nothing return");
-      return null;
-    }
+    List<String> consumersFromZk =
+        CollectionConvertor.seqConvertJavaList(kafkaZkClient.getChildren(ZkUtils.ConsumersPath()));
+    Set<String> consumerList = new HashSet<>();
 
-    List<TopicAndPartition> topicPartitions = getTopicPartitions(topic);
-    ZKGroupTopicDirs groupDirs = new ZKGroupTopicDirs(consumerGroup, topic);
-    Map<Integer, String> ownerPartitionMap =
-        topicPartitions
-            .stream()
-            .collect(
-                Collectors.toMap(
-                    TopicAndPartition::partition,
-                    tp -> {
-                      Option<String> owner =
-                          zkUtils.readDataMaybeNull(
-                                  groupDirs.consumerOwnerDir() + "/" + tp.partition())
-                              ._1;
-                      if (owner != NONE) {
-                        return owner.get();
-                      } else {
-                        return "none";
-                      }
-                    }));
-
-    ExecutorService executor = Executors.newCachedThreadPool();
-
-    List<FetchOffsetFromZKTask> taskList =
-        topicPartitions
-            .stream()
-            .map(
-                tp ->
-                    new FetchOffsetFromZKTask(
-                        zookeeperUtils, tp.topic(), consumerGroup, tp.partition()))
-            .collect(toList());
-    List<Future<FetchOffSetFromZKResult>> resultList = null;
-
-    try {
-      resultList = executor.invokeAll(taskList);
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-    }
-
-    executor.shutdown();
-
-    for (int i = 0; i < resultList.size(); i++) {
-      Future<FetchOffSetFromZKResult> future = resultList.get(i);
-      try {
-        FetchOffSetFromZKResult offsetResult = future.get();
-        fetchOffSetFromZKResultList.put(offsetResult.getParition(), offsetResult.getOffset());
-      } catch (InterruptedException | ExecutionException e) {
-        e.printStackTrace();
+    for (String consumer : consumersFromZk) {
+      String path = ZkUtils.ConsumersPath() + "/" + consumer + "/offsets";
+      List<String> topics = CollectionConvertor.seqConvertJavaList(kafkaZkClient.getChildren(path));
+      if (topics != null && topics.contains(topic)) {
+        consumerList.add(consumer);
       }
     }
 
-    log.info("Getting topic Metadata " + topic);
-    TopicMeta topicMeta = describeTopic(topic);
-
-    cgdList.addAll(
-        setOldCGD(fetchOffSetFromZKResultList, ownerPartitionMap, topic, consumerGroup, topicMeta));
-    Collections.sort(cgdList);
-
-    return cgdList;
+    return consumerList;
   }
 
-  private List<ConsumerGroupDesc> setOldCGD(
-      Map<Integer, Long> fetchOffSetFromZKResultList,
-      Map<Integer, String> ownerPartitionMap,
-      String topic,
-      String consumerGroup,
-      TopicMeta topicMeta) {
-    ConsumerGroupDescFactory factory = new ConsumerGroupDescFactory(kafkaUtils);
-    return ownerPartitionMap
+  public Set<String> listTopicsByConsumerGroup(String consumerGroup, ConsumerType type) {
+    KafkaZkClient kafkaZkClient = zookeeperUtils.createKafkaZkClient();
+    Set<String> topicList = new HashSet<>();
+
+    if (type == null) {
+      throw new ApiException("Bad Request since type is null.");
+    }
+
+    if (type == ConsumerType.OLD) {
+      if (!isOldConsumerGroup(consumerGroup)) {
+        throw new ApiException("Consumer group:" + consumerGroup + " non-exist");
+      }
+      String path = ZkUtils.ConsumersPath() + "/" + consumerGroup + "/offsets";
+      topicList =
+          CollectionConvertor.seqConvertJavaList(kafkaZkClient.getChildren(path))
+              .stream()
+              .collect(toSet());
+    } else if (type == ConsumerType.NEW) {
+      if (!isNewConsumerGroup(consumerGroup)) {
+        throw new ApiException("Consumer group:" + consumerGroup + " non-exist!");
+      }
+      topicList.addAll(getTopicListByConsumerGroup(consumerGroup));
+    } else {
+      throw new ApiException("Unknown Type " + type);
+    }
+
+    return topicList;
+  }
+
+  private List<String> getTopicListByConsumerGroup(String consumerGroup) {
+    AdminClient adminClient = kafkaUtils.createAdminClient();
+    Map<TopicPartition, Object> groupOffsets =
+        CollectionConvertor.mapConvertJavaMap(adminClient.listGroupOffsets(consumerGroup));
+
+    return groupOffsets
         .entrySet()
         .stream()
-        .map(
-            op ->
-                factory.makeOldConsumerGroupDesc(
-                    op, fetchOffSetFromZKResultList, topic, consumerGroup, topicMeta))
+        .map(topicPartitionObjectEntry -> topicPartitionObjectEntry.getKey().topic())
         .collect(toList());
   }
 
-  public List<ConsumerGroupDesc> describeNewCGByTopic(String consumerGroup, String topic) {
-    if (!isNewConsumerGroup(consumerGroup)) {
-      throw new RuntimeException(consumerGroup + " non-exist!");
-    }
-
-    return setNewCGD(consumerGroup, topic);
-  }
-
-  private List<ConsumerGroupDesc> setNewCGD(String consumerGroup, String topic) {
-    List<ConsumerGroupDesc> cgdList = new ArrayList<>();
+  public ConsumerGroupMeta getConsumerGroupMeta(String consumerGroup) {
+    List<MemberDescription> members = new ArrayList<>();
     AdminClient adminClient = kafkaUtils.createAdminClient();
 
-    List<AdminClient.ConsumerSummary> consumerSummaryList =
-        CollectionConvertor.listConvertJavaList(adminClient.describeConsumerGroup(consumerGroup));
-    // Nothing about this consumer group obtained, return an empty map directly
+    ConsumerGroupSummary consumerGroupSummary = adminClient.describeConsumerGroup(consumerGroup,
+        kafkaAdminClientGetTimeoutMs);
+    List<ConsumerSummary> consumerSummaryList =
+        CollectionConvertor.optionListConvertJavaList(consumerGroupSummary.consumers().get());
+
+    ConsumerGroupMeta consumerGroupMeta =
+        ConsumerGroupMeta.builder()
+            .groupId(consumerGroup)
+            .state(ConsumerGroupState.parse(consumerGroupSummary.state()))
+            .assignmentStrategy(consumerGroupSummary.assignmentStrategy())
+            .coordinator(consumerGroupSummary.coordinator())
+            .build();
+
+    consumerSummaryList.forEach(
+        consumerSummary -> {
+          List<TopicPartition> topicPartitions =
+              CollectionConvertor.listConvertJavaList(consumerSummary.assignment());
+          members.add(
+              new MemberDescription(
+                  consumerSummary.consumerId(),
+                  consumerSummary.clientId(),
+                  consumerSummary.host(),
+                  topicPartitions));
+        });
+
+    Collections.sort(members);
+    consumerGroupMeta.setMembers(members);
+
     adminClient.close();
+    return consumerGroupMeta;
+  }
 
-    List<AdminClient.ConsumerSummary> filteredCSList =
-        consumerSummaryList
-            .parallelStream()
-            .filter(
-                cs ->
-                    CollectionConvertor.listConvertJavaList(cs.assignment())
-                            .parallelStream()
-                            .filter(tp -> tp.topic().equals(topic))
-                            .count()
-                        != 0)
-            .collect(toList());
+  public boolean isOldConsumerGroup(String consumerGroup) {
+    return listAllOldConsumerGroups().contains(consumerGroup);
+  }
 
-    // Prepare the common metrics no matter the cg is active or not.
+  public boolean isNewConsumerGroup(String consumerGroup) {
+    // Active Consumergroup or Dead ConsumerGroup is OK
+    return (listAllNewConsumerGroups().contains(consumerGroup));
+  }
 
-    // 1. Get the meta information of the topic
-    TopicMeta topicMeta = describeTopic(topic);
-
-    // 2. Get the log end offset for every partition
-    Map<Integer, Long> partitionEndOffsetMap =
-        topicMeta
-            .getTopicPartitionInfos()
-            .stream()
-            .collect(Collectors.toMap(tpi -> tpi.getPartitionId(), tpi -> tpi.getEndOffset()));
-    if (filteredCSList.size() == 0) { // For Pending consumer group
-
-      // Even from the offsetstorage, nothing about this consumer group obtained
-      // In this case, return an empty map directly.
-      Map<GroupTopicPartition, OffsetAndMetadata> storageMap = storage.get(consumerGroup);
-      if (storageMap == null) {
-        return null;
+  public Map<String, List<ConsumerGroupDesc>> describeConsumerGroup(
+      String consumerGroup, ConsumerType type) {
+    Map<String, List<ConsumerGroupDesc>> result = new HashMap<>();
+    Set<String> topicList = listTopicsByConsumerGroup(consumerGroup, type);
+    if (topicList == null) {
+      // Return empty result
+      return result;
+    }
+    if (type == ConsumerType.NEW) {
+      if (!isNewConsumerGroup(consumerGroup)) {
+        throw new ApiException("Consumer group:" + consumerGroup + " non-exist!");
       }
+      List<PartitionAssignmentState> partitionAssignmentStateList =
+          describeNewConsumerGroup(consumerGroup, false, null);
+      result = convertPasListToMap(consumerGroup, partitionAssignmentStateList, ConsumerType.NEW);
+    } else if (type == ConsumerType.OLD) {
+      if (!isOldConsumerGroup(consumerGroup)) {
+        throw new ApiException("Consumer group:" + consumerGroup + " non-exist");
+      }
+      List<PartitionAssignmentState> partitionAssignmentStateList =
+          describeOldConsumerGroup(consumerGroup, false, null);
+      result = convertPasListToMap(consumerGroup, partitionAssignmentStateList, ConsumerType.OLD);
+    }
 
-      // Get the current offset of each partition in this topic.
-      Map<GroupTopicPartition, OffsetAndMetadata> topicStorage = new HashMap<>();
-      for (Map.Entry<GroupTopicPartition, OffsetAndMetadata> e : storageMap.entrySet()) {
-        if (e.getKey().topicPartition().topic().equals(topic)) {
-          topicStorage.put(e.getKey(), e.getValue());
+    return result;
+  }
+
+  // Convert partition assignment to map, key is topic
+  private Map<String, List<ConsumerGroupDesc>> convertPasListToMap(
+      String consumerGroup, List<PartitionAssignmentState> pasList, ConsumerType type) {
+    Map<String, List<ConsumerGroupDesc>> result = new HashMap<>();
+    ConsumerGroupSummary consumerGroupSummary;
+
+    if (type.equals(ConsumerType.NEW)) {
+      AdminClient adminClient = kafkaUtils.createAdminClient();
+      consumerGroupSummary = adminClient.describeConsumerGroup(consumerGroup, 0);
+      adminClient.close();
+    } else {
+      // Old consumer group has no state, coordinator, assignmentStrategy info
+      consumerGroupSummary = null;
+    }
+
+    pasList.forEach(
+        partitionAssignmentState -> {
+          String topic = partitionAssignmentState.getTopic();
+          List<ConsumerGroupDesc> consumerGroupDescs;
+          if (result.containsKey(topic)) {
+            consumerGroupDescs = result.get(topic);
+          } else {
+            consumerGroupDescs = new ArrayList<>();
+          }
+          consumerGroupDescs.add(
+              convertParitionAssignmentStateToGroupDesc(
+                  consumerGroup, consumerGroupSummary, partitionAssignmentState, type));
+          result.put(topic, consumerGroupDescs);
+        });
+
+    return result;
+  }
+
+  private ConsumerGroupDesc convertParitionAssignmentStateToGroupDesc(
+      String consumerGroup,
+      ConsumerGroupSummary consumerGroupSummary,
+      PartitionAssignmentState pas,
+      ConsumerType type) {
+    ConsumerGroupDesc.ConsumerGroupDescBuilder consumerGroupDescBuilder =
+        ConsumerGroupDesc.builder()
+            .groupName(consumerGroup)
+            .topic(pas.getTopic())
+            .partitionId(pas.getPartition())
+            .currentOffset(pas.getOffset())
+            .logEndOffset(pas.getLogEndOffset())
+            .lag(pas.getLag())
+            .consumerId(pas.getConsumerId())
+            .clientId(pas.getClientId())
+            .host(pas.getHost())
+            .type(type);
+
+    if (consumerGroupSummary != null) {
+      consumerGroupDescBuilder =
+          consumerGroupDescBuilder
+              .state(ConsumerGroupState.parse(consumerGroupSummary.state()))
+              .assignmentStrategy(consumerGroupSummary.assignmentStrategy())
+              .coordinator(consumerGroupSummary.coordinator());
+    }
+
+    return consumerGroupDescBuilder.build();
+  }
+
+  public List<PartitionAssignmentState> describeNewConsumerGroup(
+      String consumerGroup, boolean filtered, String topic) {
+    AdminClient adminClient = kafkaUtils.createAdminClient();
+    ConsumerGroupSummary consumerGroupSummary = adminClient.describeConsumerGroup(consumerGroup, 0);
+
+    adminClient.close();
+    return describeNewConsumerGroup(consumerGroup, filtered, topic, consumerGroupSummary);
+  }
+
+  public List<PartitionAssignmentState> describeNewConsumerGroup(
+      String consumerGroup, boolean filtered, String topic,
+      ConsumerGroupSummary consumerGroupSummary) {
+    List<PartitionAssignmentState> partitionAssignmentStateList = new ArrayList<>();
+
+    if (filtered && !existTopic(topic)) {
+      return partitionAssignmentStateList;
+    }
+
+    AdminClient adminClient = kafkaUtils.createAdminClient();
+//    ConsumerGroupSummary consumerGroupSummary = adminClient.describeConsumerGroup(consumerGroup, 0);
+    List<ConsumerSummary> consumerSummaryList =
+        CollectionConvertor.listConvertJavaList(consumerGroupSummary.consumers().get());
+    String consumersInfo = "";
+    for (ConsumerSummary cs : consumerSummaryList) {
+      consumersInfo = consumersInfo + "{clientId:" + cs.clientId() + ", host:" + cs.host()
+          + ", consumerId:" + cs.consumerId() + "}\n";
+    }
+    log.info("Describe consumer group:" + consumerGroup + " summary. ConsumerSummary List:"
+        + consumersInfo);
+    if (consumerSummaryList != null) {
+      Map<TopicPartition, Object> offsets =
+          CollectionConvertor.mapConvertJavaMap(adminClient.listGroupOffsets(consumerGroup));
+      log.info("List group offsets for consumer:" + consumerGroup + ". Result is:\n");
+      for (Map.Entry<TopicPartition, Object> offset : offsets.entrySet()) {
+        log.info("Topic:" + offset.getKey().topic() + ", Partition:" + offset.getKey().partition()
+            + ", Offset:" + offset.getValue());
+      }
+      Map<TopicPartition, Object> offsetsFiltered;
+
+      adminClient.close();
+      if (filtered && existTopic(topic)) {
+        offsetsFiltered =
+            offsets
+                .entrySet()
+                .stream()
+                .filter(
+                    topicPartitionObjectEntry ->
+                        topicPartitionObjectEntry.getKey().topic().equals(topic))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        log.info(
+            "After filter by topic:" + topic + " for consumer:" + consumerGroup + ", offsets are:");
+        for (Map.Entry<TopicPartition, Object> offset : offsetsFiltered.entrySet()) {
+          log.info("Topic:" + offset.getKey().topic() + ", Partition:" + offset.getKey().partition()
+              + ", Offset:" + offset.getValue());
         }
+      } else {
+        offsetsFiltered = offsets;
       }
+      if (offsetsFiltered.isEmpty()) {
+        return partitionAssignmentStateList;
+      } else {
+        ArrayList<TopicPartition> assignedTopicPartitions = new ArrayList<>();
+        List<PartitionAssignmentState> rowsWithConsumer =
+            consumerSummaryList
+                .stream()
+                .flatMap(
+                    consumerSummary -> {
+                      List<TopicPartition> topicPartitions =
+                          CollectionConvertor.listConvertJavaList(consumerSummary.assignment());
+                      List<TopicPartition> topicPartitionsFiltered = topicPartitions;
+                      if (filtered) {
+                        topicPartitionsFiltered =
+                            topicPartitions
+                                .stream()
+                                .filter(topicPartition -> topicPartition.topic().equals(topic))
+                                .collect(toList());
+                      }
+                      Map<TopicPartition, Object> partitionOffsets = new HashMap<>();
+                      log.info("topicPartitionsFiltered.size = " + topicPartitionsFiltered.size()
+                          + ". Detail is:");
+                      for (TopicPartition tp : topicPartitionsFiltered) {
+                        log.info(
+                            "topic:" + tp.topic() + ", partition:" + tp.partition() + ", offset:"
+                                + offsetsFiltered.get(tp));
+                        partitionOffsets.put(tp, offsetsFiltered.get(tp));
+                      }
+                      assignedTopicPartitions.addAll(topicPartitionsFiltered);
+                      /*
+                      Map<TopicPartition, Object> partitionOffsets =
+                          topicPartitionsFiltered
+                              .stream()
+                              .collect(
+                                  toMap(
+                                      Function.identity(),
+                                      topicPartition -> offsetsFiltered.get(topicPartition)));
+                                      */
+                      log.info("Topic partitions with consumers. Detail is:");
+                      for (Map.Entry<TopicPartition, Object> offset : partitionOffsets.entrySet()) {
+                        log.info("Topic:" + offset.getKey().topic() + ", Partition:" +
+                            offset.getKey().partition() + ", Offset:" + offset.getValue() +
+                            ", consumerGroup:" + consumerGroup + ", consumerId:" +
+                            consumerSummary.consumerId() + "," + ", consumerHost:" +
+                            consumerSummary.host() + ", consumerClient:" + consumerSummary
+                            .clientId());
+                      }
+                      return collectConsumerAssignment(
+                          consumerGroup,
+                          consumerGroupSummary.coordinator(),
+                          topicPartitionsFiltered,
+                          partitionOffsets,
+                          consumerSummary.consumerId(),
+                          consumerSummary.host(),
+                          consumerSummary.clientId())
+                          .stream();
+                    })
+                .collect(toList());
 
-      // Build consumer group description
-      ConsumerGroupDescFactory factory = new ConsumerGroupDescFactory(kafkaUtils);
-      cgdList.addAll(
-          topicStorage
-              .entrySet()
-              .stream()
-              .map(
-                  storage ->
-                      factory.makeNewPendingConsumerGroupDesc(
-                          consumerGroup, partitionEndOffsetMap, storage, topic))
-              .collect(toList()));
+        List<TopicPartition> topicPartitionsWithoutConsumer = new ArrayList<>();
+        Map<TopicPartition, Object> partitionOffsetsWithoutConsumer = new HashMap<>();
 
-    } else { // For running consumer group
-      // Build consumer group description
-      ConsumerGroupDescFactory factory = new ConsumerGroupDescFactory(kafkaUtils);
-      for (AdminClient.ConsumerSummary cs : filteredCSList) {
-        List<TopicPartition> assignment = CollectionConvertor.listConvertJavaList(cs.assignment());
-        // Second get the current offset of each partition in this topic
-
-        cgdList.addAll(
-            assignment
-                .parallelStream()
-                .filter(tp -> tp.topic().equals(topic))
-                .map(
-                    tp ->
-                        factory.makeNewRunningConsumerGroupDesc(
-                            tp, consumerGroup, partitionEndOffsetMap, cs))
-                .collect(toList()));
+        offsetsFiltered
+            .entrySet()
+            .forEach(
+                topicPartitionObjectEntry -> {
+                  if (!assignedTopicPartitions.contains(topicPartitionObjectEntry.getKey())) {
+                    topicPartitionsWithoutConsumer.add(topicPartitionObjectEntry.getKey());
+                    partitionOffsetsWithoutConsumer.put(
+                        topicPartitionObjectEntry.getKey(), topicPartitionObjectEntry.getValue());
+                  }
+                });
+        List<PartitionAssignmentState> rowsWithoutConsumer =
+            collectConsumerAssignment(
+                consumerGroup,
+                consumerGroupSummary.coordinator(),
+                topicPartitionsWithoutConsumer,
+                partitionOffsetsWithoutConsumer,
+                "-",
+                "-",
+                "-");
+        if (rowsWithoutConsumer.size() > 0) {
+          log.info("Topic Partitions without consumer. Detail is :");
+          for (PartitionAssignmentState pas : rowsWithoutConsumer) {
+            log.info("Topic:" + pas.getTopic() + ", Partition:" + pas.getPartition() + ", Offset:" +
+                pas.getOffset() + ", consumerGroup:" + consumerGroup + ", consumerId:" +
+                pas.getConsumerId() + "," + ", consumerHost:" + pas.getHost() +
+                ", consumerClient:" + pas.getClientId());
+          }
+        }
+        partitionAssignmentStateList.addAll(rowsWithConsumer);
+        partitionAssignmentStateList.addAll(rowsWithoutConsumer);
+        log.info("rowsWithConsumer.size:" + rowsWithConsumer.size() + ", rowsWithoutConsumer.size:"
+            + rowsWithoutConsumer.size());
       }
     }
 
-    return cgdList;
+    Collections.sort(partitionAssignmentStateList);
+    return partitionAssignmentStateList;
+  }
+
+  private List<PartitionAssignmentState> collectConsumerAssignment(
+      String group,
+      Node coordinator,
+      List<TopicPartition> topicPartitions,
+      Map<TopicPartition, Object> partitionOffsets,
+      String consumerId,
+      String host,
+      String clientId) {
+    if (topicPartitions.size() == 0) {
+      return new ArrayList<PartitionAssignmentState>();
+    } else {
+      List<PartitionAssignmentState> list = new ArrayList<>();
+      topicPartitions.forEach(
+          topicPartition -> {
+            long logEndOffset = getEndOffset(topicPartition.topic(), topicPartition.partition());
+            long offset = (Long) partitionOffsets.get(topicPartition);
+            long lag = (logEndOffset < 0) ? 0 : logEndOffset - offset;
+            list.add(
+                new PartitionAssignmentState(
+                    group,
+                    coordinator,
+                    topicPartition.topic(),
+                    topicPartition.partition(),
+                    offset,
+                    lag,
+                    consumerId,
+                    host,
+                    clientId,
+                    logEndOffset));
+          });
+
+      Collections.sort(list);
+      return list;
+    }
+  }
+
+  public List<PartitionAssignmentState> describeOldConsumerGroup(
+      String consumerGroup, boolean filtered, String topic) {
+    List<PartitionAssignmentState> partitionAssignmentStateList = new ArrayList<>();
+
+    if (filtered && !existTopic(topic)) {
+      return partitionAssignmentStateList;
+    }
+
+    String[] agrs = {
+        "--describe",
+        "--zookeeper",
+        zookeeperUtils.getZookeeperConfig().getUris(),
+        "--group",
+        consumerGroup
+    };
+    ConsumerGroupCommand.ConsumerGroupCommandOptions options =
+        new ConsumerGroupCommand.ConsumerGroupCommandOptions(agrs);
+    ConsumerGroupCommand.ZkConsumerGroupService zkConsumerGroupService =
+        new ConsumerGroupCommand.ZkConsumerGroupService(options);
+
+    ObjectMapper mapper = new ObjectMapper();
+    mapper.registerModule(new DefaultScalaModule());
+    mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    try {
+      String source =
+          mapper.writeValueAsString(zkConsumerGroupService.collectGroupOffsets()._2().get());
+      partitionAssignmentStateList =
+          mapper.readValue(
+              source, getCollectionType(mapper, List.class, PartitionAssignmentState.class));
+      List<PartitionAssignmentState> partitionAssignmentStateListFiltered;
+      if (filtered && existTopic(topic)) {
+        partitionAssignmentStateListFiltered =
+            partitionAssignmentStateList
+                .stream()
+                .filter(
+                    partitionAssignmentState -> partitionAssignmentState.getTopic().equals(topic))
+                .collect(Collectors.toList());
+      } else {
+        partitionAssignmentStateListFiltered = partitionAssignmentStateList;
+      }
+      partitionAssignmentStateListFiltered.sort(
+          Comparator.comparing(PartitionAssignmentState::getTopic)
+              .thenComparing(PartitionAssignmentState::getPartition));
+    } catch (JsonProcessingException jsonProcessingException) {
+      log.error("Describe old consumer group exception.", jsonProcessingException);
+    } catch (IOException ioexception) {
+      log.error("Describe old consumer group exception.", ioexception);
+    }
+
+    return partitionAssignmentStateList;
+  }
+
+  private JavaType getCollectionType(
+      ObjectMapper mapper, Class<?> collectionClass, Class<?>... elementClasses) {
+    return mapper.getTypeFactory().constructParametricType(collectionClass, elementClasses);
+  }
+
+  private List<ConsumerGroupDesc> getNewConsumerGroupDescByConsumerGroupAndTopic(
+      String consumerGroup, String topic) {
+    AdminClient adminClient = kafkaUtils.createAdminClient();
+    ConsumerGroupSummary consumerGroupSummary = adminClient
+        .describeConsumerGroup(consumerGroup, kafkaAdminClientGetTimeoutMs);
+    log.info("Describe consumer group:" + consumerGroup + ". Summary:" + consumerGroupSummary
+        .consumers());
+    List<PartitionAssignmentState> partitionAssignmentStateList =
+        describeNewConsumerGroup(consumerGroup, true, topic, consumerGroupSummary);
+    log.info("Partition Assignment State List for consumer:" + consumerGroup + " fitlered by topic:"
+        + topic + "  size :" + partitionAssignmentStateList.size());
+
+    adminClient.close();
+
+    return partitionAssignmentStateList
+        .stream()
+        .map(
+            partitionAssignmentState ->
+                convertParitionAssignmentStateToGroupDesc(
+                    consumerGroup,
+                    consumerGroupSummary,
+                    partitionAssignmentState,
+                    ConsumerType.NEW))
+        .collect(Collectors.toList());
+  }
+
+  public List<ConsumerGroupDesc> describeNewConsumerGroupByTopic(
+      String consumerGroup, @TopicExistConstraint String topic) {
+    if (consumerGroup != null && !isNewConsumerGroup(consumerGroup)) {
+      throw new ApiException("ConsumerGroup:" + consumerGroup + " non-exist!");
+    }
+
+    List<ConsumerGroupDesc> consumerGroupDescList = new ArrayList<>();
+    if (consumerGroup == null || consumerGroup.length() == 0) {
+      // To search all consumer groups
+      Set<String> allNewConsumerGroups = listAllNewConsumerGroups();
+
+      for (String cg : allNewConsumerGroups) {
+        consumerGroupDescList.addAll(getNewConsumerGroupDescByConsumerGroupAndTopic(cg, topic));
+      }
+      return consumerGroupDescList;
+    } else {
+      return getNewConsumerGroupDescByConsumerGroupAndTopic(consumerGroup, topic);
+    }
+  }
+
+  private List<ConsumerGroupDesc> getOldConsumerGroupDescByConsumerGroupAndTopic(
+      String consumerGroup, String topic) {
+    List<PartitionAssignmentState> partitionAssignmentStateList =
+        describeOldConsumerGroup(consumerGroup, true, topic);
+
+    ConsumerGroupSummary consumerGroupSummary = null;
+
+    return partitionAssignmentStateList
+        .stream()
+        .map(
+            partitionAssignmentState ->
+                convertParitionAssignmentStateToGroupDesc(
+                    consumerGroup,
+                    consumerGroupSummary,
+                    partitionAssignmentState,
+                    ConsumerType.OLD))
+        .collect(Collectors.toList());
+  }
+
+  public List<ConsumerGroupDesc> describeOldConsumerGroupByTopic(
+      String consumerGroup, @TopicExistConstraint String topic) {
+    if (!isOldConsumerGroup(consumerGroup)) {
+      throw new ApiException("ConsumerGroup:" + consumerGroup + " non-exist");
+    }
+
+    List<ConsumerGroupDesc> consumerGroupDescList = new ArrayList<>();
+    if (consumerGroup == null || consumerGroup.length() == 0) {
+      // To search all consumer groups
+      Set<String> allNewConsumerGroups = listAllNewConsumerGroups();
+
+      for (String cg : allNewConsumerGroups) {
+        consumerGroupDescList.addAll(getOldConsumerGroupDescByConsumerGroupAndTopic(cg, topic));
+      }
+      return consumerGroupDescList;
+    } else {
+      return getOldConsumerGroupDescByConsumerGroupAndTopic(consumerGroup, topic);
+    }
+  }
+
+  public Map<String, GeneralResponse> addPartitions(List<AddPartition> addPartitions) {
+    Map<String, GeneralResponse> addPartitionsResult = new HashMap<>();
+    org.apache.kafka.clients.admin.AdminClient kafkaAdminClient = createKafkaAdminClient();
+
+    Map<String, NewPartitions> newPartitionsMap = new HashMap<>();
+    addPartitions.forEach(
+        addPartition -> {
+          String topic = addPartition.getTopic();
+          if (!existTopic(topic)) {
+            addPartitionsResult.put(
+                topic,
+                GeneralResponse.builder()
+                    .state(GeneralResponseState.failure)
+                    .msg("Topic:" + topic + " non-exist.")
+                    .build());
+          } else {
+            TopicMeta topicMeta = describeTopic(topic);
+            int currentPartionCount = topicMeta.getPartitionCount();
+            int numPartitionsAdded = addPartition.getNumPartitionsAdded();
+            int totalCount = currentPartionCount + numPartitionsAdded;
+            List<List<Integer>> newAssignments = addPartition.getReplicaAssignment();
+            NewPartitions newPartitions;
+            if (newAssignments == null || newAssignments.isEmpty()) {
+              // The assignment of new replicas to brokers will be decided by the broker.
+              newPartitions = NewPartitions.increaseTo(totalCount);
+            } else {
+              newPartitions = NewPartitions.increaseTo(totalCount, newAssignments);
+            }
+            newPartitionsMap.put(topic, newPartitions);
+          }
+        });
+    CreatePartitionsResult createPartitionsResult =
+        kafkaAdminClient.createPartitions(newPartitionsMap);
+    try {
+      createPartitionsResult.all().get(kafkaAdminClientAlterTimeoutMs, TimeUnit.MILLISECONDS);
+    } catch (Exception exception) {
+      log.warn("Add partitions exception: " + exception);
+    } finally {
+      Map<String, KafkaFuture<Void>> result = createPartitionsResult.values();
+      result.forEach(
+          (topic, createResult) -> {
+            GeneralResponse generalResponse;
+            if (!createResult.isCompletedExceptionally() && createResult.isDone()) {
+              TopicMeta topicMeta = describeTopic(topic);
+              generalResponse =
+                  GeneralResponse.builder()
+                      .state(GeneralResponseState.success)
+                      .data(topicMeta)
+                      .build();
+            } else {
+              generalResponse =
+                  GeneralResponse.builder()
+                      .state(GeneralResponseState.failure)
+                      .msg(createResult.toString())
+                      .build();
+            }
+            addPartitionsResult.put(topic, generalResponse);
+          });
+
+      return addPartitionsResult;
+    }
+  }
+
+  // Return <Current partition replica assignment, Proposed partition reassignment>
+  public List<ReassignModel> generateReassignPartition(ReassignWrapper reassignWrapper) {
+    KafkaZkClient kafkaZkClient = zookeeperUtils.createKafkaZkClient();
+    List<ReassignModel> result = new ArrayList<>();
+
+    Seq brokerSeq =
+        JavaConverters.asScalaBufferConverter(reassignWrapper.getBrokers()).asScala().toSeq();
+    // <Proposed partition reassignment，Current partition replica assignment>
+    Tuple2 resultTuple2;
+    try {
+      resultTuple2 =
+          ReassignPartitionsCommand.generateAssignment(
+              kafkaZkClient, brokerSeq, reassignWrapper.generateReassignJsonString(), false);
+    } catch (Exception exception) {
+      throw new ApiException("Generate reassign plan exception." + exception);
+    }
+    HashMap<TopicPartitionReplica, String> emptyMap = new HashMap<>();
+    ObjectMapper objectMapper = new ObjectMapper();
+    try {
+      result.add(
+          objectMapper.readValue(
+              ReassignPartitionsCommand.formatAsReassignmentJson(
+                  (scala.collection.Map<TopicPartition, Seq<Object>>) resultTuple2._2(),
+                  JavaConverters.mapAsScalaMapConverter(emptyMap).asScala()),
+              ReassignModel.class));
+      result.add(
+          objectMapper.readValue(
+              ReassignPartitionsCommand.formatAsReassignmentJson(
+                  (scala.collection.Map<TopicPartition, Seq<Object>>) resultTuple2._1(),
+                  JavaConverters.mapAsScalaMapConverter(emptyMap).asScala()),
+              ReassignModel.class));
+      Collections.sort(result.get(0).getPartitions());
+      Collections.sort(result.get(1).getPartitions());
+    } catch (Exception exception) {
+      throw new ApiException("Generate reassign plan exception." + exception);
+    }
+
+    return result;
+  }
+
+  public ReassignStatus executeReassignPartition(
+      ReassignModel reassignModel,
+      Long interBrokerThrottle,
+      Long replicaAlterLogDirsThrottle,
+      Long timeoutMs) {
+    // Set default value
+    interBrokerThrottle = (interBrokerThrottle == null) ? Long.valueOf(-1) : interBrokerThrottle;
+    replicaAlterLogDirsThrottle =
+        (replicaAlterLogDirsThrottle == null) ? Long.valueOf(-1) : replicaAlterLogDirsThrottle;
+    timeoutMs = (timeoutMs == null) ? Long.valueOf(10000) : timeoutMs;
+
+    org.apache.kafka.clients.admin.AdminClient kafkaAdminClient = createKafkaAdminClient();
+    KafkaZkClient kafkaZkClient = zookeeperUtils.createKafkaZkClient();
+    AdminZkClient adminZkClient = new AdminZkClient(kafkaZkClient);
+
+    TwoTuple<
+        scala.collection.mutable.HashMap<TopicPartition, Seq<Object>>,
+        scala.collection.Map<TopicPartitionReplica, String>>
+        reassignPlan;
+    String reassignStr = "";
+    try {
+      reassignStr = new ObjectMapper().writeValueAsString(reassignModel);
+    } catch (Exception exception) {
+      throw new ApiException("Json processing exception." + exception);
+    }
+    reassignPlan = genReassignPlan(reassignStr);
+    scala.collection.mutable.HashMap<TopicPartition, Seq<Object>> partitionsToBeReassignedMap =
+        reassignPlan.getFirst();
+    scala.collection.Map<TopicPartitionReplica, String> replicatAssignment =
+        reassignPlan.getSecond();
+
+    ReassignPartitionsCommand reassignPartitionsCommand =
+        new ReassignPartitionsCommand(
+            kafkaZkClient,
+            scala.Option.apply(kafkaAdminClient),
+            partitionsToBeReassignedMap,
+            replicatAssignment,
+            adminZkClient);
+
+    Function0<BoxedUnit> postUpdateAction =
+        new AbstractFunction0<BoxedUnit>() {
+          @Override
+          public BoxedUnit apply() {
+            return null;
+          }
+        };
+    Throttle throttle =
+        new Throttle(interBrokerThrottle, replicaAlterLogDirsThrottle, postUpdateAction);
+
+    if (kafkaZkClient.reassignPartitionsInProgress()) {
+      // check whether zk node /admin/reassign_partitions exists
+      reassignPartitionsCommand.maybeLimit(throttle);
+      throw new ApiException(
+          "Failed to reassign partitions because there is an existing assignment running.");
+    } else {
+      try {
+        reassignPartitionsCommand.reassignPartitions(throttle, timeoutMs);
+        log.info("Successfully started reassignment of partitions.");
+      } catch (Exception exception) {
+        throw new ApiException(
+            "Failed to reassign partitions:"
+                + reassignPlan.getFirst()
+                + ". Exception:"
+                + exception.getLocalizedMessage());
+      }
+    }
+
+    return checkReassignStatus(partitionsToBeReassignedMap, replicatAssignment);
+  }
+
+  private ReassignStatus checkReassignStatus(
+      scala.collection.Map<TopicPartition, Seq<Object>> partitionsToBeReassigned,
+      scala.collection.Map<TopicPartitionReplica, String> replicaAssignement) {
+    ReassignStatus reassignStatus = new ReassignStatus();
+    Map<TopicPartition, Integer> reassignedPartitionsStatus =
+        checkIfPartitionReassignmentSucceeded(partitionsToBeReassigned);
+    Map<TopicPartitionReplica, Integer> replicasReassignmentStatus =
+        checkIfReplicaReassignmentSucceeded(
+            CollectionConvertor.mapConvertJavaMap(replicaAssignement));
+
+    reassignStatus.setPartitionsReassignStatus(reassignedPartitionsStatus);
+    reassignStatus.setReplicasReassignStatus(replicasReassignmentStatus);
+
+    if (removeThrottle(reassignedPartitionsStatus, replicasReassignmentStatus)) {
+      reassignStatus.setRemoveThrottle(true);
+    } else {
+      reassignStatus.setRemoveThrottle(false);
+    }
+
+    reassignStatus.setMsg(
+        "If removeThrottle in response is false, please use check api to remove throttle.");
+
+    return reassignStatus;
+  }
+
+  private boolean removeThrottle(
+      Map<TopicPartition, Integer> reassignedPartitionsStatus,
+      Map<TopicPartitionReplica, Integer> replicasReassignmentStatus) {
+    for (Map.Entry entry : reassignedPartitionsStatus.entrySet()) {
+      // Partitions reassignemnt not all done
+      if (!entry.getValue().equals(ReassignmentState.ReassignmentCompleted.code())) {
+        return false;
+      }
+    }
+
+    for (Map.Entry entry : replicasReassignmentStatus.entrySet()) {
+      // Replica reassignement not all done
+      if (!entry.getValue().equals(ReassignmentState.ReassignmentCompleted.code())) {
+        return false;
+      }
+    }
+
+    KafkaZkClient kafkaZkClient = zookeeperUtils.createKafkaZkClient();
+
+    List<Broker> brokerList =
+        CollectionConvertor.seqConvertJavaList(kafkaZkClient.getAllBrokersInCluster());
+    for (Broker broker : brokerList) {
+      int brokerId = broker.id();
+      List<String> keysToBeRemoved = new ArrayList<>();
+      //      We can't access the scala object here
+      //      keysToBeRemoved.add(DynamicConfig.Broker.LeaderReplicationThrottledRateProp());
+      //      keysToBeRemoved.add(DynamicConfig.Broker.FollowerReplicationThrottledRateProp());
+      //
+      // keysToBeRemoved.add(DynamicConfig.Broker.ReplicaAlterLogDirsIoMaxBytesPerSecondProp());
+      keysToBeRemoved.add(LeaderReplicationThrottledRateProp);
+      keysToBeRemoved.add(FollowerReplicationThrottledRateProp);
+      keysToBeRemoved.add(ReplicaAlterLogDirsIoMaxBytesPerSecondProp);
+      try {
+        removeConfigInZk(Type.BROKER, String.valueOf(brokerId), keysToBeRemoved);
+      } catch (ApiException apiException) {
+        log.info(
+            "Remove property on broker:" + brokerId + " failed since " + apiException.getMessage());
+      }
+    }
+
+    Set<String> topics =
+        reassignedPartitionsStatus.keySet().stream().map(tp -> tp.topic()).collect(toSet());
+    Set<String> topicInReplicas =
+        replicasReassignmentStatus.keySet().stream().map(tpr -> tpr.topic()).collect(toSet());
+    topics.addAll(topicInReplicas);
+
+    for (String topic : topics) {
+      List<String> keysToBeRemoved = new ArrayList<>();
+      keysToBeRemoved.add(LogConfig.LeaderReplicationThrottledReplicasProp());
+      keysToBeRemoved.add(LogConfig.FollowerReplicationThrottledReplicasProp());
+      try {
+        removeConfigInZk(Type.TOPIC, topic, keysToBeRemoved);
+      } catch (ApiException apiException) {
+        log.info(
+            "Remove property on topic:" + topic + " failed since " + apiException.getMessage());
+      }
+    }
+
+    return true;
+  }
+
+  private Map<TopicPartition, Integer> checkIfPartitionReassignmentSucceeded(
+      scala.collection.Map<TopicPartition, Seq<Object>> partitionsToBeReassigned) {
+    Map<TopicPartition, Integer> reassignedPartitionsStatus = new HashMap<>();
+    KafkaZkClient kafkaZkClient = zookeeperUtils.createKafkaZkClient();
+
+    scala.collection.immutable.Map<TopicPartition, Seq<Object>> partitionsBeingReassigned =
+        kafkaZkClient.getPartitionReassignment();
+    scala.collection.Iterator<TopicPartition> topicPartitionIterator =
+        partitionsToBeReassigned.keysIterator();
+    while (topicPartitionIterator.hasNext()) {
+      TopicPartition topicPartition = topicPartitionIterator.next();
+      reassignedPartitionsStatus.put(
+          topicPartition,
+          ReassignPartitionsCommand.checkIfPartitionReassignmentSucceeded(
+              kafkaZkClient,
+              topicPartition,
+              partitionsToBeReassigned,
+              partitionsBeingReassigned)
+              .status());
+    }
+
+    return reassignedPartitionsStatus;
+  }
+
+  private Map<TopicPartitionReplica, Integer> checkIfReplicaReassignmentSucceeded(
+      Map<TopicPartitionReplica, String> replicaAssignement) {
+    Map<TopicPartitionReplica, Integer> replicasReassignmentStatus = new HashMap<>();
+    Map<TopicPartitionReplica, ReplicaLogDirInfo> replicaLogDirInfos = new HashMap<>();
+
+    if (!replicaAssignement.isEmpty()) {
+      List<TopicPartitionReplica> replicaList = new ArrayList<>(replicaAssignement.keySet());
+      replicaLogDirInfos = describeReplicaLogDirs(replicaList);
+    }
+
+    for (Map.Entry<TopicPartitionReplica, String> newLogDirEntry : replicaAssignement.entrySet()) {
+      TopicPartitionReplica tpr = newLogDirEntry.getKey();
+      String newLogDir = newLogDirEntry.getValue();
+      ReplicaLogDirInfo replicaLogDirInfo = replicaLogDirInfos.get(tpr);
+      if (replicaLogDirInfo.getCurrentReplicaLogDir() == null) {
+        // tpr log dir not found
+        replicasReassignmentStatus.put(tpr, ReassignmentState.ReassignmentFailed.code());
+      } else if (replicaLogDirInfo.getFutureReplicaLogDir() != null
+          && replicaLogDirInfo.getFutureReplicaLogDir().equals(newLogDir)) {
+        replicasReassignmentStatus.put(tpr, ReassignmentState.ReassignmentInProgress.code());
+      } else if (replicaLogDirInfo.getFutureReplicaLogDir() != null
+          && !replicaLogDirInfo.getFutureReplicaLogDir().equals(newLogDir)) {
+        // tpr is being moved to another logdir instead of newLogDir
+        replicasReassignmentStatus.put(tpr, ReassignmentState.ReassignmentFailed.code());
+      } else if (replicaLogDirInfo.getCurrentReplicaLogDir() != null
+          && replicaLogDirInfo.getCurrentReplicaLogDir().equals(newLogDir)) {
+        replicasReassignmentStatus.put(tpr, ReassignmentState.ReassignmentCompleted.code());
+      } else {
+        replicasReassignmentStatus.put(tpr, ReassignmentState.ReassignmentFailed.code());
+      }
+    }
+
+    return replicasReassignmentStatus;
+  }
+
+  public ReassignStatus checkReassignStatus(ReassignModel reassignModel) {
+    String reassignJsonStr = "";
+    try {
+      ObjectMapper objectMapper = new ObjectMapper();
+      reassignJsonStr = objectMapper.writeValueAsString(reassignModel);
+    } catch (JsonProcessingException exception) {
+      throw new ApiException("Json processing exception." + exception);
+    }
+    TwoTuple<
+        scala.collection.mutable.HashMap<TopicPartition, Seq<Object>>,
+        scala.collection.Map<TopicPartitionReplica, String>>
+        reassignPlan = genReassignPlan(reassignJsonStr);
+    scala.collection.mutable.HashMap<TopicPartition, Seq<Object>> partitionsToBeReassignedMap =
+        reassignPlan.getFirst();
+    scala.collection.Map<TopicPartitionReplica, String> replicatAssignment =
+        reassignPlan.getSecond();
+
+    return checkReassignStatus(partitionsToBeReassignedMap, replicatAssignment);
+  }
+
+  private TwoTuple<
+      scala.collection.mutable.HashMap<TopicPartition, Seq<Object>>,
+      scala.collection.Map<TopicPartitionReplica, String>>
+  genReassignPlan(String reassignJsonStr) {
+    Tuple2 resultTuple2;
+
+    KafkaZkClient kafkaZkClient = zookeeperUtils.createKafkaZkClient();
+
+    try {
+      // Parse and validate reassignment json string, return (partitionsToBeReassigned,
+      // replicaAssignment)
+      resultTuple2 = ReassignPartitionsCommand.parseAndValidate(kafkaZkClient, reassignJsonStr);
+    } catch (Exception exception) {
+      throw new ApiException("Bad Request. " + exception.getMessage());
+    }
+    // Change list buffer to map
+    ListBuffer partitionsToBeReassignedList =
+        (scala.collection.mutable.ListBuffer) resultTuple2._1();
+    scala.collection.mutable.HashMap<TopicPartition, Seq<Object>> partitionsToBeReassignedMap =
+        new scala.collection.mutable.HashMap<>();
+    for (int i = 0; i < partitionsToBeReassignedList.size(); ++i) {
+      Tuple2 tup = (Tuple2) partitionsToBeReassignedList.apply(i);
+      partitionsToBeReassignedMap.put((TopicPartition) tup._1(), (Seq<Object>) tup._2());
+    }
+
+    scala.collection.Map<TopicPartitionReplica, String> replicatAssignment =
+        (scala.collection.Map<TopicPartitionReplica, String>) resultTuple2._2();
+
+    return new TwoTuple<>(partitionsToBeReassignedMap, replicatAssignment);
+  }
+
+  public GeneralResponse stopReassignPartitions() {
+    GeneralResponse response = GeneralResponse.builder().build();
+
+    KafkaZkClient kafkaZkClient = zookeeperUtils.createKafkaZkClient();
+    log.info("Deleting zk path /admin/reassign_partitions");
+    try {
+      kafkaZkClient.deletePartitionReassignment();
+      response.setState(GeneralResponseState.success);
+      log.info("Delete zk path /admin/reassign_partitions successfully.");
+    } catch (Exception exception) {
+      response.setState(GeneralResponseState.failure);
+      response.setMsg("Delete zk path /admin/reassign_partitions failed.");
+      log.info("Delete zk path /admin/reassign_partitions failed.");
+    }
+
+    kafkaZkClient.close();
+    return response;
   }
 
   public String getMessage(
@@ -775,7 +1884,7 @@ public class KafkaAdminService {
 
     String last = null;
 
-    // ConsumerRecords<String, String> crs = consumer.poll(channelRetryBackoffMs);
+//     ConsumerRecords<String, String> crs = consumer.poll(channelRetryBackoffMs);
     ConsumerRecords<String, String> crs = consumer.poll(3000);
     log.info(
         "Seek to offset:"
@@ -790,7 +1899,13 @@ public class KafkaAdminService {
       Iterator<ConsumerRecord<String, String>> it = crs.iterator();
       while (it.hasNext()) {
         ConsumerRecord<String, String> initCr = it.next();
-        last = "Value: " + initCr.value() + ", Offset: " + String.valueOf(initCr.offset());
+        last =
+            "Value: "
+                + initCr.value()
+                + ", Offset: "
+                + String.valueOf(initCr.offset())
+                + ", timestamp:"
+                + initCr.timestamp();
         log.info(
             "Value: " + initCr.value() + ", initCr.Offset: " + String.valueOf(initCr.offset()));
         if (last != null && initCr.offset() == offset) {
@@ -803,6 +1918,235 @@ public class KafkaAdminService {
     return last;
   }
 
+  public List<Record> getRecordsByOffset(
+      @TopicExistConstraint String topic,
+      int partition,
+      long offset,
+      int maxRecords,
+      String keyDecoder,
+      String valueDecoder,
+      String avroSchema,
+      long timeoutMs) throws ApiException {
+    if (!isTopicPartitionValid(topic, partition)) {
+      throw new ApiException("Bad request. Topic:" + topic + " has no partition:" + partition);
+    }
+
+    checkOffsetValid(topic, partition, offset);
+
+    if (!kafkaUtils.DESERIALIZER_TYPE_MAP.containsKey(valueDecoder)) {
+      throw new ApiException(
+          "Bad request. Decoder class:"
+              + valueDecoder
+              + " not found. ByteArrayDeserializer, ByteBufferDeserializer, BytesDeserializer, "
+              + "DoubleDeserializer, FloatDeserializer, "
+              + "IntegerDeserializer, LongDeserializer, ShortDeserializer, StringDeserializer, AvroDeserializer "
+              + "are supported.");
+    }
+
+    if (valueDecoder == null || valueDecoder.isEmpty()) {
+      // default decoder is StringDeserializer
+      valueDecoder = "StringDeserializer";
+    }
+    if (keyDecoder == null || keyDecoder.isEmpty()) {
+      // default decoder is StringDeserializer
+      keyDecoder = "StringDeserializer";
+    }
+
+    if (valueDecoder != null && valueDecoder.equals("AvroDeserializer")) {
+      if (avroSchema == null || avroSchema.isEmpty()) {
+        throw new ApiException("Bad request. Schema is needed when choosing AvroDeserializer.");
+      } else {
+        return getAvroRecordsByOffset(topic, partition, offset, keyDecoder, avroSchema, maxRecords,
+            timeoutMs);
+      }
+    }
+
+    KafkaConsumer consumer;
+    try {
+      consumer = kafkaUtils
+          .createNewConsumer(String.valueOf(System.currentTimeMillis()), keyDecoder, valueDecoder,
+              maxRecords);
+    } catch (ClassNotFoundException classNotFoundException) {
+      throw new ApiException("Class for keyDecoder:" + keyDecoder + ", valueDecoder:" + valueDecoder
+          + "not found exception." + classNotFoundException);
+    }
+
+    TopicPartition tp = new TopicPartition(topic, partition);
+    consumer.assign(Collections.singletonList(tp));
+    consumer.seek(tp, offset);
+
+    List<Record> recordList = new ArrayList<>();
+
+    try {
+      ConsumerRecords<Object, Object> crs = consumer.poll(timeoutMs);
+      log.info(
+          "Seek to offset:"
+              + offset
+              + ", topic:"
+              + topic
+              + ", partition:"
+              + partition
+              + ", crs.count:"
+              + crs.count());
+      if (crs.count() != 0) {
+        Iterator<ConsumerRecord<Object, Object>> it = crs.iterator();
+        while (it.hasNext()) {
+          Record record = Record.builder().topic(topic).keyDecoder(keyDecoder)
+              .valueDecoder(valueDecoder).build();
+          ConsumerRecord<Object, Object> initCr = it.next();
+          record.setOffset(offset);
+          record.setTimestamp(initCr.timestamp());
+          record.setKey(initCr.key());
+          record.setValue(initCr.value());
+          log.info(
+              "Value: "
+                  + initCr.value()
+                  + ", initCr.Offset: "
+                  + String.valueOf(initCr.offset())
+                  + ", timestamp:"
+                  + initCr.timestamp());
+          recordList.add(record);
+        }
+      }
+    } catch (Exception exception) {
+      throw new ApiException(
+          "Consume "
+              + topic
+              + "-"
+              + partition
+              + " offset:"
+              + offset
+              + " using keyDecoder:" + keyDecoder + ", valueDecoder:"
+              + valueDecoder
+              + " exception. "
+              + exception.getLocalizedMessage());
+    } finally {
+      consumer.close();
+    }
+
+    return recordList;
+  }
+
+  private boolean isTopicPartitionValid(String topic, int partition) {
+    TopicMeta topicMeta = describeTopic(topic);
+
+    for (CustomTopicPartitionInfo topicPartitionInfo : topicMeta.getTopicPartitionInfos()) {
+      if (topicPartitionInfo.getTopicPartitionInfo().partition() == partition) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  public void checkOffsetValid(String topic, int partition, long offset) {
+    long beginningOffset = getBeginningOffset(topic, partition);
+    long endOffset = getEndOffset(topic, partition);
+
+    log.info(
+        "Topic:"
+            + topic
+            + ", partition:"
+            + partition
+            + " begin offset:"
+            + beginningOffset
+            + ", end offset:"
+            + endOffset);
+    if (beginningOffset == endOffset) {
+      throw new ApiException("There is no message in this partition of this topic");
+    }
+    if (offset < beginningOffset || offset >= endOffset) {
+      log.error(offset + " error");
+      throw new ApiException(
+          "offsets must be between " + String.valueOf(beginningOffset + " and " + (endOffset - 1)));
+    }
+  }
+
+  public List<Record> getAvroRecordsByOffset(String topic, int partition, long offset,
+      String keyDecoder,
+      String avroSchema, int maxRecords, long timeoutMs) throws ApiException {
+    TopicPartition tp = new TopicPartition(topic, partition);
+    KafkaConsumer consumer = null;
+    final String valueDecoder = "AvroDeserializer";
+    try {
+      consumer = kafkaUtils.createNewConsumer(
+          String.valueOf(System.currentTimeMillis()), keyDecoder,
+          valueDecoder, maxRecords);
+    } catch (Exception exception) {
+      log.error("Create consumer exception." + exception);
+      throw new ApiException("Create consumer exception:" + exception.getMessage());
+    }
+    consumer.assign(Collections.singletonList(tp));
+    consumer.seek(tp, offset);
+
+    List<Record> recordList = new ArrayList<>();
+    try {
+      ConsumerRecords<byte[], byte[]> crs = consumer.poll(timeoutMs);
+      log.info(
+          "Seek to offset:"
+              + offset
+              + ", topic:"
+              + topic
+              + ", partition:"
+              + partition
+              + ", crs.count:"
+              + crs.count());
+      if (crs.count() != 0) {
+        Iterator<ConsumerRecord<byte[], byte[]>> it = crs.iterator();
+        while (it.hasNext()) {
+          ConsumerRecord<byte[], byte[]> initCr = it.next();
+          Record record =
+              Record.builder().topic(topic).keyDecoder(keyDecoder).valueDecoder(valueDecoder)
+                  .build();
+          record.setOffset(offset);
+          record.setTimestamp(initCr.timestamp());
+          record.setKey(initCr.key());
+          record.setValue(avroDeserialize(initCr.value(), avroSchema));
+          log.info(
+              "Value: "
+                  + initCr.value()
+                  + ", initCr.Offset: "
+                  + String.valueOf(initCr.offset())
+                  + ", timestamp:"
+                  + initCr.timestamp());
+          recordList.add(record);
+        }
+      }
+    } catch (Exception exception) {
+      throw new ApiException(
+          "Consume "
+              + topic
+              + "-"
+              + partition
+              + " offset:"
+              + offset
+              + " using keyDecoder:" + keyDecoder + ", valueDecoder:"
+              + "ByteArrayDeserializer"
+              + " exception. "
+              + exception.getLocalizedMessage());
+    } finally {
+      consumer.close();
+    }
+
+    return recordList;
+  }
+
+  private Object avroDeserialize(byte[] bytes, String avroSchema) {
+    Schema schema = new Schema.Parser().parse(avroSchema);
+    DatumReader reader = new GenericDatumReader<GenericRecord>(schema);
+    ByteBuffer buffer = ByteBuffer.wrap(bytes);
+    Object object = null;
+    try {
+      object =
+          reader.read(
+              null, DecoderFactory.get().binaryDecoder(buffer.array(), 0, bytes.length, null));
+    } catch (IOException exception) {
+      throw new ApiException("Avro Deserialize exception. " + exception);
+    }
+
+    return object;
+  }
+
   public GeneralResponse resetOffset(
       @TopicExistConstraint String topic,
       int partition,
@@ -810,28 +2154,41 @@ public class KafkaAdminService {
       ConsumerType type,
       String offset) {
     KafkaConsumer consumer = null;
-    log.info("To tell the consumergroup " + consumerGroup + " is new");
     if (type != null && type == ConsumerType.NEW) {
       if (!isNewConsumerGroup(consumerGroup)) {
-        throw new ApiException("Consumer group " + consumerGroup + " is non-exist!");
+        return GeneralResponse.builder()
+            .state(GeneralResponseState.failure)
+            .msg("New consumer group:" + consumerGroup + " non-exists!")
+            .build();
       }
     }
 
-    log.info("To tell the consumergroup " + consumerGroup + " is old");
     if (type != null && type == ConsumerType.OLD) {
       if (!isOldConsumerGroup(consumerGroup)) {
-        throw new ApiException("Consumer group " + consumerGroup + " is non-exist!");
+        return GeneralResponse.builder()
+            .state(GeneralResponseState.failure)
+            .msg("Old consumer group:" + consumerGroup + " non-exists!")
+            .build();
       }
     }
 
-    long offsetToBeReset;
+    if (!isTopicPartitionValid(topic, partition)) {
+      return GeneralResponse.builder()
+          .state(GeneralResponseState.failure)
+          .msg("Topic:" + topic + " has no partition:" + partition)
+          .build();
+    }
+
+    long offsetToBeReset = -1;
     long beginningOffset = getBeginningOffset(topic, partition);
     long endOffset = getEndOffset(topic, partition);
 
     log.info("To tell the consumergroup " + consumerGroup + " is active now");
     if (isConsumerGroupActive(consumerGroup, type)) {
-      throw new ApiException(
-          "Assignments can only be reset if the group " + consumerGroup + " is inactive");
+      return GeneralResponse.builder()
+          .state(GeneralResponseState.failure)
+          .msg("Offsets can only be reset if the group " + consumerGroup + " is inactive")
+          .build();
     }
 
     if (type != null && type == ConsumerType.NEW && isNewConsumerGroup(consumerGroup)) {
@@ -844,16 +2201,78 @@ public class KafkaAdminService {
         consumer.poll(channelSocketTimeoutMs);
         if (offset.equals("earliest")) {
           consumer.seekToBeginning(Arrays.asList(tp));
-          log.info("Reset to" + consumer.position(tp));
+          offsetToBeReset = beginningOffset;
+          log.info(
+              "Reset offset for consumer group:"
+                  + consumerGroup
+                  + " on "
+                  + topic
+                  + "-"
+                  + partition
+                  + " to "
+                  + consumer.position(tp));
         } else if (offset.equals("latest")) {
           consumer.seekToEnd(Arrays.asList(tp));
-          log.info("Reset to" + consumer.position(tp));
+          offsetToBeReset = endOffset;
+          log.info(
+              "Reset offset for consumer group:"
+                  + consumerGroup
+                  + " on "
+                  + topic
+                  + "-"
+                  + partition
+                  + " to "
+                  + consumer.position(tp));
+        } else if (isDateTime(offset)) {
+          // Reset offset by time
+          SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+          Map<TopicPartition, Long> timestampsToSearch = new HashMap<>();
+          try {
+            timestampsToSearch.put(tp, sdf.parse(offset).getTime());
+            Map<TopicPartition, OffsetAndTimestamp> results =
+                consumer.offsetsForTimes(timestampsToSearch);
+            OffsetAndTimestamp offsetAndTimestamp = results.get(tp);
+            if (offsetAndTimestamp != null) {
+              offsetToBeReset = offsetAndTimestamp.offset();
+              log.info(
+                  "Reset consumer group:"
+                      + consumerGroup
+                      + " offset by time. Reset to offset:"
+                      + offsetAndTimestamp.offset()
+                      + ", timestamp:"
+                      + offsetAndTimestamp.timestamp()
+                      + ", timestampToDate:"
+                      + sdf.format(new Date(offsetAndTimestamp.timestamp())));
+              consumer.seek(tp, offsetToBeReset);
+            } else {
+              return GeneralResponse.builder()
+                  .state(GeneralResponseState.failure)
+                  .msg(
+                      "No offset's timestamp is greater than or equal to the given timestamp:"
+                          + offset)
+                  .build();
+            }
+          } catch (ParseException parseException) {
+            return GeneralResponse.builder()
+                .state(GeneralResponseState.failure)
+                .msg("Invalid offset format. Date format should be yyyy-MM-dd HH:mm:ss.SSS .")
+                .build();
+          }
         } else {
           if (Long.parseLong(offset) < beginningOffset || Long.parseLong(offset) > endOffset) {
-            log.error(offset + " error");
-            throw new ApiException(
-                "offsets must be between "
-                    + String.valueOf(beginningOffset + " and " + (endOffset - 1)));
+            log.warn(offset + " error");
+            return GeneralResponse.builder()
+                .state(GeneralResponseState.failure)
+                .msg(
+                    "Invalid request offset:"
+                        + offset
+                        + ". Topic "
+                        + topic
+                        + "'s beginning offset:"
+                        + beginningOffset
+                        + ", endoffset:"
+                        + endOffset)
+                .build();
           }
           offsetToBeReset = Long.parseLong(offset);
           consumer.seek(tp, offsetToBeReset);
@@ -861,9 +2280,14 @@ public class KafkaAdminService {
         consumer.commitSync();
       } catch (IllegalStateException e) {
         storage.getMap().remove(consumerGroup);
-        throw new ApiException(e);
+        return GeneralResponse.builder()
+            .state(GeneralResponseState.failure)
+            .msg(e.getLocalizedMessage())
+            .build();
       } finally {
-        consumer.close();
+        if (consumer != null) {
+          consumer.close();
+        }
       }
     }
 
@@ -871,44 +2295,70 @@ public class KafkaAdminService {
     if (type != null && type == ConsumerType.OLD && isOldConsumerGroup(consumerGroup)) {
       log.info("The consumergroup " + consumerGroup + " is old. Reset offset now");
       if (offset.equals("earliest")) {
-        offset = String.valueOf(beginningOffset);
+        offsetToBeReset = beginningOffset;
       } else if (offset.equals("latest")) {
-        offset = String.valueOf(endOffset);
-      }
-      try {
-        if (Long.parseLong(offset) < beginningOffset || Long.parseLong(offset) > endOffset) {
-          log.info("Setting offset to " + offset + " error");
-          throw new ApiException(
-              "offsets must be between "
-                  + String.valueOf(beginningOffset + " and " + (endOffset - 1)));
+        offsetToBeReset = endOffset;
+      } else {
+        try {
+          if (Long.parseLong(offset) < beginningOffset || Long.parseLong(offset) > endOffset) {
+            log.info("Setting offset to " + offset + " error");
+            return GeneralResponse.builder()
+                .state(GeneralResponseState.failure)
+                .msg(
+                    "Invalid request offset:"
+                        + offset
+                        + ". Topic "
+                        + topic
+                        + "'s beginning offset:"
+                        + beginningOffset
+                        + ", endoffset:"
+                        + endOffset)
+                .build();
+          }
+          log.info("Offset will be reset to " + offset);
+          zkUtils = zookeeperUtils.getZkUtils();
+          offsetToBeReset = Long.parseLong(offset);
+          zkUtils
+              .zkClient()
+              .writeData(
+                  "/consumers/" + consumerGroup + "/offsets/" + topic + "/" + partition, offset);
+        } catch (Exception e) {
+          return GeneralResponse.builder()
+              .state(GeneralResponseState.failure)
+              .msg(e.getLocalizedMessage())
+              .build();
         }
-        log.info("Offset will be reset to " + offset);
-        zkUtils
-            .zkClient()
-            .writeData(
-                "/consumers/" + consumerGroup + "/offsets/" + topic + "/" + partition, offset);
-      } catch (Exception e) {
-        throw new ApiException(e);
       }
     }
-    return new GeneralResponse(GeneralResponseState.success, "Reset the offset successfully!");
+    return GeneralResponse.builder()
+        .state(GeneralResponseState.success)
+        .msg("Reset the offset successfully!")
+        .data(Long.toString(offsetToBeReset))
+        .build();
   }
 
-  public Map<String, Map<Integer, java.lang.Long>> getLastCommitTime(
+  private boolean isDateTime(String offset) {
+    String patternStr = "\\d\\d\\d\\d-[0-1]\\d-[0-3]\\d\\s+[0-2]\\d:[0-5]\\d:[0-5]\\d\\.\\d\\d\\d";
+    Pattern timePattern = Pattern.compile(patternStr);
+    return timePattern.matcher(offset).find();
+  }
+
+  public Map<String, Map<Integer, Long>> getLastCommitTime(
       @ConsumerGroupExistConstraint String consumerGroup,
       @TopicExistConstraint String topic,
       ConsumerType type) {
-    Map<String, Map<Integer, java.lang.Long>> result = new ConcurrentHashMap<>();
+    Map<String, Map<Integer, Long>> result = new ConcurrentHashMap<>();
 
     if (type != null && type == ConsumerType.OLD) {
+      CuratorFramework zkClient = zookeeperUtils.createZkClient();
       // Get Old Consumer commit time
       try {
-        Map<Integer, java.lang.Long> oldConsumerOffsetMap = new ConcurrentHashMap<>();
+        Map<Integer, Long> oldConsumerOffsetMap = new ConcurrentHashMap<>();
         if (zkClient.checkExists().forPath(CONSUMERPATHPREFIX + consumerGroup) != null
             && zkClient
-                    .checkExists()
-                    .forPath(CONSUMERPATHPREFIX + consumerGroup + OFFSETSPATHPREFIX + topic)
-                != null) {
+            .checkExists()
+            .forPath(CONSUMERPATHPREFIX + consumerGroup + OFFSETSPATHPREFIX + topic)
+            != null) {
           List<String> offsets =
               zkClient
                   .getChildren()
@@ -932,13 +2382,18 @@ public class KafkaAdminService {
           result.put("old", oldConsumerOffsetMap);
         }
       } catch (Exception e) {
-        e.printStackTrace();
+        log.warn(
+            "Get last commit time for consumergroup:"
+                + consumerGroup
+                + " failed. "
+                + e.getLocalizedMessage());
       }
-
     } else {
-      // Get New consumer commit time, from offset storage instance
+      //      Get New consumer commit time, from offset storage instance
+      // TODO find a solution a replace the storage
       if (storage.get(consumerGroup) != null) {
-        Map<GroupTopicPartition, OffsetAndMetadata> storageResult = storage.get(consumerGroup);
+        Map<GroupTopicPartition, kafka.common.OffsetAndMetadata> storageResult =
+            storage.get(consumerGroup);
         result.put(
             "new",
             (storageResult
@@ -952,7 +2407,7 @@ public class KafkaAdminService {
                           if (s.getValue() != null) {
                             return s.getValue().commitTimestamp();
                           } else {
-                            return -1l;
+                            return -1L;
                           }
                         }))));
       }
@@ -961,88 +2416,75 @@ public class KafkaAdminService {
     return result;
   }
 
-  public GeneralResponse deleteConsumerGroup(String consumerGroup) {
-    if (!isOldConsumerGroup(consumerGroup)) {
-      throw new RuntimeException(consumerGroup + " non-exist");
+  public GeneralResponse deleteConsumerGroup(String consumerGroup, ConsumerType type) {
+    if (type == ConsumerType.OLD && !isOldConsumerGroup(consumerGroup)) {
+      return GeneralResponse.builder()
+          .state(GeneralResponseState.failure)
+          .msg("Old consumer group:" + consumerGroup + " non-exist")
+          .build();
     }
-    try {
-      if (zookeeperUtils
-              .getCuratorClient()
-              .checkExists()
-              .forPath(CONSUMERPATHPREFIX + consumerGroup + "/ids")
-          == null) {
-        zookeeperUtils
-            .getCuratorClient()
-            .delete()
-            .deletingChildrenIfNeeded()
-            .forPath(CONSUMERPATHPREFIX + consumerGroup);
-      } else {
-        if (!AdminUtils.deleteConsumerGroupInZK(zkUtils, consumerGroup)) {
-          throw new ApiException(
-              "The consumer " + consumerGroup + " is still active.Please stop it first");
-        }
-      }
-    } catch (Exception e) {
-      throw new RuntimeException(e);
+    if (type == ConsumerType.NEW && !isNewConsumerGroup(consumerGroup)) {
+      return GeneralResponse.builder()
+          .state(GeneralResponseState.failure)
+          .msg("New consumer group:" + consumerGroup + " non-exist")
+          .build();
     }
-
-    return new GeneralResponse(GeneralResponseState.success, consumerGroup + " has been deleted.");
-  }
-
-  public Map<String, Set<String>> listAllConsumerGroups(ConsumerType type) {
-    Map<String, Set<String>> result = new HashMap<>();
-
-    if (type == null || type == ConsumerType.OLD) {
-      Set<String> oldCGList = listAllOldConsumerGroups();
-      if (oldCGList.size() != 0) {
-        result.put("old", oldCGList);
+    if (type == ConsumerType.OLD) {
+      zkUtils = zookeeperUtils.getZkUtils();
+      if (!AdminUtils.deleteConsumerGroupInZK(zkUtils, consumerGroup)) {
+        return GeneralResponse.builder()
+            .state(GeneralResponseState.failure)
+            .msg("The consumer " + consumerGroup + " is still active.Please stop it first")
+            .build();
       }
-    }
+    } else if (type == ConsumerType.NEW) {
+      AdminClient adminClient = kafkaUtils.createAdminClient();
+      List<String> groups = new ArrayList<>();
+      groups.add(consumerGroup);
 
-    if (type == null || type == ConsumerType.NEW) {
-      Set<String> newCGList = listAllNewConsumerGroups();
-      if (newCGList.size() != 0) {
-        result.put("new", newCGList);
-      }
-    }
+      scala.collection.immutable.List<String> groupsList =
+          JavaConverters.asScalaBufferConverter(groups).asScala().toList();
+      scala.collection.immutable.Map<String, Errors> stringErrorsMap =
+          adminClient.deleteConsumerGroups((scala.collection.immutable.List) (groupsList));
 
-    return result;
-  }
-
-  public Map<String, Set<String>> listConsumerGroupsByTopic(
-      @TopicExistConstraint String topic, ConsumerType type) {
-    Map<String, Set<String>> result = new HashMap<>();
-
-    if (type == null || type == ConsumerType.OLD) {
-      Set<String> oldCGList = null;
-      try {
-        oldCGList = listOldConsumerGroupsByTopic(topic);
-      } catch (Exception e) {
-        e.printStackTrace();
-      }
-      if (oldCGList.size() != 0) {
-        result.put("old", oldCGList);
+      adminClient.close();
+      if (!stringErrorsMap.get(consumerGroup).get().equals(Errors.NONE)) {
+        log.info("Consumer group:"
+            + consumerGroup
+            + " could not be deleted. Error Code:"
+            + stringErrorsMap.get(consumerGroup).get()
+            + ". Error msg:"
+            + stringErrorsMap.get(consumerGroup).get().exception());
+        return GeneralResponse.builder()
+            .state(GeneralResponseState.failure)
+            .msg(
+                "Consumer group:"
+                    + consumerGroup
+                    + " could not be deleted. Error Code:"
+                    + stringErrorsMap.get(consumerGroup).get()
+                    + ". Error msg:"
+                    + stringErrorsMap.get(consumerGroup).get().exception())
+            .build();
       }
     }
 
-    if (type == null || type == ConsumerType.NEW) {
-      Set<String> newCGList = listNewConsumerGroupsByTopic(topic);
+    log.info("Consumer group:" + consumerGroup + " has been deleted.");
 
-      if (newCGList.size() != 0) {
-        result.put("new", newCGList);
-      }
-    }
-
-    return result;
+    return GeneralResponse.builder()
+        .state(GeneralResponseState.success)
+        .msg("Consumer group:" + consumerGroup + " has been deleted.")
+        .data(consumerGroup)
+        .build();
   }
 
   private List<TopicAndPartition> getTopicPartitions(String t) {
     List<TopicAndPartition> tpList = new ArrayList<>();
     List<String> l = Arrays.asList(t);
+    zkUtils = zookeeperUtils.getZkUtils();
     java.util.Map<String, Seq<Object>> tpMap =
         JavaConverters.mapAsJavaMapConverter(
-                zkUtils.getPartitionsForTopics(
-                    JavaConverters.asScalaIteratorConverter(l.iterator()).asScala().toSeq()))
+            zkUtils.getPartitionsForTopics(
+                JavaConverters.asScalaIteratorConverter(l.iterator()).asScala().toSeq()))
             .asJava();
     if (tpMap != null) {
       ArrayList<Object> partitionLists =
@@ -1051,10 +2493,6 @@ public class KafkaAdminService {
           partitionLists.stream().map(p -> new TopicAndPartition(t, (Integer) p)).collect(toList());
     }
     return tpList;
-  }
-
-  private Properties getTopicPropsFromZk(String topic) {
-    return AdminUtils.fetchEntityConfig(zkUtils, ConfigType.Topic(), topic);
   }
 
   private long getOffsets(Node leader, String topic, int partitionId, long time) {
@@ -1087,158 +2525,76 @@ public class KafkaAdminService {
     return offsets[0];
   }
 
-  private long getOffsets(PartitionInfo partitionInfo, long time) {
-    return getOffsets(
-        partitionInfo.leader(), partitionInfo.topic(), partitionInfo.partition(), time);
+  boolean partitionLeaderExist(String topic, int partitionId) {
+    TopicDescription topicDes = getTopicDescription(topic);
+    if (topicDes != null) {
+      for (TopicPartitionInfo tpi : topicDes.partitions()) {
+        if (tpi.partition() == partitionId) {
+          return tpi.leader() != null;
+        }
+      }
+    }
+    return false;
   }
 
   public long getBeginningOffset(String topic, int partitionId) {
-    return getOffsets(
-        kafkaUtils.getLeader(topic, partitionId),
-        topic,
-        partitionId,
-        kafka.api.OffsetRequest.EarliestTime());
+    if (partitionLeaderExist(topic, partitionId)) {
+      log.info("Getting beginning offset for topic:" + topic + ", partition:" + partitionId);
+      KafkaConsumer consumer = kafkaUtils.createNewConsumer(KafkaUtils.DEFAULTCP);
+      TopicPartition tp = new TopicPartition(topic, partitionId);
+      consumer.assign(Arrays.asList(tp));
+      Map<TopicPartition, Long> beginningOffsets =
+          consumer.beginningOffsets(Collections.singletonList(tp));
+      consumer.close();
+
+      if (beginningOffsets != null) {
+        return beginningOffsets.get(tp);
+      }
+
+      log.info("End Get beginning offset for topic:" + topic + ", partition:" + partitionId);
+    }
+    return -1;
   }
 
   public long getEndOffset(String topic, int partitionId) {
-    return getOffsets(
-        kafkaUtils.getLeader(topic, partitionId),
-        topic,
-        partitionId,
-        kafka.api.OffsetRequest.LatestTime());
-  }
+    if (partitionLeaderExist(topic, partitionId)) {
+      log.info("Getting end offset for topic:" + topic + ", partition:" + partitionId);
+      KafkaConsumer consumer = kafkaUtils.createNewConsumer(KafkaUtils.DEFAULTCP);
+      TopicPartition tp = new TopicPartition(topic, partitionId);
+      consumer.assign(Arrays.asList(tp));
+      Map<TopicPartition, Long> endOffsets = consumer.endOffsets(Collections.singletonList(tp));
+      consumer.close();
 
-  private long getBeginningOffset(Node leader, String topic, int partitionId) {
-    return getOffsets(leader, topic, partitionId, kafka.api.OffsetRequest.EarliestTime());
+      log.info("End Get end offset for topic:" + topic + ", partition:" + partitionId);
+      if (endOffsets != null) {
+        return endOffsets.get(tp);
+      }
+    }
+    return -1;
   }
 
   private long getEndOffset(Node leader, String topic, int partitionId) {
     return getOffsets(leader, topic, partitionId, kafka.api.OffsetRequest.LatestTime());
   }
 
-  public boolean isOldConsumerGroup(String consumerGroup) {
-    return listAllOldConsumerGroups().contains(consumerGroup);
-  }
-
-  public boolean isNewConsumerGroup(String consumerGroup) {
-    // Active Consumergroup or Dead ConsumerGroup is OK
-    return (listAllNewConsumerGroups().contains(consumerGroup));
-  }
-
-  public Set<String> listTopicsByCG(String consumerGroup, ConsumerType type) {
-    Set<String> topicList = new HashSet<>();
-
-    if (type == null) {
-      throw new ApiException("Unknown Type " + type);
-    }
-
-    if (type == ConsumerType.OLD) {
-      if (!isOldConsumerGroup(consumerGroup)) {
-        throw new RuntimeException(consumerGroup + " non-exist");
-      }
-
-      topicList =
-          new HashSet<>(
-              CollectionConvertor.seqConvertJavaList(
-                  zkUtils.getTopicsByConsumerGroup(consumerGroup)));
-    } else if (type == ConsumerType.NEW) {
-      if (!isNewConsumerGroup(consumerGroup)) {
-        throw new RuntimeException(consumerGroup + " non-exist!");
-      }
-
-      AdminClient adminClient = kafkaUtils.createAdminClient();
-
-      List<AdminClient.ConsumerSummary> consumerSummaryList =
-          CollectionConvertor.listConvertJavaList(adminClient.describeConsumerGroup(consumerGroup));
-      // Nothing about this consumer group obtained, return an empty map directly
-      adminClient.close();
-
-      if (isConsumerGroupActive(consumerGroup, ConsumerType.NEW)
-          && consumerSummaryList.size() != 0) {
-
-        // Get topic list and filter if topic is set
-        topicList.addAll(
-            consumerSummaryList
-                .stream()
-                .flatMap(cs -> CollectionConvertor.listConvertJavaList(cs.assignment()).stream())
-                .map(tp -> tp.topic())
-                .distinct()
-                .collect(toList()));
-      }
-
-      if (consumerSummaryList.size() == 0) { // PENDING Consumer Group
-        Map<GroupTopicPartition, OffsetAndMetadata> storageMap = storage.get(consumerGroup);
-        if (storageMap == null) {
-          return null;
-        }
-
-        // Fetch the topics involved by consumer. And filter it by topic name
-        topicList.addAll(
-            storageMap
-                .entrySet()
-                .stream()
-                .map(e -> e.getKey().topicPartition().topic())
-                .distinct()
-                .collect(toList()));
-      }
-    } else {
-      throw new ApiException("Unknown Type " + type);
-    }
-
-    return topicList;
-  }
-
-  public Map<String, List<ConsumerGroupDesc>> describeConsumerGroup(
-      String consumerGroup, ConsumerType type) {
-    Map<String, List<ConsumerGroupDesc>> result = new HashMap<>();
-    Set<String> topicList = listTopicsByCG(consumerGroup, type);
-    if (topicList == null) {
-      // Return empty result
-      return result;
-    }
-    if (type == ConsumerType.NEW) {
-      for (String topic : topicList) {
-        result.put(topic, describeNewCGByTopic(consumerGroup, topic));
-      }
-
-    } else if (type == ConsumerType.OLD) {
-      for (String topic : topicList) {
-        result.put(topic, describeOldCGByTopic(consumerGroup, topic));
-      }
-    }
-
-    return result;
-  }
-
-  public Map<Integer, Long> countPartition(String topic) {
-    KafkaConsumer consumer = kafkaUtils.createNewConsumer();
-    List<PartitionInfo> piList = consumer.partitionsFor(topic);
-    Map<Integer, Long> result =
-        piList
-            .stream()
-            .flatMap(pi -> Arrays.stream(pi.replicas()))
-            .map(node -> node.id())
-            .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
-
-    consumer.close();
-
-    return result;
-  }
-
   private boolean isConsumerGroupActive(String consumerGroup, ConsumerType type) {
     if (type == ConsumerType.NEW) {
-      AdminClient adminClient = kafkaUtils.createAdminClient();
-      boolean isActive =
-          CollectionConvertor.seqConvertJavaList(adminClient.listAllConsumerGroupsFlattened())
-                  .stream()
-                  .map(GroupOverview::groupId)
-                  .filter(c -> c.equals(consumerGroup))
-                  .count()
-              == 1;
-      adminClient.close();
-      return isActive;
+      ConsumerGroupMeta groupMeta = getConsumerGroupMeta(consumerGroup);
+      ConsumerGroupState groupState = groupMeta.getState();
+      if (groupState.equals(ConsumerGroupState.STABLE)
+          || groupState.equals(ConsumerGroupState.PREPARING_REBALANCE)
+          || groupState.equals(ConsumerGroupState.COMPLETING_REBALANCE)) {
+        return true;
+      }
+      if (groupState.equals(ConsumerGroupState.EMPTY)
+          || groupState.equals(ConsumerGroupState.DEAD)) {
+        return false;
+      }
+      throw new ApiException(
+          "Consumer group:" + consumerGroup + " state:" + groupState + " unkown.");
     } else if (type == ConsumerType.OLD) {
-      return AdminUtils.isConsumerGroupActive(zookeeperUtils.getZkUtils(), consumerGroup);
+      zkUtils = zookeeperUtils.getZkUtils();
+      return zkUtils.getConsumersInGroup(consumerGroup).nonEmpty();
     } else {
       throw new ApiException("Unknown type " + type);
     }
@@ -1248,7 +2604,8 @@ public class KafkaAdminService {
     String healthCheckTopic = kafkaConfig.getHealthCheckTopic();
     HealthCheckResult healthCheckResult = new HealthCheckResult();
     KafkaProducer producer = kafkaUtils.createProducer();
-    KafkaConsumer consumer = kafkaUtils.createNewConsumerByTopic(healthCheckTopic);
+    int partitionId;
+    long offset;
 
     boolean healthCheckTopicExist = existTopic(healthCheckTopic);
     log.info("HealthCheckTopic:" + healthCheckTopic + " existed:" + healthCheckTopicExist);
@@ -1261,12 +2618,20 @@ public class KafkaAdminService {
       return healthCheckResult;
     }
 
-    String message = "healthcheck_" + System.currentTimeMillis();
+    String message = "health check_" + System.currentTimeMillis();
     ProducerRecord<String, String> record = new ProducerRecord(healthCheckTopic, null, message);
     log.info("Generate message:" + message);
     try {
       RecordMetadata recordMetadata = (RecordMetadata) producer.send(record).get();
-      log.info("Message:" + message + " has been sent to Partition:" + recordMetadata.partition());
+      partitionId = recordMetadata.partition();
+      offset = recordMetadata.offset();
+      log.info(
+          "Message:"
+              + message
+              + " has been sent to Partition:"
+              + partitionId
+              + ", offset:"
+              + offset);
     } catch (Exception e) {
       healthCheckResult.setStatus("error");
       healthCheckResult.setMsg(
@@ -1277,14 +2642,21 @@ public class KafkaAdminService {
       producer.close();
     }
 
+    KafkaConsumer consumer = kafkaUtils.createNewConsumer();
+    TopicPartition topicPartition = new TopicPartition(healthCheckTopic, partitionId);
+    consumer.assign(Arrays.asList(topicPartition));
+    consumer.seek(topicPartition, offset);
     int retries = 30;
     int noRecordsCount = 0;
     while (true) {
       final ConsumerRecords<Long, String> consumerRecords = consumer.poll(1000);
       if (consumerRecords.count() == 0) {
         noRecordsCount++;
-        if (noRecordsCount > retries) break;
-        else continue;
+        if (noRecordsCount > retries) {
+          break;
+        } else {
+          continue;
+        }
       }
       Iterator<ConsumerRecord<Long, String>> iterator = consumerRecords.iterator();
       while (iterator.hasNext()) {
@@ -1308,3 +2680,4 @@ public class KafkaAdminService {
     return healthCheckResult;
   }
 }
+

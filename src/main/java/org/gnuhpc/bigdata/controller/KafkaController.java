@@ -4,25 +4,51 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
-import joptsimple.internal.Strings;
-import kafka.common.TopicAndPartition;
-import lombok.extern.log4j.Log4j;
-import org.apache.kafka.common.errors.ApiException;
-import org.apache.kafka.common.errors.InvalidTopicException;
-import org.gnuhpc.bigdata.constant.ConsumerType;
-import org.gnuhpc.bigdata.constant.GeneralResponseState;
-import org.gnuhpc.bigdata.model.*;
-import org.gnuhpc.bigdata.service.KafkaAdminService;
-import org.gnuhpc.bigdata.service.KafkaProducerService;
-import org.gnuhpc.bigdata.validator.ConsumerGroupExistConstraint;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.*;
-
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import joptsimple.internal.Strings;
+import lombok.extern.log4j.Log4j;
+import org.apache.kafka.clients.admin.DescribeReplicaLogDirsResult.ReplicaLogDirInfo;
+import org.apache.kafka.common.Node;
+import org.apache.kafka.common.TopicPartitionReplica;
+import org.apache.kafka.common.config.ConfigResource.Type;
+import org.apache.kafka.common.errors.ApiException;
+import org.apache.kafka.common.requests.DescribeLogDirsResponse.LogDirInfo;
+import org.gnuhpc.bigdata.constant.ConsumerType;
+import org.gnuhpc.bigdata.model.AddPartition;
+import org.gnuhpc.bigdata.model.BrokerInfo;
+import org.gnuhpc.bigdata.model.ClusterInfo;
+import org.gnuhpc.bigdata.model.ConsumerGroupDesc;
+import org.gnuhpc.bigdata.model.ConsumerGroupMeta;
+import org.gnuhpc.bigdata.model.CustomConfigEntry;
+import org.gnuhpc.bigdata.model.GeneralResponse;
+import org.gnuhpc.bigdata.model.HealthCheckResult;
+import org.gnuhpc.bigdata.model.ReassignModel;
+import org.gnuhpc.bigdata.model.ReassignStatus;
+import org.gnuhpc.bigdata.model.ReassignWrapper;
+import org.gnuhpc.bigdata.model.Record;
+import org.gnuhpc.bigdata.model.TopicBrief;
+import org.gnuhpc.bigdata.model.TopicDetail;
+import org.gnuhpc.bigdata.model.TopicMeta;
+import org.gnuhpc.bigdata.service.KafkaAdminService;
+import org.gnuhpc.bigdata.validator.ConsumerGroupExistConstraint;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Created by gnuhpc on 2017/7/16.
@@ -31,250 +57,353 @@ import java.util.Set;
 @RequestMapping("/kafka")
 @RestController
 public class KafkaController {
-    @Autowired
-    private KafkaAdminService kafkaAdminService;
 
-    @Autowired
-    private KafkaProducerService kafkaProducerService;
+  @Autowired
+  private KafkaAdminService kafkaAdminService;
 
-    @GetMapping("/topics")
-    @ApiOperation(value = "List topics")
-    public List<String> listTopics() {
-        return kafkaAdminService.listTopics();
+//  @Autowired private KafkaProducerService kafkaProducerService;
+
+  @GetMapping(value = "/cluster")
+  @ApiOperation(value = "Describe cluster, nodes, controller info.")
+  public ClusterInfo describeCluster() {
+    return kafkaAdminService.describeCluster();
+  }
+
+  @GetMapping(value = "/brokers")
+  @ApiOperation(value = "List brokers in this cluster")
+  public List<BrokerInfo> listBrokers() {
+    return kafkaAdminService.listBrokers();
+  }
+
+  @GetMapping(value = "/controller")
+  @ApiOperation(value = "Get controller in this cluster")
+  public Node getControllerId() {
+    return kafkaAdminService.getController();
+  }
+
+  @GetMapping(value = "/brokers/logdirs")
+  @ApiOperation(value = "List log dirs by broker list")
+  public Map<Integer, List<String>> listLogDirs(
+      @RequestParam(required = false) List<Integer> brokerList) {
+    return kafkaAdminService.listLogDirsByBroker(brokerList);
+  }
+
+  @PostMapping(value = "/brokers/logdirs/detail")
+  @ApiOperation(value = "Describe log dirs by broker list and topic list")
+  public Map<Integer, Map<String, LogDirInfo>> describeLogDirs(
+      @RequestParam(required = false) List<Integer> brokerList,
+      @RequestParam(required = false) List<String> logDirList,
+      @RequestBody(required = false) Map<String, List<Integer>> topicPartitionMap) {
+    return kafkaAdminService
+        .describeLogDirsByBrokerAndTopic(brokerList, logDirList, topicPartitionMap);
+  }
+
+  @GetMapping(value = "/brokers/replicalogdir/{brokerId}/{topic}/{partition}")
+  @ApiOperation(value = "Describe replica log dir.")
+  public ReplicaLogDirInfo describeReplicaLogDirs(@PathVariable int brokerId,
+      @PathVariable String topic, @PathVariable int partition) {
+    TopicPartitionReplica replica = new TopicPartitionReplica(topic, partition, brokerId);
+    return kafkaAdminService.describeReplicaLogDir(replica);
+  }
+
+  @GetMapping(value = "/brokers/{brokerId}/conf")
+  @ApiOperation(value = "Get broker configs, including dynamic configs")
+  public Collection<CustomConfigEntry> getBrokerConfig(@PathVariable int brokerId) {
+    return kafkaAdminService.getBrokerConf(brokerId);
+  }
+
+  @GetMapping(value = "/brokers/{brokerId}/dynconf")
+  @ApiOperation(value = "Get broker dynamic configs")
+  public Properties getBrokerDynConfig(@PathVariable int brokerId) {
+    return kafkaAdminService.getConfigInZk(Type.BROKER, String.valueOf(brokerId));
+  }
+
+  @PutMapping(value = "/brokers/{brokerId}/dynconf")
+  @ApiOperation(value = "Update broker configs")
+  public Properties updateBrokerDynConfig(
+      @PathVariable int brokerId, @RequestBody Properties props) {
+    return kafkaAdminService.updateBrokerDynConf(brokerId, props);
+  }
+
+  @DeleteMapping(value = "/brokers/{brokerId}/dynconf")
+  @ApiOperation(value = "Remove broker dynamic configs")
+  public void removeBrokerDynConfig(
+      @PathVariable int brokerId, @RequestParam List<String> configKeysToBeRemoved) {
+    kafkaAdminService.removeConfigInZk(
+        Type.BROKER, String.valueOf(brokerId), configKeysToBeRemoved);
+  }
+
+  @GetMapping("/topics")
+  @ApiOperation(value = "List topics")
+  public List<String> listTopics() {
+    return kafkaAdminService.listTopics();
+  }
+
+  @GetMapping("/topicsbrief")
+  @ApiOperation(value = "List topics Brief")
+  public List<TopicBrief> listTopicBrief() {
+    return kafkaAdminService.listTopicBrief();
+  }
+
+  @PostMapping(value = "/topics/create", consumes = "application/json")
+  @ResponseStatus(HttpStatus.CREATED)
+  @ApiOperation(value = "Create topics")
+  @ApiParam(value = "if reassignStr set, partitions and repli-factor will be ignored.")
+  public HashMap<String, GeneralResponse> createTopic(
+      @RequestBody List<TopicDetail> topicList) {
+    return kafkaAdminService.createTopic(topicList);
+  }
+
+  @ApiOperation(value = "Tell if a topic exists")
+  @GetMapping(value = "/topics/{topic}/exist")
+  public boolean existTopic(@PathVariable String topic) {
+    return kafkaAdminService.existTopic(topic);
+  }
+
+//  @PostMapping(value = "/topics/{topic}/write", consumes = "text/plain")
+//  @ResponseStatus(HttpStatus.CREATED)
+//  @ApiOperation(value = "Write a message to the topic, for testing purpose")
+//  public GeneralResponse writeMessage(@PathVariable String topic, @RequestBody String message) {
+//    kafkaProducerService.send(topic, message);
+//    return GeneralResponse.builder()
+//        .state(GeneralResponseState.success)
+//        .msg(message + " has been sent")
+//        .build();
+//  }
+
+  @GetMapping(value = "/consumer/{topic}/{partition}/{offset}")
+  @ApiOperation(
+      value =
+          "Get the message from the offset of the partition in the topic")
+  public List<Record> getMessage(
+      @PathVariable String topic,
+      @PathVariable int partition,
+      @PathVariable long offset,
+      @RequestParam(required = false) int maxRecords,
+      @RequestParam(required = false, defaultValue = "StringDeserializer") String keyDecoder,
+      @RequestParam(required = false, defaultValue = "StringDeserializer") String valueDecoder,
+      @RequestParam(required = false) String avroSchema,
+      @RequestParam(required = false, defaultValue = "30000") long fetchTimeoutMs)
+      throws ApiException {
+    return kafkaAdminService.getRecordsByOffset(topic, partition, offset, maxRecords, keyDecoder,
+        valueDecoder, avroSchema, fetchTimeoutMs);
+  }
+
+  @GetMapping(value = "/topics/{topic}")
+  @ApiOperation(value = "Describe a topic by fetching the metadata and config")
+  public TopicMeta describeTopic(@PathVariable String topic) {
+    return kafkaAdminService.describeTopic(topic);
+  }
+
+  @DeleteMapping(value = "/topics")
+  @ApiOperation(value = "Delete a topic list (you should enable topic deletion")
+  public Map<String, GeneralResponse> deleteTopicList(@RequestParam List<String> topicList) {
+    // TODO add a function to delete topics completely,
+    // rmr /brokers/topics/< topic_name >
+    // rmr /config/topics/< topic_name >
+    // rmr /admin/delete_topics/< topic_name >
+    // rm log dirs on all brokers
+    return kafkaAdminService.deleteTopicList(topicList);
+  }
+
+  @PutMapping(value = "/topics/{topic}/conf")
+  @ApiOperation(value = "Update topic configs")
+  public Collection<CustomConfigEntry> updateTopicConfig(
+      @PathVariable String topic, @RequestBody Properties props) {
+    return kafkaAdminService.updateTopicConf(topic, props);
+  }
+
+  @GetMapping(value = "/topics/{topic}/conf")
+  @ApiOperation(value = "Get topic configs")
+  public Collection<CustomConfigEntry> getTopicConfig(@PathVariable String topic) {
+    return kafkaAdminService.getTopicConf(topic);
+  }
+
+  @GetMapping(value = "/topics/{topic}/dynconf")
+  @ApiOperation(value = "Get topic dyn configs")
+  public Properties getTopicDynConfig(@PathVariable String topic) {
+    return kafkaAdminService.getConfigInZk(Type.TOPIC, topic);
+  }
+
+  @GetMapping(value = "/topics/{topic}/conf/{key}")
+  @ApiOperation(value = "Get topic config by key")
+  public Properties getTopicConfigByKey(@PathVariable String topic, @PathVariable String key) {
+    return kafkaAdminService.getTopicConfByKey(topic, key);
+  }
+
+  @PutMapping(value = "/topics/{topic}/conf/{key}={value}")
+  @ApiOperation(value = "Update a topic config by key")
+  public Collection<CustomConfigEntry> updateTopicConfigByKey(
+      @PathVariable String topic, @PathVariable String key, @PathVariable String value) {
+    return kafkaAdminService.updateTopicConfByKey(topic, key, value);
+  }
+
+  @PostMapping(value = "/partitions/add")
+  @ApiOperation(value = "Add partitions to the topics")
+  public Map<String, GeneralResponse> addPartition(@RequestBody List<AddPartition> addPartitions) {
+    return kafkaAdminService.addPartitions(addPartitions);
+  }
+
+  @PostMapping(value = "/partitions/reassign/generate")
+  @ApiOperation(value = "Generate plan for the partition reassignment")
+  public List<ReassignModel> generateReassignPartitions(
+      @RequestBody ReassignWrapper reassignWrapper) {
+    return kafkaAdminService.generateReassignPartition(reassignWrapper);
+  }
+
+  @PutMapping(value = "/partitions/reassign/execute")
+  @ApiOperation(value = "Execute the partition reassignment")
+  public ReassignStatus executeReassignPartitions(
+      @RequestBody ReassignModel reassign,
+      long interBrokerThrottle,
+      long replicaAlterLogDirsThrottle,
+      long timeoutMs) {
+    return kafkaAdminService.executeReassignPartition(
+        reassign, interBrokerThrottle, replicaAlterLogDirsThrottle, timeoutMs);
+  }
+
+  @PutMapping(value = "/partitions/reassign/check")
+  @ApiOperation(value = "Check the partition reassignment process")
+  @ApiResponses(
+      value = {
+          @ApiResponse(code = 1, message = "Reassignment Completed"),
+          @ApiResponse(code = 0, message = "Reassignment In Progress"),
+          @ApiResponse(code = -1, message = "Reassignment Failed")
+      })
+  public ReassignStatus checkReassignPartitions(@RequestBody ReassignModel reassign) {
+    return kafkaAdminService.checkReassignStatus(reassign);
+  }
+
+  @PutMapping(value = "/partitions/reassign/stop")
+  @ApiOperation(value = "Stop the partition reassignment process")
+  public GeneralResponse stopReassignPartitions() {
+    return kafkaAdminService.stopReassignPartitions();
+  }
+
+  @GetMapping(value = "/consumergroups")
+  @ApiOperation(value = "List all consumer groups from zk and kafka")
+  public Map<String, Set<String>> listAllConsumerGroups(
+      @RequestParam(required = false) ConsumerType type,
+      @RequestParam(required = false) String topic) {
+    if (topic != null) {
+      return kafkaAdminService.listConsumerGroupsByTopic(topic, type);
+    } else {
+      return kafkaAdminService.listAllConsumerGroups(type);
+    }
+  }
+
+  @GetMapping(value = "/consumergroups/{consumerGroup}/{type}/topic")
+  @ApiOperation(value = "Get the topics involved of the specify consumer group")
+  public Set<String> listTopicByConsumerGroup(
+      @PathVariable String consumerGroup, @PathVariable ConsumerType type) {
+    return kafkaAdminService.listTopicsByConsumerGroup(consumerGroup, type);
+  }
+
+  @GetMapping(value = "/consumergroups/{consumerGroup}/meta")
+  @ApiOperation(
+      value =
+          "Get the meta data of the specify new consumer group, including state, coordinator,"
+              + " assignmentStrategy, members")
+  public ConsumerGroupMeta getConsumerGroupMeta(@PathVariable String consumerGroup) {
+    if (kafkaAdminService.isNewConsumerGroup(consumerGroup)) {
+      return kafkaAdminService.getConsumerGroupMeta(consumerGroup);
     }
 
-    @GetMapping("/topicsbrief")
-    @ApiOperation(value = "List topics Brief")
-    public List<TopicBrief> listTopicBrief() {
-        return kafkaAdminService.listTopicBrief();
+    throw new ApiException("New consumer group:" + consumerGroup + " non-exist.");
+  }
+
+  @GetMapping(value = "/consumergroups/meta")
+  @ApiOperation(
+      value =
+          "Get all the meta data of new consumer groups, including state, coordinator,"
+              + " assignmentStrategy, members")
+  public List<ConsumerGroupMeta> getConsumerGroupsMeta() {
+    Set<String> consumerGroupList = kafkaAdminService.listAllNewConsumerGroups();
+    List<ConsumerGroupMeta> consumerGroupMetaList = new ArrayList<>();
+    for (String consumerGroup : consumerGroupList) {
+      if (kafkaAdminService.isNewConsumerGroup(consumerGroup)) {
+        consumerGroupMetaList.add(kafkaAdminService.getConsumerGroupMeta(consumerGroup));
+      } else {
+        throw new ApiException("New consumer group:" + consumerGroup + " non-exist.");
+      }
     }
 
-    @PostMapping(value = "/topics/create", consumes = "application/json")
-    @ResponseStatus(HttpStatus.CREATED)
-    @ApiOperation(value = "Create a topic")
-    @ApiParam(value = "if reassignStr set, partitions and repli-factor will be ignored.")
-    public TopicMeta createTopic(@RequestBody TopicDetail topic, @RequestParam(required = false) String reassignStr) {
-        return kafkaAdminService.createTopic(topic, reassignStr);
+    return consumerGroupMetaList;
+  }
+
+  @GetMapping(value = "/consumergroups/{type}/topic/{topic}")
+  @ApiOperation(value = "Describe consumer groups by topic, showing lag and offset")
+  public List<ConsumerGroupDesc> describeConsumerGroupByTopic(
+      @RequestParam(required = false) String consumerGroup,
+      @PathVariable ConsumerType type,
+      @PathVariable String topic) {
+    if (!Strings.isNullOrEmpty(topic)) {
+      existTopic(topic);
+    } else {
+      throw new ApiException("Topic must be set!");
+    }
+    if (type != null && type == ConsumerType.NEW) {
+      return kafkaAdminService.describeNewConsumerGroupByTopic(consumerGroup, topic);
     }
 
-    @ApiOperation(value = "Tell if a topic exists")
-    @GetMapping(value = "/topics/{topic}/exist")
-    public boolean existTopic(@PathVariable String topic) {
-        return kafkaAdminService.existTopic(topic);
+    if (type != null && type == ConsumerType.OLD) {
+      return kafkaAdminService.describeOldConsumerGroupByTopic(consumerGroup, topic);
     }
 
-    @PostMapping(value = "/topics/{topic}/write", consumes = "text/plain")
-    @ResponseStatus(HttpStatus.CREATED)
-    @ApiOperation(value = "Write a message to the topic, for testing purpose")
-    public GeneralResponse writeMessage(@PathVariable String topic, @RequestBody String message) {
-        kafkaProducerService.send(topic, message);
-        return new GeneralResponse(GeneralResponseState.success, message + " has been sent");
-    }
+    throw new ApiException("Unknown type specified!");
+  }
 
-    @GetMapping(value = "/consumer/{topic}/{partition}/{offset}")
-    @ApiOperation(value = "Get the message from the offset of the partition in the topic" +
-            ", decoder is not supported yet")
-    public String getMessage(@PathVariable String topic,
-                             @PathVariable int partition,
-                             @PathVariable long offset, @RequestParam(required = false) String decoder) {
-        return kafkaAdminService.getMessage(topic, partition, offset, decoder,"");
-    }
+  @GetMapping(value = "/consumergroups/{consumerGroup}/{type}")
+  @ApiOperation(
+      value =
+          "Describe consumer group, showing lag and offset, may be slow if multi"
+              + " topics are listened")
+  public Map<String, List<ConsumerGroupDesc>> describeConsumerGroup(
+      @ConsumerGroupExistConstraint @PathVariable String consumerGroup,
+      @PathVariable ConsumerType type) {
+    return kafkaAdminService.describeConsumerGroup(consumerGroup, type);
+  }
 
-    @GetMapping(value = "/topics/{topic}")
-    @ApiOperation(value = "Describe a topic by fetching the metadata and config")
-    public TopicMeta describeTopic(@PathVariable String topic) {
-        return kafkaAdminService.describeTopic(topic);
-    }
+  @PutMapping(value = "/consumergroup/{consumergroup}/{type}/topic/{topic}/{partition}/{offset}")
+  @ApiOperation(
+      value =
+          "Reset consumer group offset, earliest/latest can be used. Support reset by time for "
+              + "new consumer group, pass a parameter that satisfies yyyy-MM-dd HH:mm:ss.SSS "
+              + "to offset.")
+  public GeneralResponse resetOffset(
+      @PathVariable String topic,
+      @PathVariable int partition,
+      @PathVariable String consumergroup,
+      @PathVariable
+      @ApiParam(
+          value =
+              "[earliest/latest/{long}/yyyy-MM-dd HH:mm:ss.SSS] can be supported. "
+                  + "The date type is only valid for new consumer group.")
+          String offset,
+      @PathVariable ConsumerType type) {
+    return kafkaAdminService.resetOffset(topic, partition, consumergroup, type, offset);
+  }
 
-    @GetMapping(value = "/brokers")
-    @ApiOperation(value = "List brokers in this cluster")
-    public List<BrokerInfo> listBrokers() {
-        return kafkaAdminService.listBrokers();
-    }
+  @GetMapping(value = "/consumergroup/{consumergroup}/{type}/topic/{topic}/lastcommittime")
+  public Map<String, Map<Integer, Long>> getLastCommitTimestamp(
+      @PathVariable String consumergroup,
+      @PathVariable String topic,
+      @PathVariable ConsumerType type) {
+    return kafkaAdminService.getLastCommitTime(consumergroup, topic, type);
+  }
 
-    @DeleteMapping(value = "/topics/{topic}")
-    @ApiOperation(value = "Delete a topic (you should enable topic deletion")
-    public GeneralResponse deleteTopic(@PathVariable String topic) {
-        return kafkaAdminService.deleteTopic(topic);
-    }
+  @DeleteMapping(value = "/consumergroup/{consumergroup}/{type}")
+  @ApiOperation(value = "Delete Consumer Group")
+  public GeneralResponse deleteOldConsumerGroup(
+      @PathVariable String consumergroup, @PathVariable ConsumerType type) {
+    return kafkaAdminService.deleteConsumerGroup(consumergroup, type);
+  }
 
-    @PostMapping(value = "/topics/{topic}/conf")
-    @ApiOperation(value = "Create topic configs")
-    public Properties createTopicConfig(@PathVariable String topic,
-                                        @RequestBody Properties prop) {
-        return kafkaAdminService.createTopicConf(topic, prop);
-    }
+  @GetMapping(value = "/health")
+  @ApiOperation(value = "Check the cluster health.")
+  public HealthCheckResult healthCheck() {
+    return kafkaAdminService.healthCheck();
+  }
 
-    @PutMapping(value = "/topics/{topic}/conf")
-    @ApiOperation(value = "Update topic configs")
-    public Properties updateTopicConfig(@PathVariable String topic,
-                                        @RequestBody Properties prop) {
-        return kafkaAdminService.updateTopicConf(topic, prop);
-    }
-
-    @DeleteMapping(value = "/topics/{topic}/conf")
-    @ApiOperation(value = "Delete topic configs")
-    public Properties deleteTopicConfig(@PathVariable String topic,
-                                        @RequestBody List<String> delProps) {
-        return kafkaAdminService.deleteTopicConf(topic, delProps);
-    }
-
-    @GetMapping(value = "/topics/{topic}/conf")
-    @ApiOperation(value = "Get topic configs")
-    public Properties getTopicConfig(@PathVariable String topic) {
-        return kafkaAdminService.getTopicConf(topic);
-    }
-
-    @GetMapping(value = "/topics/{topic}/conf/{key}")
-    @ApiOperation(value = "Get topic config by key")
-    public Properties getTopicConfigByKey(@PathVariable String topic,
-                                          @PathVariable String key) {
-        return kafkaAdminService.getTopicConfByKey(topic, key);
-    }
-
-    @PostMapping(value = "/topics/{topic}/conf/{key}={value}")
-    @ApiOperation(value = "Create a topic config by key")
-    public Properties createTopicConfigByKey(@PathVariable String topic,
-                                             @PathVariable String key,
-                                             @PathVariable String value) {
-        return kafkaAdminService.createTopicConfByKey(topic, key, value);
-    }
-
-    @PutMapping(value = "/topics/{topic}/conf/{key}={value}")
-    @ApiOperation(value = "Update a topic config by key")
-    public Properties updateTopicConfigByKey(@PathVariable String topic,
-                                             @PathVariable String key,
-                                             @PathVariable String value) {
-        return kafkaAdminService.updateTopicConfByKey(topic, key, value);
-    }
-
-    @DeleteMapping(value = "/topics/{topic}/conf/{key}")
-    @ApiOperation(value = "Delete a topic config by key")
-    public boolean deleteTopicConfigByKey(@PathVariable String topic,
-                                          @PathVariable String key) {
-        return kafkaAdminService.deleteTopicConfByKey(topic, key);
-    }
-
-    @PostMapping(value = "/partitions/add")
-    @ApiOperation(value = "Add a partition to the topic")
-    public TopicMeta addPartition(@RequestBody AddPartition addPartition) {
-        String topic = addPartition.getTopic();
-        isTopicExist(topic);
-
-        if (addPartition.getReplicaAssignment() != null && !addPartition.getReplicaAssignment().equals("") && addPartition.getReplicaAssignment().split(",").length
-                != addPartition.getNumPartitionsAdded()) {
-            throw new InvalidTopicException("Topic " + topic + ": num of partitions added not equal to manual reassignment str!");
-        }
-
-        if (addPartition.getNumPartitionsAdded() == 0) {
-            throw new InvalidTopicException("Num of paritions added must be specified and should not be 0");
-        }
-        return kafkaAdminService.addPartition(topic, addPartition);
-    }
-
-    @PostMapping(value = "/partitions/reassign/generate")
-    @ApiOperation(value = "Generate plan for the partition reassignment")
-    public List<String> generateReassignPartitions(@RequestBody ReassignWrapper reassignWrapper) {
-        return kafkaAdminService.generateReassignPartition(reassignWrapper);
-
-    }
-
-    @PutMapping(value = "/partitions/reassign/execute")
-    @ApiOperation(value = "Execute the partition reassignment")
-    public Map<TopicAndPartition, Integer> executeReassignPartitions(
-            @RequestBody String reassignStr) {
-        return kafkaAdminService.executeReassignPartition(reassignStr);
-    }
-
-    @PutMapping(value = "/partitions/reassign/check")
-    @ApiOperation(value = "Check the partition reassignment process")
-    @ApiResponses(value = {@ApiResponse(code = 1, message = "Reassignment Completed"),
-            @ApiResponse(code = 0, message = "Reassignment In Progress"),
-            @ApiResponse(code = -1, message = "Reassignment Failed")})
-    public Map<TopicAndPartition, Integer> checkReassignPartitions(@RequestBody String reassignStr) {
-        return kafkaAdminService.checkReassignStatus(reassignStr);
-    }
-
-    @GetMapping(value = "/consumergroups")
-    @ApiOperation(value = "List all consumer groups from zk and kafka")
-    public Map<String, Set<String>> listAllConsumerGroups(
-            @RequestParam(required = false) ConsumerType type,
-            @RequestParam(required = false) String topic
-    ) {
-        if(topic!=null){
-            return kafkaAdminService.listConsumerGroupsByTopic(topic,type);
-        } else{
-            return kafkaAdminService.listAllConsumerGroups(type);
-        }
-    }
-
-    @GetMapping(value = "/consumergroups/{consumerGroup}/{type}/topic")
-    @ApiOperation(value = "Get the topics involved of the specify consumer group")
-    public Set<String> listTopicByCG(@PathVariable String consumerGroup,
-                                                 @PathVariable ConsumerType type){
-        return kafkaAdminService.listTopicsByCG(consumerGroup,type);
-
-    }
-
-    @GetMapping(value = "/consumergroups/{consumerGroup}/{type}/topic/{topic}")
-    @ApiOperation(value = "Describe consumer groups by topic, showing lag and offset")
-    public List<ConsumerGroupDesc> describeCGByTopic(@ConsumerGroupExistConstraint @PathVariable String consumerGroup,
-                                                     @PathVariable ConsumerType type,
-                                                     @PathVariable String topic) {
-        if (!Strings.isNullOrEmpty(topic)) {
-            existTopic(topic);
-        } else {
-            throw new ApiException("Topic must be set!");
-        }
-        if (type != null && type == ConsumerType.NEW)
-            return kafkaAdminService.describeNewCGByTopic(consumerGroup, topic);
-
-        if (type != null && type == ConsumerType.OLD)
-            return kafkaAdminService.describeOldCGByTopic(consumerGroup, topic);
-
-        throw new ApiException("Unknown type specified!");
-    }
-
-    @GetMapping(value = "/consumergroups/{consumerGroup}/{type}")
-    @ApiOperation(value = "Describe consumer groups, showing lag and offset, may be slow if multi topic are listened")
-    public Map<String, List<ConsumerGroupDesc>> describeCG(@ConsumerGroupExistConstraint @PathVariable String consumerGroup,
-                                                           @PathVariable ConsumerType type){
-        return kafkaAdminService.describeConsumerGroup(consumerGroup,type);
-    }
-
-    @PutMapping(value = "/consumergroup/{consumergroup}/{type}/topic/{topic}/{partition}/{offset}")
-    @ApiOperation(value = "Reset consumer group offset, earliest/latest can be used")
-    public GeneralResponse resetOffset(@PathVariable String topic,
-                                       @PathVariable int partition,
-                                       @PathVariable String consumergroup,
-                                       @PathVariable String offset,
-                                       @PathVariable ConsumerType type) {
-        return kafkaAdminService.resetOffset(topic, partition, consumergroup, type, offset);
-    }
-
-    @GetMapping(value = "/consumergroup/{consumergroup}/{type}/topic/{topic}/lastcommittime")
-    public Map<String, Map<Integer, Long>> getLastCommitTimestamp(
-            @PathVariable String consumergroup,
-            @PathVariable String topic,
-            @PathVariable ConsumerType type) {
-        return kafkaAdminService.getLastCommitTime(consumergroup, topic, type);
-    }
-
-    @DeleteMapping(value = "/consumergroup/{consumergroup}")
-    @ApiOperation(value = "Delete old Consumer Group")
-    public GeneralResponse deleteOldConsumerGroup(@PathVariable String consumergroup) {
-        return kafkaAdminService.deleteConsumerGroup(consumergroup);
-    }
-
-    private void isTopicExist(String topic) throws InvalidTopicException {
-        if (!kafkaAdminService.existTopic(topic)) {
-            throw new InvalidTopicException("Topic " + topic + " non-exist!");
-        }
-    }
-
-    @GetMapping(value = "/health")
-    @ApiOperation(value = "Check the cluster health.")
-    public HealthCheckResult healthCheck() {
-        return kafkaAdminService.healthCheck();
-    }
+  //TODO add kafkaAdminClient.deleterecords api
 }

@@ -1,18 +1,22 @@
 package org.gnuhpc.bigdata
 
-import scala.collection.JavaConversions
+import scala.collection.JavaConverters
 
 object CollectionConvertor {
 
   def seqConvertJavaList[A](seq: Seq[A]): java.util.List[A] = {
-    return JavaConversions.seqAsJavaList(seq)
+    return JavaConverters.seqAsJavaListConverter(seq).asJava
   }
 
   def mapConvertJavaMap[A, B](map: scala.collection.Map[A, B]): java.util.Map[A, B] = {
-    return JavaConversions.mapAsJavaMap(map);
+    return JavaConverters.mapAsJavaMapConverter(map).asJava
   }
 
   def listConvertJavaList[A](list: List[A]): java.util.List[A] = {
-    return JavaConversions.bufferAsJavaList(list.toBuffer);
+    return JavaConverters.bufferAsJavaListConverter(list.toBuffer).asJava;
+  }
+
+  def optionListConvertJavaList[A](list: List[A]): java.util.List[A] = {
+    return JavaConverters.bufferAsJavaListConverter(list.toBuffer).asJava;
   }
 }

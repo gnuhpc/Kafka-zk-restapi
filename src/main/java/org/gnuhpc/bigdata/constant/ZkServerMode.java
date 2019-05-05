@@ -4,5 +4,7 @@ public enum ZkServerMode {
   Leader,
   Follower,
   Observer,
-  Standalone
+  Standalone,
+  Down,
+  Unknow
 }

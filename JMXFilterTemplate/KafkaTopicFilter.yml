@@ -1,57 +1,57 @@
 filters:
-    - include:
-        domain: kafka.server
-        bean: kafka.server:type=BrokerTopicMetrics,name=BytesInPerSec,topic={topicname}
-        attribute:
-            Count:
-                metric_type: KAFKA_TOPIC_PERF
-                alias: BytesInPerSec
-    - include:
-        domain: kafka.server
-        bean: kafka.server:type=BrokerTopicMetrics,name=BytesOutPerSec,topic={topicname}
-        attribute:
-            Count:
-                metric_type: KAFKA_TOPIC_PERF
-                alias: BytesOutPerSec
-    - include:
-        domain: kafka.server
-        bean: kafka.server:type=BrokerTopicMetrics,name=MessagesInPerSec,topic={topicname}
-        attribute:
-            Count:
-                metric_type: KAFKA_TOPIC_PERF
-                alias: MessagesInPerSec
-    - include:
-        domain: kafka.server
-        bean: kafka.server:type=BrokerTopicMetrics,name=BytesRejectedPerSec,topic={topicname}
-        attribute:
-            Count:
-                metric_type: KAFKA_TOPIC_PERF
-                alias: BytesRejectedPerSec
-    - include:
-        domain: kafka.server
-        bean: kafka.server:type=BrokerTopicMetrics,name=FailedFetchRequestsPerSec,topic={topicname}
-        attribute:
-            Count:
-                metric_type: KAFKA_TOPIC_PERF
-                alias: FailedFetchRequestsPerSec
-    - include:
-        domain: kafka.server
-        bean: kafka.server:type=BrokerTopicMetrics,name=FailedProduceRequestsPerSec,topic={topicname}
-        attribute:
-            Count:
-                metric_type: KAFKA_TOPIC_PERF
-                alias: FailedProduceRequestsPerSec
-    - include:
-        domain: kafka.server
-        bean: kafka.server:type=BrokerTopicMetrics,name=TotalFetchRequestsPerSec,topic={topicname}
-        attribute:
-            Count:
-                metric_type: KAFKA_TOPIC_PERF
-                alias: TotalFetchRequestsPerSec
-    - include:
-            domain: kafka.server
-            bean: kafka.server:type=BrokerTopicMetrics,name=TotalProduceRequestsPerSec,topic={topicname}
-            attribute:
-                Count:
-                    metric_type: KAFKA_TOPIC_PERF
-                    alias: TotalProduceRequestsPerSec
+- include:
+    domain: kafka.server
+    bean: kafka.server:type=BrokerTopicMetrics,name=BytesInPerSec,topic={topicname}
+    attribute:
+      Count:
+        metric_type: KAFKA_TOPIC_PERF
+        alias: BytesInPerSec
+- include:
+    domain: kafka.server
+    bean: kafka.server:type=BrokerTopicMetrics,name=BytesOutPerSec,topic={topicname}
+    attribute:
+      Count:
+        metric_type: KAFKA_TOPIC_PERF
+        alias: BytesOutPerSec
+- include:
+    domain: kafka.server
+    bean: kafka.server:type=BrokerTopicMetrics,name=MessagesInPerSec,topic={topicname}
+    attribute:
+      Count:
+        metric_type: KAFKA_TOPIC_PERF
+        alias: MessagesInPerSec
+- include:
+    domain: kafka.server
+    bean: kafka.server:type=BrokerTopicMetrics,name=BytesRejectedPerSec,topic={topicname}
+    attribute:
+      Count:
+        metric_type: KAFKA_TOPIC_PERF
+        alias: BytesRejectedPerSec
+- include:
+    domain: kafka.server
+    bean: kafka.server:type=BrokerTopicMetrics,name=FailedFetchRequestsPerSec,topic={topicname}
+    attribute:
+      Count:
+        metric_type: KAFKA_TOPIC_PERF
+        alias: FailedFetchRequestsPerSec
+- include:
+    domain: kafka.server
+    bean: kafka.server:type=BrokerTopicMetrics,name=FailedProduceRequestsPerSec,topic={topicname}
+    attribute:
+      Count:
+        metric_type: KAFKA_TOPIC_PERF
+        alias: FailedProduceRequestsPerSec
+- include:
+    domain: kafka.server
+    bean: kafka.server:type=BrokerTopicMetrics,name=TotalFetchRequestsPerSec,topic={topicname}
+    attribute:
+      Count:
+        metric_type: KAFKA_TOPIC_PERF
+        alias: TotalFetchRequestsPerSec
+- include:
+    domain: kafka.server
+    bean: kafka.server:type=BrokerTopicMetrics,name=TotalProduceRequestsPerSec,topic={topicname}
+    attribute:
+      Count:
+        metric_type: KAFKA_TOPIC_PERF
+        alias: TotalProduceRequestsPerSec

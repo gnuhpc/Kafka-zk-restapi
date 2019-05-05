@@ -7,8 +7,9 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class FetchOffSetFromZKResult {
-    private String topic;
-    private int parition;
-    private long offset;
+public class FetchOffSetFromZkResult {
+
+  private String topic;
+  private int parition;
+  private long offset;
 }

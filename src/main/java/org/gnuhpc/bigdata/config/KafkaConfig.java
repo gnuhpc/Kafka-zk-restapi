@@ -1,6 +1,7 @@
 package org.gnuhpc.bigdata.config;
 
 import lombok.Data;
+import lombok.Getter;
 import lombok.extern.log4j.Log4j;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -32,6 +33,7 @@ import java.util.Map;
 @Data
 @EnableKafka
 @Configuration
+@Getter
 public class KafkaConfig {
     @Value("${kafka.brokers}")
     private String brokers;
@@ -42,9 +44,11 @@ public class KafkaConfig {
     @Value("${kafka.offset.partitions}")
     private int internalTopicPartitions;
 
-
     @Value("${spring.kafka.consumer.group-id}")
     private String groupId;
+
+    @Value("${kafka.healthcheck.topic}")
+    private String healthCheckTopic;
 
     @Bean(initMethod = "init", destroyMethod = "destroy")
     public KafkaUtils kafkaUtils() {

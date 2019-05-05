@@ -1,6 +1,6 @@
 spring:
   profiles:
-    active: home
+    active: tina
 
 server:
   error:

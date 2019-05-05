@@ -200,7 +200,7 @@ public class KafkaController {
     public Map<String, Set<String>> listAllConsumerGroups(
             @RequestParam(required = false) ConsumerType type,
             @RequestParam(required = false) String topic
-    ) throws Exception {
+    ) {
         if(topic!=null){
             return kafkaAdminService.listConsumerGroupsByTopic(topic,type);
         } else{
@@ -270,5 +270,11 @@ public class KafkaController {
         if (!kafkaAdminService.existTopic(topic)) {
             throw new InvalidTopicException("Topic " + topic + " non-exist!");
         }
+    }
+
+    @GetMapping(value = "/health")
+    @ApiOperation(value = "Check the cluster health.")
+    public HealthCheckResult healthCheck() {
+        return kafkaAdminService.healthCheck();
     }
 }

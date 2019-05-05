@@ -1,5 +1,5 @@
 kafka:
-  brokers: DPFTMP01:9092,DPFTMP03:9092,DPFTMP04:9092,DPFTMP05:9092,DPFTMP06:9092,DPFTMP07:9092,DPFTMP08:9092,DPFTMP09:9092,DPFTMP10:9092
+  brokers: localhost:19092,localhost:19093,localhost:19095
   offset:
     topic: "__consumer_offsets"
     partitions: 50
@@ -8,18 +8,29 @@ kafka:
     topic: "health"
 
 zookeeper:
-  uris: DPFTMP06:2181,DPFTMP07:2181,DPFTMP08:2181,DPFTMP09:2181,DPFTMP10:2181
+  uris: 127.0.0.1:2183,127.0.0.1:2182
+
+jmx:
+  kafka:
+    jmxurl: localhost:19999,localhost:29999,localhost:39999
+  zookeeper:
+    jmxurl: localhost:49999
+  filterTemplate: JMXFilterTemplate
 
 server:
   port: 8121
   context-path: /
   debug: true
+  security:
+    check: true
+    checkInitDelay: 30
+    checkSecurityInterval: 5
 
 spring:
   kafka:
     bootstrap-servers: ${kafka.brokers}
     consumer:
-      group-id: "__kafka-zk-rest"
+      group-id: "kafka-zk-rest"
   mvc:
     throw-exception-if-no-handler-found: true
   output:

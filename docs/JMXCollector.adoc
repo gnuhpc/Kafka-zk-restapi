@@ -1,0 +1,360 @@
+= JMX Collector Rest API
+
+== Overview
+JMX Collector Rest API provides two APIs to collect JMX metrics from applications that expose JMX metrics.
+
+* V1: Collect all the JMX metric data.
+
+* V2: Higher level API to collect the JMX metric data by querying with the filters. You can query the metrics which you want to include or exclude.
+
+== V1 API
+
+=== How to visit V1 API
+Visit the service through HTTP GET and provide a name "jmxurl" String parameter as follows:
+[source, html]
+----
+http://localhost:8121/jmx/v1?jmxurl=127.0.0.1:19999,127.0.0.1:29999
+----
+*Notice:* Parameter "jmxurl" should be a comma-separated list of {IP:Port} or set to 'default'. The list should match the following regex. If set to default, it will use the value of the variable "jmx.kafka.jmxurl" that defined in the application config file.
+[source, java]
+----
+  private static final String IP_AND_PORT_LIST_REGEX = "(([0-9]+(?:\\.[0-9]+){3}:[0-9]+,)*([0-9]+(?:\\.[0-9]+){3}:[0-9]+)+)|(default)";
+----
+
+=== V1 API JSON Format Response
+Response from the service is a list of object that in JSON format. Each JSON object includes the following fields:
+
+* host: The "host" field is composited of IP and exposed JMX Port.
+* timestamp: Time when collect. For easier reading, the "timestamp" field is transformed to the format "yyyy-MM-dd HH:mm:ss".
+* collected: If the collection is successful, the filed "collected" will return true and return false otherwise.
+* mbeanInfo: JMX metric data. It's a dictionary that key is the JMX bean name and value is the attribute info dictionary. The mbeanInfo will be empty when "collected" return false.
+* msg: The error message when collecting the JMX metrics.
+
+==== Sample Response for success
+[source, json]
+----
+[
+  {
+    "host": "127.0.0.1:19999",
+    "timestamp": "2018-04-10 00:13:16",
+    "collected": true,
+    "mbeanInfo": {
+      "kafka.network:type=RequestMetrics,name=ResponseQueueTimeMs,request=FetchFollower": {
+        "75thPercentile": "0.0",
+        "Mean": "0.2777777777777778",
+        "StdDev": "0.7911877721292356",
+        "98thPercentile": "3.69999999999996",
+        "Min": "0.0",
+        "99thPercentile": "6.0",
+        "95thPercentile": "1.0",
+        "Max": "6.0",
+        "999thPercentile": "6.0",
+        "Count": "72",
+        "50thPercentile": "0.0"
+      },
+      "kafka.server:type=ReplicaFetcherManager,name=MinFetchRate,clientId=Replica": {
+        "Value": "1.8566937378852422"
+      }
+      ...
+    }
+  },
+  {
+    "host": "127.0.0.1:29999",
+    "timestamp": "2018-04-10 00:14:16",
+    "collected": true,
+    "mbeanInfo": {
+    ...
+    }
+  }
+]
+----
+==== Sample Response for failure
+[source, json]
+----
+[
+  {
+    "host": "127.0.0.1:19999",
+    "timestamp": "2018-04-10 14:18:28",
+    "collected": false,
+    "mbeanInfo": {},
+    "msg": "org.gnuhpc.bigdata.exception.CollectorException occurred. URL: service:jmx:rmi:///jndi/rmi://127.0.0.1:19999/jmxrmi. Reason: java.rmi.ConnectException: Connection refused to host: 192.168.1.106; nested exception is: \n\tjava.net.ConnectException: Operation timed out"
+  },
+  {
+    "host": "127.0.0.1:29999",
+    "timestamp": "2018-04-10 14:21:06",
+    "collected": false,
+    "mbeanInfo": {},
+    "msg": "org.gnuhpc.bigdata.exception.CollectorException occurred. URL: service:jmx:rmi:///jndi/rmi://127.0.0.1:29999/jmxrmi. Reason: java.rmi.ConnectException: Connection refused to host: 192.168.1.106; nested exception is: \n\tjava.net.ConnectException: Operation timed out"
+  }
+]
+----
+
+== V2 API
+If you only want collect some metrics, not all of them, then choose V2 API.
+
+=== How to visit V2 API:/jmx/v2
+Visit the service through HTTP POST. Provide a name "jmxurl" String parameter and put the JSON query filter into the RequestBody as follows:
+[source, html]
+----
+http://localhost:8121/jmx/v2?jmxurl=127.0.0.1:19999,127.0.0.1:29999
+RequesBody:
+{
+  "filters":[
+    {
+	  "include":{
+	    "domain":"kafka.server",
+		"bean":["kafka.server:type=BrokerTopicMetrics,name=TotalProduceRequestsPerSec"],
+		"attribute":["OneMinuteRate", "FiveMinuteRate"]
+	  },
+	  "exclude":{
+
+	  }
+	}
+  ]
+}
+----
+==== Instruction: Query Filter
+Query filter is used to define the query conditions. The field "filters" is a list of parallel query configurations.
+Only 2 keys are allowed in each query configuration:
+
+* include (mandatory): Dictionary of JMX filter. Any attribute that matches these filters will be collected unless it also matches the “exclude” filters (see below)
+* exclude (optional): Dictionary of JMX filter. Attributes that match these filters won’t be collected
+
+Each include or exclude dictionary supports the following keys:
+
+* domain: a list of domain names (e.g. java.lang)
+* domain_regex: a list of regexes on the domain name (e.g. java\.lang.*)
+* bean or bean_name: A list of full bean names (e.g. java.lang:type=Compilation)
+* bean_regex: A list of regexes on the full bean names (e.g. java\.lang.*[,:]type=Compilation.*)
+* attribute: It can accept two types of values: a dictionary whose keys are attributes names or a list of attributes names
+
+You can freely customize the query conditions, and you can also use the filter template for convenience(See the below for details.)
+
+==== Response of V2 API /jmx/v2
+Response from the service is a list of object that in JSON format. Each JSON object includes the following fields:
+
+* host: The "host" field is composited of IP and exposed JMX Port.
+* timestamp: Time when collect. For easier reading, the "timestamp" field is transformed to the format "yyyy-MM-dd HH:mm:ss".
+* collected: If the collection is successful, the filed "collected" will return true and return false otherwise.
+* metrics: JMX metric data. It's a list of dictionary that includes following keys.
+
+           **  domain: domain name of the metric
+           **  metric_type: metric type that defined in the "attribute" field of query field. Default value is "gauge".
+           **  alias: metric alias that defined in the "attribute" field of query filter
+           **  beanName: bean name of the metric
+           **  attributeName: attribute name of the metric
+           **  value: metric value
+* msg: The error message when collecting the JMX metrics.
+
+Sample response is as follows:
+[source, json]
+----
+[
+  {
+    "host": "127.0.0.1:4444",
+    "timestamp": "2018-04-04 22:40:18",
+    "collected": true,
+    "metrics": [
+      {
+        "domain": "kafka.consumer",
+        "metric_type": "consumer",
+        "alias": "owned_partitions_count",
+        "beanName": "kafka.consumer:clientId=console-consumer-4251,groupId=console-consumer-4251,name=OwnedPartitionsCount,type=ZookeeperConsumerConnector",
+        "attributeName": "Value",
+        "value": 3
+      },
+      {
+        "domain": "kafka.consumer",
+        "metric_type": "consumer",
+        "alias": "messages_per_sec",
+        "beanName": "kafka.consumer:clientId=console-consumer-4251,name=MessagesPerSec,type=ConsumerTopicMetrics",
+        "attributeName": "Count",
+        "value": 0
+      },
+      {
+        "domain": "kafka.consumer",
+        "metric_type": "consumer",
+        "alias": "min_fetch_rate",
+        "beanName": "kafka.consumer:clientId=console-consumer-4251,name=MinFetchRate,type=ConsumerFetcherManager",
+        "attributeName": "Value",
+        "value": 9.7817371514609
+      },
+      {
+        "domain": "kafka.consumer",
+        "metric_type": "consumer",
+        "alias": "kafka_commits_per_sec",
+        "beanName": "kafka.consumer:clientId=console-consumer-4251,name=KafkaCommitsPerSec,type=ZookeeperConsumerConnector",
+        "attributeName": "Count",
+        "value": 0
+      },
+      {
+        "domain": "kafka.consumer",
+        "metric_type": "consumer",
+        "alias": "bytes_per_sec",
+        "beanName": "kafka.consumer:clientId=console-consumer-4251,name=BytesPerSec,type=ConsumerTopicMetrics",
+        "attributeName": "Count",
+        "value": 0
+      },
+      {
+        "domain": "kafka.consumer",
+        "metric_type": "consumer",
+        "alias": "maxlag",
+        "beanName": "kafka.consumer:clientId=console-consumer-4251,name=MaxLag,type=ConsumerFetcherManager",
+        "attributeName": "Value",
+        "value": 0
+      }
+    ],
+    "msg": null
+  }
+]
+----
+
+=== How to visit V2 API:/jmx/v2/filters
+Specific applications have their own JMX metrics, then we developed some filter templates such as KafkaBrokerFilter, KafkaConsumerFilter and KafkaProducerFilter.
+
+This API helps list the query filter templates with the filterKey(not case sensitive). If filterKey is set to empty, it will return all the templates.
+[source, html]
+----
+http://localhost:8121/jmx/v2/filters?filterKey=consumer
+----
+
+The response is as follows:
+[source, json]
+----
+{
+  "KafkaConsumerFilter": {
+    "filters": [
+      {
+        "include": {
+          "domain": "kafka.consumer",
+          "bean_regex": "kafka.consumer:type=ConsumerFetcherManager,name=MaxLag,clientId=([-.\\w]+)",
+          "attribute": {
+            "Value": {
+              "metric_type": "KAFKA_CONSUMER_OLD_HIGH",
+              "alias": "MaxLag"
+            }
+          }
+        }
+      },
+      {
+        "include": {
+          "domain": "kafka.consumer",
+          "bean_regex": "kafka.consumer:type=ConsumerFetcherManager,name=MinFetchRate,clientId=([-.\\w]+)",
+          "attribute": {
+            "Value": {
+              "metric_type": "KAFKA_CONSUMER_OLD_HIGH",
+              "alias": "MinFetchRate"
+            }
+          }
+        }
+      },
+      {
+        "include": {
+          "domain": "kafka.consumer",
+          "bean_regex": "kafka.consumer:type=ConsumerTopicMetrics,name=MessagesPerSec,clientId=([-.\\w]+)",
+          "attribute": {
+            "Count": {
+              "metric_type": "KAFKA_CONSUMER_OLD_HIGH",
+              "alias": "MessagesPerSec"
+            }
+          }
+        }
+      },
+      {
+        "include": {
+          "domain": "kafka.consumer",
+          "bean_regex": "kafka.consumer:type=ConsumerTopicMetrics,name=BytesPerSec,clientId=([-.\\w]+)",
+          "attribute": {
+            "Count": {
+              "metric_type": "KAFKA_CONSUMER_OLD_HIGH",
+              "alias": "BytesPerSec"
+            }
+          }
+        }
+      },
+      {
+        "include": {
+          "domain": "kafka.consumer",
+          "bean_regex": "kafka.consumer:type=ZookeeperConsumerConnector,name=KafkaCommitsPerSec,clientId=([-.\\w]+)",
+          "attribute": {
+            "Count": {
+              "metric_type": "KAFKA_CONSUMER_OLD_HIGH",
+              "alias": "KafkaCommitsPerSec"
+            }
+          }
+        }
+      },
+      {
+        "include": {
+          "domain": "kafka.consumer",
+          "bean_regex": "kafka.consumer:type=ZookeeperConsumerConnector,name=OwnedPartitionsCount,clientId=([-.\\w]+),groupId=([-.\\w]+)",
+          "attribute": {
+            "Value": {
+              "metric_type": "KAFKA_CONSUMER_OLD_HIGH",
+              "alias": "OwnedPartitionsCount"
+            }
+          }
+        }
+      }
+    ]
+  }
+}
+----
+
+==== How to add filter template
+You can add filter template yml files to JMXFilterTemplate directory in project root folder. The fields of the file are the same with the query filter that noticed above.
+
+Sample filter template is as follows:
+[source, yml]
+----
+filters:
+    - include:
+        domain: kafka.consumer
+        bean_regex: kafka.consumer:type=ConsumerFetcherManager,name=MaxLag,clientId=([-.\w]+)
+        attribute:
+            Value:
+                metric_type: KAFKA_CONSUMER_OLD_HIGH
+                alias: MaxLag
+    - include:
+        domain: kafka.consumer
+        bean_regex: kafka.consumer:type=ConsumerFetcherManager,name=MinFetchRate,clientId=([-.\w]+)
+        attribute:
+            Value:
+                metric_type: KAFKA_CONSUMER_OLD_HIGH
+                alias: MinFetchRate
+    - include:
+        domain: kafka.consumer
+        bean_regex: kafka.consumer:type=ConsumerTopicMetrics,name=MessagesPerSec,clientId=([-.\w]+)
+        attribute:
+            Count:
+                metric_type: KAFKA_CONSUMER_OLD_HIGH
+                alias: MessagesPerSec
+    - include:
+            domain: kafka.consumer
+            bean_regex: kafka.consumer:type=ConsumerTopicMetrics,name=BytesPerSec,clientId=([-.\w]+)
+            attribute:
+                Count:
+                    metric_type: KAFKA_CONSUMER_OLD_HIGH
+                    alias: BytesPerSec
+    - include:
+            domain: kafka.consumer
+            bean_regex: kafka.consumer:type=ZookeeperConsumerConnector,name=KafkaCommitsPerSec,clientId=([-.\w]+)
+            attribute:
+                Count:
+                    metric_type: KAFKA_CONSUMER_OLD_HIGH
+                    alias: KafkaCommitsPerSec
+    - include:
+            domain: kafka.consumer
+            bean_regex: kafka.consumer:type=ZookeeperConsumerConnector,name=OwnedPartitionsCount,clientId=([-.\w]+),groupId=([-.\w]+)
+            attribute:
+                Value:
+                    metric_type: KAFKA_CONSUMER_OLD_HIGH
+                    alias: OwnedPartitionsCount
+----
+
+
+
+
+
+
+

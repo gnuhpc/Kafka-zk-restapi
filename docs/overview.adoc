@@ -25,7 +25,9 @@ __BasePath__ : /
 
 === Tags
 
+* collector-controller : Rest API for Collecting JMX Metric Data
 * kafka-controller : Kafka Controller
+* user-controller : Security User Management Controller.
 * zookeeper-controller : Zookeeper Controller
 
 

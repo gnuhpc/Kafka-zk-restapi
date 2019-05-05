@@ -2,6 +2,131 @@
 [[_paths]]
 == Resources
 
+[[_collector-controller_resource]]
+=== Collector-controller
+Rest API for Collecting JMX Metric Data
+
+
+[[_collectjmxmetricusingget]]
+==== Fetch all JMX metric data
+....
+GET /jmx/v1
+....
+
+
+===== Parameters
+
+[options="header", cols=".^2,.^3,.^9,.^4"]
+|===
+|Type|Name|Description|Schema
+|**Query**|**jmxurl** +
+__optional__|Parameter jmxurl should be a comma-separated list of {IP:Port} or set to 'default'|string
+|===
+
+
+===== Responses
+
+[options="header", cols=".^2,.^14,.^4"]
+|===
+|HTTP Code|Description|Schema
+|**200**|OK|< <<_jmxmetricdatav1,JMXMetricDataV1>> > array
+|**401**|Unauthorized|No Content
+|**403**|Forbidden|No Content
+|**404**|Not Found|No Content
+|===
+
+
+===== Consumes
+
+* `application/json`
+
+
+===== Produces
+
+* `*/*`
+
+
+[[_collectjmxmetricusingpost]]
+==== Fetch JMX metric data with query filter. You can get the query filter template through the API /jmx/v2/filters.
+....
+POST /jmx/v2
+....
+
+
+===== Parameters
+
+[options="header", cols=".^2,.^3,.^9,.^4"]
+|===
+|Type|Name|Description|Schema
+|**Query**|**jmxurl** +
+__optional__|Parameter jmxurl should be a comma-separated list of {IP:Port} or set to 'default'|string
+|**Body**|**jmxQuery** +
+__required__|jmxQuery|<<_jmxquery,JMXQuery>>
+|===
+
+
+===== Responses
+
+[options="header", cols=".^2,.^14,.^4"]
+|===
+|HTTP Code|Description|Schema
+|**200**|OK|< <<_jmxmetricdata,JMXMetricData>> > array
+|**201**|Created|No Content
+|**401**|Unauthorized|No Content
+|**403**|Forbidden|No Content
+|**404**|Not Found|No Content
+|===
+
+
+===== Consumes
+
+* `application/json`
+
+
+===== Produces
+
+* `*/*`
+
+
+[[_listjmxfiltertemplateusingget]]
+==== List the query filter templates with the filterKey. If filterKey is set to empty, it will return all the templates.
+....
+GET /jmx/v2/filters
+....
+
+
+===== Parameters
+
+[options="header", cols=".^2,.^3,.^9,.^4"]
+|===
+|Type|Name|Description|Schema
+|**Query**|**filterKey** +
+__required__|filterKey|string
+|===
+
+
+===== Responses
+
+[options="header", cols=".^2,.^14,.^4"]
+|===
+|HTTP Code|Description|Schema
+|**200**|OK|< string, object > map
+|**401**|Unauthorized|No Content
+|**403**|Forbidden|No Content
+|**404**|Not Found|No Content
+|===
+
+
+===== Consumes
+
+* `application/json`
+
+
+===== Produces
+
+* `*/*`
+
+
 [[_kafka-controller_resource]]
 === Kafka-controller
 Kafka Controller
@@ -361,6 +486,35 @@ __required__|type|enum (NEW, OLD)
 |===
 |HTTP Code|Description|Schema
 |**200**|OK|< <<_consumergroupdesc,ConsumerGroupDesc>> > array
+|**401**|Unauthorized|No Content
+|**403**|Forbidden|No Content
+|**404**|Not Found|No Content
+|===
+
+
+===== Consumes
+
+* `application/json`
+
+
+===== Produces
+
+* `*/*`
+
+
+[[_healthcheckusingget]]
+==== Check the cluster health.
+....
+GET /kafka/health
+....
+
+
+===== Responses
+
+[options="header", cols=".^2,.^14,.^4"]
+|===
+|HTTP Code|Description|Schema
+|**200**|OK|<<_healthcheckresult,HealthCheckResult>>
 |**401**|Unauthorized|No Content
 |**403**|Forbidden|No Content
 |**404**|Not Found|No Content
@@ -1131,6 +1285,159 @@ GET /kafka/topicsbrief
 * `*/*`
 
 
+[[_user-controller_resource]]
+=== User-controller
+Security User Management Controller.
+
+
+[[_adduserusingpost]]
+==== Add user.
+....
+POST /users
+....
+
+
+===== Parameters
+
+[options="header", cols=".^2,.^3,.^9,.^4"]
+|===
+|Type|Name|Description|Schema
+|**Body**|**user** +
+__required__|user|<<_user,User>>
+|===
+
+
+===== Responses
+
+[options="header", cols=".^2,.^14,.^4"]
+|===
+|HTTP Code|Description|Schema
+|**200**|OK|<<_generalresponse,GeneralResponse>>
+|**201**|Created|No Content
+|**401**|Unauthorized|No Content
+|**403**|Forbidden|No Content
+|**404**|Not Found|No Content
+|===
+
+
+===== Consumes
+
+* `application/json`
+
+
+===== Produces
+
+* `*/*`
+
+
+[[_listuserusingget]]
+==== Get user list.
+....
+GET /users
+....
+
+
+===== Responses
+
+[options="header", cols=".^2,.^14,.^4"]
+|===
+|HTTP Code|Description|Schema
+|**200**|OK|< string > array
+|**401**|Unauthorized|No Content
+|**403**|Forbidden|No Content
+|**404**|Not Found|No Content
+|===
+
+
+===== Consumes
+
+* `application/json`
+
+
+===== Produces
+
+* `*/*`
+
+
+[[_modifyuserusingput]]
+==== Modify user information.
+....
+PUT /users
+....
+
+
+===== Parameters
+
+[options="header", cols=".^2,.^3,.^9,.^4"]
+|===
+|Type|Name|Description|Schema
+|**Body**|**user** +
+__required__|user|<<_user,User>>
+|===
+
+
+===== Responses
+
+[options="header", cols=".^2,.^14,.^4"]
+|===
+|HTTP Code|Description|Schema
+|**200**|OK|<<_generalresponse,GeneralResponse>>
+|**201**|Created|No Content
+|**401**|Unauthorized|No Content
+|**403**|Forbidden|No Content
+|**404**|Not Found|No Content
+|===
+
+
+===== Consumes
+
+* `application/json`
+
+
+===== Produces
+
+* `*/*`
+
+
+[[_deluserusingdelete]]
+==== Delete user.
+....
+DELETE /users/{username}
+....
+
+
+===== Parameters
+
+[options="header", cols=".^2,.^3,.^9,.^4"]
+|===
+|Type|Name|Description|Schema
+|**Path**|**username** +
+__required__|username|string
+|===
+
+
+===== Responses
+
+[options="header", cols=".^2,.^14,.^4"]
+|===
+|HTTP Code|Description|Schema
+|**200**|OK|<<_generalresponse,GeneralResponse>>
+|**204**|No Content|No Content
+|**401**|Unauthorized|No Content
+|**403**|Forbidden|No Content
+|===
+
+
+===== Consumes
+
+* `application/json`
+
+
+===== Produces
+
+* `*/*`
+
+
 [[_zookeeper-controller_resource]]
 === Zookeeper-controller
 Zookeeper Controller
@@ -1194,10 +1501,10 @@ GET /zk/env
 * `*/*`
 
 
-[[_lsusingget]]
-==== List a zookeeper path
+[[_getusingget]]
+==== Get data of a zookeeper path
 ....
-GET /zk/ls/{path}
+GET /zk/get/path
 ....
 
 
@@ -1206,7 +1513,46 @@ GET /zk/ls/{path}
 [options="header", cols=".^2,.^3,.^9,.^4"]
 |===
 |Type|Name|Description|Schema
-|**Path**|**path** +
+|**Query**|**path** +
+__required__|path|string
+|===
+
+
+===== Responses
+
+[options="header", cols=".^2,.^14,.^4"]
+|===
+|HTTP Code|Description|Schema
+|**200**|OK|< string, string > map
+|**401**|Unauthorized|No Content
+|**403**|Forbidden|No Content
+|**404**|Not Found|No Content
+|===
+
+
+===== Consumes
+
+* `application/json`
+
+
+===== Produces
+
+* `*/*`
+
+
+[[_lsusingget]]
+==== List a zookeeper path
+....
+GET /zk/ls/path
+....
+
+
+===== Parameters
+
+[options="header", cols=".^2,.^3,.^9,.^4"]
+|===
+|Type|Name|Description|Schema
+|**Query**|**path** +
 __required__|path|string
 |===
 

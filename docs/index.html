@@ -439,44 +439,61 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_chapter_of_manual_content_2">3. Chapter of manual content 2</a></li>
 <li><a href="#_paths">4. Resources</a>
 <ul class="sectlevel2">
-<li><a href="#_kafka-controller_resource">4.1. Kafka-controller</a>
+<li><a href="#_collector-controller_resource">4.1. Collector-controller</a>
 <ul class="sectlevel3">
-<li><a href="#_listbrokersusingget">4.1.1. List brokers in this cluster</a></li>
-<li><a href="#_getmessageusingget">4.1.2. Get the message from the offset of the partition in the topic, decoder is not supported yet</a></li>
-<li><a href="#_deleteoldconsumergroupusingdelete">4.1.3. Delete old Consumer Group</a></li>
-<li><a href="#_getlastcommittimestampusingget">4.1.4. getLastCommitTimestamp</a></li>
-<li><a href="#_resetoffsetusingput">4.1.5. Reset consumer group offset, earliest/latest can be used</a></li>
-<li><a href="#_listallconsumergroupsusingget">4.1.6. List all consumer groups from zk and kafka</a></li>
-<li><a href="#_describecgusingget">4.1.7. Describe consumer groups, showing lag and offset, may be slow if multi topic are listened</a></li>
-<li><a href="#_listtopicbycgusingget">4.1.8. Get the topics involved of the specify consumer group</a></li>
-<li><a href="#_describecgbytopicusingget">4.1.9. Describe consumer groups by topic, showing lag and offset</a></li>
-<li><a href="#_addpartitionusingpost">4.1.10. Add a partition to the topic</a></li>
-<li><a href="#_checkreassignpartitionsusingput">4.1.11. Check the partition reassignment process</a></li>
-<li><a href="#_executereassignpartitionsusingput">4.1.12. Execute the partition reassignment</a></li>
-<li><a href="#_generatereassignpartitionsusingpost">4.1.13. Generate plan for the partition reassignment</a></li>
-<li><a href="#_listtopicsusingget">4.1.14. List topics</a></li>
-<li><a href="#_createtopicusingpost">4.1.15. Create a topic</a></li>
-<li><a href="#_describetopicusingget">4.1.16. Describe a topic by fetching the metadata and config</a></li>
-<li><a href="#_deletetopicusingdelete">4.1.17. Delete a topic (you should enable topic deletion</a></li>
-<li><a href="#_createtopicconfigusingpost">4.1.18. Create topic configs</a></li>
-<li><a href="#_gettopicconfigusingget">4.1.19. Get topic configs</a></li>
-<li><a href="#_updatetopicconfigusingput">4.1.20. Update topic configs</a></li>
-<li><a href="#_deletetopicconfigusingdelete">4.1.21. Delete topic configs</a></li>
-<li><a href="#_gettopicconfigbykeyusingget">4.1.22. Get topic config by key</a></li>
-<li><a href="#_deletetopicconfigbykeyusingdelete">4.1.23. Delete a topic config by key</a></li>
-<li><a href="#_createtopicconfigbykeyusingpost">4.1.24. Create a topic config by key</a></li>
-<li><a href="#_updatetopicconfigbykeyusingput">4.1.25. Update a topic config by key</a></li>
-<li><a href="#_existtopicusingget">4.1.26. Tell if a topic exists</a></li>
-<li><a href="#_writemessageusingpost">4.1.27. Write a message to the topic, for testing purpose</a></li>
-<li><a href="#_listtopicbriefusingget">4.1.28. List topics Brief</a></li>
+<li><a href="#_collectjmxmetricusingget">4.1.1. Fetch all JMX metric data</a></li>
+<li><a href="#_collectjmxmetricusingpost">4.1.2. Fetch JMX metric data with query filter. You can get the query filter template through the API /jmx/v2/filters.</a></li>
+<li><a href="#_listjmxfiltertemplateusingget">4.1.3. List the query filter templates with the filterKey. If filterKey is set to empty, it will return all the templates.</a></li>
 </ul>
 </li>
-<li><a href="#_zookeeper-controller_resource">4.2. Zookeeper-controller</a>
+<li><a href="#_kafka-controller_resource">4.2. Kafka-controller</a>
 <ul class="sectlevel3">
-<li><a href="#_zkconnstateusingget">4.2.1. Get the connection state of zookeeper</a></li>
-<li><a href="#_getenvusingget">4.2.2. Get the environment information of zookeeper</a></li>
-<li><a href="#_lsusingget">4.2.3. List a zookeeper path</a></li>
-<li><a href="#_getstatusingget">4.2.4. Get the service state of zookeeper</a></li>
+<li><a href="#_listbrokersusingget">4.2.1. List brokers in this cluster</a></li>
+<li><a href="#_getmessageusingget">4.2.2. Get the message from the offset of the partition in the topic, decoder is not supported yet</a></li>
+<li><a href="#_deleteoldconsumergroupusingdelete">4.2.3. Delete old Consumer Group</a></li>
+<li><a href="#_getlastcommittimestampusingget">4.2.4. getLastCommitTimestamp</a></li>
+<li><a href="#_resetoffsetusingput">4.2.5. Reset consumer group offset, earliest/latest can be used</a></li>
+<li><a href="#_listallconsumergroupsusingget">4.2.6. List all consumer groups from zk and kafka</a></li>
+<li><a href="#_describecgusingget">4.2.7. Describe consumer groups, showing lag and offset, may be slow if multi topic are listened</a></li>
+<li><a href="#_listtopicbycgusingget">4.2.8. Get the topics involved of the specify consumer group</a></li>
+<li><a href="#_describecgbytopicusingget">4.2.9. Describe consumer groups by topic, showing lag and offset</a></li>
+<li><a href="#_healthcheckusingget">4.2.10. Check the cluster health.</a></li>
+<li><a href="#_addpartitionusingpost">4.2.11. Add a partition to the topic</a></li>
+<li><a href="#_checkreassignpartitionsusingput">4.2.12. Check the partition reassignment process</a></li>
+<li><a href="#_executereassignpartitionsusingput">4.2.13. Execute the partition reassignment</a></li>
+<li><a href="#_generatereassignpartitionsusingpost">4.2.14. Generate plan for the partition reassignment</a></li>
+<li><a href="#_listtopicsusingget">4.2.15. List topics</a></li>
+<li><a href="#_createtopicusingpost">4.2.16. Create a topic</a></li>
+<li><a href="#_describetopicusingget">4.2.17. Describe a topic by fetching the metadata and config</a></li>
+<li><a href="#_deletetopicusingdelete">4.2.18. Delete a topic (you should enable topic deletion</a></li>
+<li><a href="#_createtopicconfigusingpost">4.2.19. Create topic configs</a></li>
+<li><a href="#_gettopicconfigusingget">4.2.20. Get topic configs</a></li>
+<li><a href="#_updatetopicconfigusingput">4.2.21. Update topic configs</a></li>
+<li><a href="#_deletetopicconfigusingdelete">4.2.22. Delete topic configs</a></li>
+<li><a href="#_gettopicconfigbykeyusingget">4.2.23. Get topic config by key</a></li>
+<li><a href="#_deletetopicconfigbykeyusingdelete">4.2.24. Delete a topic config by key</a></li>
+<li><a href="#_createtopicconfigbykeyusingpost">4.2.25. Create a topic config by key</a></li>
+<li><a href="#_updatetopicconfigbykeyusingput">4.2.26. Update a topic config by key</a></li>
+<li><a href="#_existtopicusingget">4.2.27. Tell if a topic exists</a></li>
+<li><a href="#_writemessageusingpost">4.2.28. Write a message to the topic, for testing purpose</a></li>
+<li><a href="#_listtopicbriefusingget">4.2.29. List topics Brief</a></li>
+</ul>
+</li>
+<li><a href="#_user-controller_resource">4.3. User-controller</a>
+<ul class="sectlevel3">
+<li><a href="#_adduserusingpost">4.3.1. Add user.</a></li>
+<li><a href="#_listuserusingget">4.3.2. Get user list.</a></li>
+<li><a href="#_modifyuserusingput">4.3.3. Modify user information.</a></li>
+<li><a href="#_deluserusingdelete">4.3.4. Delete user.</a></li>
+</ul>
+</li>
+<li><a href="#_zookeeper-controller_resource">4.4. Zookeeper-controller</a>
+<ul class="sectlevel3">
+<li><a href="#_zkconnstateusingget">4.4.1. Get the connection state of zookeeper</a></li>
+<li><a href="#_getenvusingget">4.4.2. Get the environment information of zookeeper</a></li>
+<li><a href="#_getusingget">4.4.3. Get data of a zookeeper path</a></li>
+<li><a href="#_lsusingget">4.4.4. List a zookeeper path</a></li>
+<li><a href="#_getstatusingget">4.4.5. Get the service state of zookeeper</a></li>
 </ul>
 </li>
 </ul>
@@ -487,17 +504,26 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_brokerinfo">5.2. BrokerInfo</a></li>
 <li><a href="#_consumergroupdesc">5.3. ConsumerGroupDesc</a></li>
 <li><a href="#_generalresponse">5.4. GeneralResponse</a></li>
-<li><a href="#_hostandport">5.5. HostAndPort</a></li>
-<li><a href="#_bbed2f02db402d6ae09a0dcf86682c45">5.6. Map«int,long»</a></li>
-<li><a href="#_reassignwrapper">5.7. ReassignWrapper</a></li>
-<li><a href="#_topicandpartition">5.8. TopicAndPartition</a></li>
-<li><a href="#_topicbrief">5.9. TopicBrief</a></li>
-<li><a href="#_topicdetail">5.10. TopicDetail</a></li>
-<li><a href="#_topicmeta">5.11. TopicMeta</a></li>
-<li><a href="#_topicpartitioninfo">5.12. TopicPartitionInfo</a></li>
-<li><a href="#_zkserverclient">5.13. ZkServerClient</a></li>
-<li><a href="#_zkserverenvironment">5.14. ZkServerEnvironment</a></li>
-<li><a href="#_zkserverstat">5.15. ZkServerStat</a></li>
+<li><a href="#_25ace99c7bfccf8d17a8f035a9b4bd2f">5.5. HashMap«string,object»</a></li>
+<li><a href="#_healthcheckresult">5.6. HealthCheckResult</a></li>
+<li><a href="#_hostandport">5.7. HostAndPort</a></li>
+<li><a href="#_jmxconfiguration">5.8. JMXConfiguration</a></li>
+<li><a href="#_jmxfilter">5.9. JMXFilter</a></li>
+<li><a href="#_jmxmetricdata">5.10. JMXMetricData</a></li>
+<li><a href="#_jmxmetricdatav1">5.11. JMXMetricDataV1</a></li>
+<li><a href="#_jmxquery">5.12. JMXQuery</a></li>
+<li><a href="#_bbed2f02db402d6ae09a0dcf86682c45">5.13. Map«int,long»</a></li>
+<li><a href="#_pattern">5.14. Pattern</a></li>
+<li><a href="#_reassignwrapper">5.15. ReassignWrapper</a></li>
+<li><a href="#_topicandpartition">5.16. TopicAndPartition</a></li>
+<li><a href="#_topicbrief">5.17. TopicBrief</a></li>
+<li><a href="#_topicdetail">5.18. TopicDetail</a></li>
+<li><a href="#_topicmeta">5.19. TopicMeta</a></li>
+<li><a href="#_topicpartitioninfo">5.20. TopicPartitionInfo</a></li>
+<li><a href="#_user">5.21. User</a></li>
+<li><a href="#_zkserverclient">5.22. ZkServerClient</a></li>
+<li><a href="#_zkserverenvironment">5.23. ZkServerEnvironment</a></li>
+<li><a href="#_zkserverstat">5.24. ZkServerStat</a></li>
 </ul>
 </li>
 </ul>
@@ -535,7 +561,13 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div class="ulist">
 <ul>
 <li>
+<p>collector-controller : Rest API for Collecting JMX Metric Data</p>
+</li>
+<li>
 <p>kafka-controller : Kafka Controller</p>
+</li>
+<li>
+<p>user-controller : Security User Management Controller.</p>
 </li>
 <li>
 <p>zookeeper-controller : Zookeeper Controller</p>
@@ -571,16 +603,44 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <h2 id="_paths"><a class="anchor" href="#_paths"></a>4. Resources</h2>
 <div class="sectionbody">
 <div class="sect2">
-<h3 id="_kafka-controller_resource"><a class="anchor" href="#_kafka-controller_resource"></a>4.1. Kafka-controller</h3>
+<h3 id="_collector-controller_resource"><a class="anchor" href="#_collector-controller_resource"></a>4.1. Collector-controller</h3>
 <div class="paragraph">
-<p>Kafka Controller</p>
+<p>Rest API for Collecting JMX Metric Data</p>
 </div>
 <div class="sect3">
-<h4 id="_listbrokersusingget"><a class="anchor" href="#_listbrokersusingget"></a>4.1.1. List brokers in this cluster</h4>
+<h4 id="_collectjmxmetricusingget"><a class="anchor" href="#_collectjmxmetricusingget"></a>4.1.1. Fetch all JMX metric data</h4>
 <div class="literalblock">
 <div class="content">
-<pre>GET /kafka/brokers</pre>
+<pre>GET /jmx/v1</pre>
 </div>
+</div>
+<div class="sect4">
+<h5 id="_parameters"><a class="anchor" href="#_parameters"></a>Parameters</h5>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 11%;">
+<col style="width: 16%;">
+<col style="width: 50%;">
+<col style="width: 22%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-middle">Type</th>
+<th class="tableblock halign-left valign-middle">Name</th>
+<th class="tableblock halign-left valign-middle">Description</th>
+<th class="tableblock halign-left valign-middle">Schema</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Query</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>jmxurl</strong><br>
+<em>optional</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Parameter jmxurl should be a comma-separated list of {IP:Port} or set to 'default'</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
+</tr>
+</tbody>
+</table>
 </div>
 <div class="sect4">
 <h5 id="_responses"><a class="anchor" href="#_responses"></a>Responses</h5>
@@ -601,7 +661,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <tr>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>200</strong></p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock">OK</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; <a href="#_brokerinfo">BrokerInfo</a> &gt; array</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; <a href="#_jmxmetricdatav1">JMXMetricDataV1</a> &gt; array</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
@@ -643,14 +703,289 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect3">
-<h4 id="_getmessageusingget"><a class="anchor" href="#_getmessageusingget"></a>4.1.2. Get the message from the offset of the partition in the topic, decoder is not supported yet</h4>
+<h4 id="_collectjmxmetricusingpost"><a class="anchor" href="#_collectjmxmetricusingpost"></a>4.1.2. Fetch JMX metric data with query filter. You can get the query filter template through the API /jmx/v2/filters.</h4>
+<div class="literalblock">
+<div class="content">
+<pre>POST /jmx/v2</pre>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_parameters_2"><a class="anchor" href="#_parameters_2"></a>Parameters</h5>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 11%;">
+<col style="width: 16%;">
+<col style="width: 50%;">
+<col style="width: 22%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-middle">Type</th>
+<th class="tableblock halign-left valign-middle">Name</th>
+<th class="tableblock halign-left valign-middle">Description</th>
+<th class="tableblock halign-left valign-middle">Schema</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Query</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>jmxurl</strong><br>
+<em>optional</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Parameter jmxurl should be a comma-separated list of {IP:Port} or set to 'default'</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Body</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>jmxQuery</strong><br>
+<em>required</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">jmxQuery</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><a href="#_jmxquery">JMXQuery</a></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect4">
+<h5 id="_responses_2"><a class="anchor" href="#_responses_2"></a>Responses</h5>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 10%;">
+<col style="width: 70%;">
+<col style="width: 20%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-middle">HTTP Code</th>
+<th class="tableblock halign-left valign-middle">Description</th>
+<th class="tableblock halign-left valign-middle">Schema</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>200</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">OK</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; <a href="#_jmxmetricdata">JMXMetricData</a> &gt; array</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>201</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Created</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Unauthorized</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>403</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Forbidden</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>404</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Not Found</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect4">
+<h5 id="_consumes_2"><a class="anchor" href="#_consumes_2"></a>Consumes</h5>
+<div class="ulist">
+<ul>
+<li>
+<p><code>application/json</code></p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_produces_2"><a class="anchor" href="#_produces_2"></a>Produces</h5>
+<div class="ulist">
+<ul>
+<li>
+<p><code><strong>/</strong></code></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_listjmxfiltertemplateusingget"><a class="anchor" href="#_listjmxfiltertemplateusingget"></a>4.1.3. List the query filter templates with the filterKey. If filterKey is set to empty, it will return all the templates.</h4>
+<div class="literalblock">
+<div class="content">
+<pre>GET /jmx/v2/filters</pre>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_parameters_3"><a class="anchor" href="#_parameters_3"></a>Parameters</h5>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 11%;">
+<col style="width: 16%;">
+<col style="width: 50%;">
+<col style="width: 22%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-middle">Type</th>
+<th class="tableblock halign-left valign-middle">Name</th>
+<th class="tableblock halign-left valign-middle">Description</th>
+<th class="tableblock halign-left valign-middle">Schema</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Query</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>filterKey</strong><br>
+<em>required</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">filterKey</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect4">
+<h5 id="_responses_3"><a class="anchor" href="#_responses_3"></a>Responses</h5>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 10%;">
+<col style="width: 70%;">
+<col style="width: 20%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-middle">HTTP Code</th>
+<th class="tableblock halign-left valign-middle">Description</th>
+<th class="tableblock halign-left valign-middle">Schema</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>200</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">OK</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; string, object &gt; map</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Unauthorized</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>403</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Forbidden</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>404</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Not Found</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect4">
+<h5 id="_consumes_3"><a class="anchor" href="#_consumes_3"></a>Consumes</h5>
+<div class="ulist">
+<ul>
+<li>
+<p><code>application/json</code></p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_produces_3"><a class="anchor" href="#_produces_3"></a>Produces</h5>
+<div class="ulist">
+<ul>
+<li>
+<p><code><strong>/</strong></code></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_kafka-controller_resource"><a class="anchor" href="#_kafka-controller_resource"></a>4.2. Kafka-controller</h3>
+<div class="paragraph">
+<p>Kafka Controller</p>
+</div>
+<div class="sect3">
+<h4 id="_listbrokersusingget"><a class="anchor" href="#_listbrokersusingget"></a>4.2.1. List brokers in this cluster</h4>
+<div class="literalblock">
+<div class="content">
+<pre>GET /kafka/brokers</pre>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_responses_4"><a class="anchor" href="#_responses_4"></a>Responses</h5>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 10%;">
+<col style="width: 70%;">
+<col style="width: 20%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-middle">HTTP Code</th>
+<th class="tableblock halign-left valign-middle">Description</th>
+<th class="tableblock halign-left valign-middle">Schema</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>200</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">OK</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; <a href="#_brokerinfo">BrokerInfo</a> &gt; array</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Unauthorized</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>403</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Forbidden</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>404</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Not Found</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect4">
+<h5 id="_consumes_4"><a class="anchor" href="#_consumes_4"></a>Consumes</h5>
+<div class="ulist">
+<ul>
+<li>
+<p><code>application/json</code></p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_produces_4"><a class="anchor" href="#_produces_4"></a>Produces</h5>
+<div class="ulist">
+<ul>
+<li>
+<p><code><strong>/</strong></code></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_getmessageusingget"><a class="anchor" href="#_getmessageusingget"></a>4.2.2. Get the message from the offset of the partition in the topic, decoder is not supported yet</h4>
 <div class="literalblock">
 <div class="content">
 <pre>GET /kafka/consumer/{topic}/{partition}/{offset}</pre>
 </div>
 </div>
 <div class="sect4">
-<h5 id="_parameters"><a class="anchor" href="#_parameters"></a>Parameters</h5>
+<h5 id="_parameters_4"><a class="anchor" href="#_parameters_4"></a>Parameters</h5>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 11%;">
@@ -699,7 +1034,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </table>
 </div>
 <div class="sect4">
-<h5 id="_responses_2"><a class="anchor" href="#_responses_2"></a>Responses</h5>
+<h5 id="_responses_5"><a class="anchor" href="#_responses_5"></a>Responses</h5>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 10%;">
@@ -738,7 +1073,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </table>
 </div>
 <div class="sect4">
-<h5 id="_consumes_2"><a class="anchor" href="#_consumes_2"></a>Consumes</h5>
+<h5 id="_consumes_5"><a class="anchor" href="#_consumes_5"></a>Consumes</h5>
 <div class="ulist">
 <ul>
 <li>
@@ -748,7 +1083,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect4">
-<h5 id="_produces_2"><a class="anchor" href="#_produces_2"></a>Produces</h5>
+<h5 id="_produces_5"><a class="anchor" href="#_produces_5"></a>Produces</h5>
 <div class="ulist">
 <ul>
 <li>
@@ -759,14 +1094,14 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect3">
-<h4 id="_deleteoldconsumergroupusingdelete"><a class="anchor" href="#_deleteoldconsumergroupusingdelete"></a>4.1.3. Delete old Consumer Group</h4>
+<h4 id="_deleteoldconsumergroupusingdelete"><a class="anchor" href="#_deleteoldconsumergroupusingdelete"></a>4.2.3. Delete old Consumer Group</h4>
 <div class="literalblock">
 <div class="content">
 <pre>DELETE /kafka/consumergroup/{consumergroup}</pre>
 </div>
 </div>
 <div class="sect4">
-<h5 id="_parameters_2"><a class="anchor" href="#_parameters_2"></a>Parameters</h5>
+<h5 id="_parameters_5"><a class="anchor" href="#_parameters_5"></a>Parameters</h5>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 11%;">
@@ -794,7 +1129,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </table>
 </div>
 <div class="sect4">
-<h5 id="_responses_3"><a class="anchor" href="#_responses_3"></a>Responses</h5>
+<h5 id="_responses_6"><a class="anchor" href="#_responses_6"></a>Responses</h5>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 10%;">
@@ -833,7 +1168,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </table>
 </div>
 <div class="sect4">
-<h5 id="_consumes_3"><a class="anchor" href="#_consumes_3"></a>Consumes</h5>
+<h5 id="_consumes_6"><a class="anchor" href="#_consumes_6"></a>Consumes</h5>
 <div class="ulist">
 <ul>
 <li>
@@ -843,7 +1178,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect4">
-<h5 id="_produces_3"><a class="anchor" href="#_produces_3"></a>Produces</h5>
+<h5 id="_produces_6"><a class="anchor" href="#_produces_6"></a>Produces</h5>
 <div class="ulist">
 <ul>
 <li>
@@ -854,14 +1189,14 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect3">
-<h4 id="_getlastcommittimestampusingget"><a class="anchor" href="#_getlastcommittimestampusingget"></a>4.1.4. getLastCommitTimestamp</h4>
+<h4 id="_getlastcommittimestampusingget"><a class="anchor" href="#_getlastcommittimestampusingget"></a>4.2.4. getLastCommitTimestamp</h4>
 <div class="literalblock">
 <div class="content">
 <pre>GET /kafka/consumergroup/{consumergroup}/{type}/topic/{topic}/lastcommittime</pre>
 </div>
 </div>
 <div class="sect4">
-<h5 id="_parameters_3"><a class="anchor" href="#_parameters_3"></a>Parameters</h5>
+<h5 id="_parameters_6"><a class="anchor" href="#_parameters_6"></a>Parameters</h5>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 11%;">
@@ -903,7 +1238,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </table>
 </div>
 <div class="sect4">
-<h5 id="_responses_4"><a class="anchor" href="#_responses_4"></a>Responses</h5>
+<h5 id="_responses_7"><a class="anchor" href="#_responses_7"></a>Responses</h5>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 10%;">
@@ -942,7 +1277,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </table>
 </div>
 <div class="sect4">
-<h5 id="_consumes_4"><a class="anchor" href="#_consumes_4"></a>Consumes</h5>
+<h5 id="_consumes_7"><a class="anchor" href="#_consumes_7"></a>Consumes</h5>
 <div class="ulist">
 <ul>
 <li>
@@ -952,7 +1287,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect4">
-<h5 id="_produces_4"><a class="anchor" href="#_produces_4"></a>Produces</h5>
+<h5 id="_produces_7"><a class="anchor" href="#_produces_7"></a>Produces</h5>
 <div class="ulist">
 <ul>
 <li>
@@ -963,14 +1298,14 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect3">
-<h4 id="_resetoffsetusingput"><a class="anchor" href="#_resetoffsetusingput"></a>4.1.5. Reset consumer group offset, earliest/latest can be used</h4>
+<h4 id="_resetoffsetusingput"><a class="anchor" href="#_resetoffsetusingput"></a>4.2.5. Reset consumer group offset, earliest/latest can be used</h4>
 <div class="literalblock">
 <div class="content">
 <pre>PUT /kafka/consumergroup/{consumergroup}/{type}/topic/{topic}/{partition}/{offset}</pre>
 </div>
 </div>
 <div class="sect4">
-<h5 id="_parameters_4"><a class="anchor" href="#_parameters_4"></a>Parameters</h5>
+<h5 id="_parameters_7"><a class="anchor" href="#_parameters_7"></a>Parameters</h5>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 11%;">
@@ -1026,7 +1361,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </table>
 </div>
 <div class="sect4">
-<h5 id="_responses_5"><a class="anchor" href="#_responses_5"></a>Responses</h5>
+<h5 id="_responses_8"><a class="anchor" href="#_responses_8"></a>Responses</h5>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 10%;">
@@ -1070,312 +1405,6 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </table>
 </div>
 <div class="sect4">
-<h5 id="_consumes_5"><a class="anchor" href="#_consumes_5"></a>Consumes</h5>
-<div class="ulist">
-<ul>
-<li>
-<p><code>application/json</code></p>
-</li>
-</ul>
-</div>
-</div>
-<div class="sect4">
-<h5 id="_produces_5"><a class="anchor" href="#_produces_5"></a>Produces</h5>
-<div class="ulist">
-<ul>
-<li>
-<p><code><strong>/</strong></code></p>
-</li>
-</ul>
-</div>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_listallconsumergroupsusingget"><a class="anchor" href="#_listallconsumergroupsusingget"></a>4.1.6. List all consumer groups from zk and kafka</h4>
-<div class="literalblock">
-<div class="content">
-<pre>GET /kafka/consumergroups</pre>
-</div>
-</div>
-<div class="sect4">
-<h5 id="_parameters_5"><a class="anchor" href="#_parameters_5"></a>Parameters</h5>
-<table class="tableblock frame-all grid-all spread">
-<colgroup>
-<col style="width: 11%;">
-<col style="width: 16%;">
-<col style="width: 50%;">
-<col style="width: 22%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-middle">Type</th>
-<th class="tableblock halign-left valign-middle">Name</th>
-<th class="tableblock halign-left valign-middle">Description</th>
-<th class="tableblock halign-left valign-middle">Schema</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Query</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>topic</strong><br>
-<em>optional</em></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">topic</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Query</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>type</strong><br>
-<em>optional</em></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">type</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">enum (NEW, OLD)</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="sect4">
-<h5 id="_responses_6"><a class="anchor" href="#_responses_6"></a>Responses</h5>
-<table class="tableblock frame-all grid-all spread">
-<colgroup>
-<col style="width: 10%;">
-<col style="width: 70%;">
-<col style="width: 20%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-middle">HTTP Code</th>
-<th class="tableblock halign-left valign-middle">Description</th>
-<th class="tableblock halign-left valign-middle">Schema</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>200</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">OK</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; string, &lt; string &gt; array &gt; map</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">Unauthorized</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>403</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">Forbidden</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>404</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">Not Found</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="sect4">
-<h5 id="_consumes_6"><a class="anchor" href="#_consumes_6"></a>Consumes</h5>
-<div class="ulist">
-<ul>
-<li>
-<p><code>application/json</code></p>
-</li>
-</ul>
-</div>
-</div>
-<div class="sect4">
-<h5 id="_produces_6"><a class="anchor" href="#_produces_6"></a>Produces</h5>
-<div class="ulist">
-<ul>
-<li>
-<p><code><strong>/</strong></code></p>
-</li>
-</ul>
-</div>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_describecgusingget"><a class="anchor" href="#_describecgusingget"></a>4.1.7. Describe consumer groups, showing lag and offset, may be slow if multi topic are listened</h4>
-<div class="literalblock">
-<div class="content">
-<pre>GET /kafka/consumergroups/{consumerGroup}/{type}</pre>
-</div>
-</div>
-<div class="sect4">
-<h5 id="_parameters_6"><a class="anchor" href="#_parameters_6"></a>Parameters</h5>
-<table class="tableblock frame-all grid-all spread">
-<colgroup>
-<col style="width: 11%;">
-<col style="width: 16%;">
-<col style="width: 50%;">
-<col style="width: 22%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-middle">Type</th>
-<th class="tableblock halign-left valign-middle">Name</th>
-<th class="tableblock halign-left valign-middle">Description</th>
-<th class="tableblock halign-left valign-middle">Schema</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Path</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>consumerGroup</strong><br>
-<em>required</em></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">consumerGroup</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Path</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>type</strong><br>
-<em>required</em></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">type</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">enum (NEW, OLD)</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="sect4">
-<h5 id="_responses_7"><a class="anchor" href="#_responses_7"></a>Responses</h5>
-<table class="tableblock frame-all grid-all spread">
-<colgroup>
-<col style="width: 10%;">
-<col style="width: 70%;">
-<col style="width: 20%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-middle">HTTP Code</th>
-<th class="tableblock halign-left valign-middle">Description</th>
-<th class="tableblock halign-left valign-middle">Schema</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>200</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">OK</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; string, &lt; <a href="#_consumergroupdesc">ConsumerGroupDesc</a> &gt; array &gt; map</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">Unauthorized</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>403</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">Forbidden</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>404</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">Not Found</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="sect4">
-<h5 id="_consumes_7"><a class="anchor" href="#_consumes_7"></a>Consumes</h5>
-<div class="ulist">
-<ul>
-<li>
-<p><code>application/json</code></p>
-</li>
-</ul>
-</div>
-</div>
-<div class="sect4">
-<h5 id="_produces_7"><a class="anchor" href="#_produces_7"></a>Produces</h5>
-<div class="ulist">
-<ul>
-<li>
-<p><code><strong>/</strong></code></p>
-</li>
-</ul>
-</div>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_listtopicbycgusingget"><a class="anchor" href="#_listtopicbycgusingget"></a>4.1.8. Get the topics involved of the specify consumer group</h4>
-<div class="literalblock">
-<div class="content">
-<pre>GET /kafka/consumergroups/{consumerGroup}/{type}/topic</pre>
-</div>
-</div>
-<div class="sect4">
-<h5 id="_parameters_7"><a class="anchor" href="#_parameters_7"></a>Parameters</h5>
-<table class="tableblock frame-all grid-all spread">
-<colgroup>
-<col style="width: 11%;">
-<col style="width: 16%;">
-<col style="width: 50%;">
-<col style="width: 22%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-middle">Type</th>
-<th class="tableblock halign-left valign-middle">Name</th>
-<th class="tableblock halign-left valign-middle">Description</th>
-<th class="tableblock halign-left valign-middle">Schema</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Path</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>consumerGroup</strong><br>
-<em>required</em></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">consumerGroup</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Path</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>type</strong><br>
-<em>required</em></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">type</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">enum (NEW, OLD)</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="sect4">
-<h5 id="_responses_8"><a class="anchor" href="#_responses_8"></a>Responses</h5>
-<table class="tableblock frame-all grid-all spread">
-<colgroup>
-<col style="width: 10%;">
-<col style="width: 70%;">
-<col style="width: 20%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-middle">HTTP Code</th>
-<th class="tableblock halign-left valign-middle">Description</th>
-<th class="tableblock halign-left valign-middle">Schema</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>200</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">OK</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; string &gt; array</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">Unauthorized</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>403</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">Forbidden</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>404</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">Not Found</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="sect4">
 <h5 id="_consumes_8"><a class="anchor" href="#_consumes_8"></a>Consumes</h5>
 <div class="ulist">
 <ul>
@@ -1397,10 +1426,10 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect3">
-<h4 id="_describecgbytopicusingget"><a class="anchor" href="#_describecgbytopicusingget"></a>4.1.9. Describe consumer groups by topic, showing lag and offset</h4>
+<h4 id="_listallconsumergroupsusingget"><a class="anchor" href="#_listallconsumergroupsusingget"></a>4.2.6. List all consumer groups from zk and kafka</h4>
 <div class="literalblock">
 <div class="content">
-<pre>GET /kafka/consumergroups/{consumerGroup}/{type}/topic/{topic}</pre>
+<pre>GET /kafka/consumergroups</pre>
 </div>
 </div>
 <div class="sect4">
@@ -1422,23 +1451,16 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </thead>
 <tbody>
 <tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Path</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>consumerGroup</strong><br>
-<em>required</em></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">consumerGroup</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Path</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Query</strong></p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>topic</strong><br>
-<em>required</em></p></td>
+<em>optional</em></p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock">topic</p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Path</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Query</strong></p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>type</strong><br>
-<em>required</em></p></td>
+<em>optional</em></p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock">type</p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock">enum (NEW, OLD)</p></td>
 </tr>
@@ -1464,7 +1486,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <tr>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>200</strong></p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock">OK</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; <a href="#_consumergroupdesc">ConsumerGroupDesc</a> &gt; array</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; string, &lt; string &gt; array &gt; map</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
@@ -1506,14 +1528,394 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect3">
-<h4 id="_addpartitionusingpost"><a class="anchor" href="#_addpartitionusingpost"></a>4.1.10. Add a partition to the topic</h4>
+<h4 id="_describecgusingget"><a class="anchor" href="#_describecgusingget"></a>4.2.7. Describe consumer groups, showing lag and offset, may be slow if multi topic are listened</h4>
+<div class="literalblock">
+<div class="content">
+<pre>GET /kafka/consumergroups/{consumerGroup}/{type}</pre>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_parameters_9"><a class="anchor" href="#_parameters_9"></a>Parameters</h5>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 11%;">
+<col style="width: 16%;">
+<col style="width: 50%;">
+<col style="width: 22%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-middle">Type</th>
+<th class="tableblock halign-left valign-middle">Name</th>
+<th class="tableblock halign-left valign-middle">Description</th>
+<th class="tableblock halign-left valign-middle">Schema</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Path</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>consumerGroup</strong><br>
+<em>required</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">consumerGroup</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Path</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>type</strong><br>
+<em>required</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">type</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">enum (NEW, OLD)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect4">
+<h5 id="_responses_10"><a class="anchor" href="#_responses_10"></a>Responses</h5>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 10%;">
+<col style="width: 70%;">
+<col style="width: 20%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-middle">HTTP Code</th>
+<th class="tableblock halign-left valign-middle">Description</th>
+<th class="tableblock halign-left valign-middle">Schema</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>200</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">OK</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; string, &lt; <a href="#_consumergroupdesc">ConsumerGroupDesc</a> &gt; array &gt; map</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Unauthorized</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>403</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Forbidden</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>404</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Not Found</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect4">
+<h5 id="_consumes_10"><a class="anchor" href="#_consumes_10"></a>Consumes</h5>
+<div class="ulist">
+<ul>
+<li>
+<p><code>application/json</code></p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_produces_10"><a class="anchor" href="#_produces_10"></a>Produces</h5>
+<div class="ulist">
+<ul>
+<li>
+<p><code><strong>/</strong></code></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_listtopicbycgusingget"><a class="anchor" href="#_listtopicbycgusingget"></a>4.2.8. Get the topics involved of the specify consumer group</h4>
+<div class="literalblock">
+<div class="content">
+<pre>GET /kafka/consumergroups/{consumerGroup}/{type}/topic</pre>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_parameters_10"><a class="anchor" href="#_parameters_10"></a>Parameters</h5>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 11%;">
+<col style="width: 16%;">
+<col style="width: 50%;">
+<col style="width: 22%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-middle">Type</th>
+<th class="tableblock halign-left valign-middle">Name</th>
+<th class="tableblock halign-left valign-middle">Description</th>
+<th class="tableblock halign-left valign-middle">Schema</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Path</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>consumerGroup</strong><br>
+<em>required</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">consumerGroup</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Path</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>type</strong><br>
+<em>required</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">type</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">enum (NEW, OLD)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect4">
+<h5 id="_responses_11"><a class="anchor" href="#_responses_11"></a>Responses</h5>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 10%;">
+<col style="width: 70%;">
+<col style="width: 20%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-middle">HTTP Code</th>
+<th class="tableblock halign-left valign-middle">Description</th>
+<th class="tableblock halign-left valign-middle">Schema</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>200</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">OK</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; string &gt; array</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Unauthorized</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>403</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Forbidden</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>404</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Not Found</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect4">
+<h5 id="_consumes_11"><a class="anchor" href="#_consumes_11"></a>Consumes</h5>
+<div class="ulist">
+<ul>
+<li>
+<p><code>application/json</code></p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_produces_11"><a class="anchor" href="#_produces_11"></a>Produces</h5>
+<div class="ulist">
+<ul>
+<li>
+<p><code><strong>/</strong></code></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_describecgbytopicusingget"><a class="anchor" href="#_describecgbytopicusingget"></a>4.2.9. Describe consumer groups by topic, showing lag and offset</h4>
+<div class="literalblock">
+<div class="content">
+<pre>GET /kafka/consumergroups/{consumerGroup}/{type}/topic/{topic}</pre>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_parameters_11"><a class="anchor" href="#_parameters_11"></a>Parameters</h5>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 11%;">
+<col style="width: 16%;">
+<col style="width: 50%;">
+<col style="width: 22%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-middle">Type</th>
+<th class="tableblock halign-left valign-middle">Name</th>
+<th class="tableblock halign-left valign-middle">Description</th>
+<th class="tableblock halign-left valign-middle">Schema</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Path</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>consumerGroup</strong><br>
+<em>required</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">consumerGroup</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Path</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>topic</strong><br>
+<em>required</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">topic</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Path</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>type</strong><br>
+<em>required</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">type</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">enum (NEW, OLD)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect4">
+<h5 id="_responses_12"><a class="anchor" href="#_responses_12"></a>Responses</h5>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 10%;">
+<col style="width: 70%;">
+<col style="width: 20%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-middle">HTTP Code</th>
+<th class="tableblock halign-left valign-middle">Description</th>
+<th class="tableblock halign-left valign-middle">Schema</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>200</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">OK</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; <a href="#_consumergroupdesc">ConsumerGroupDesc</a> &gt; array</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Unauthorized</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>403</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Forbidden</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>404</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Not Found</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect4">
+<h5 id="_consumes_12"><a class="anchor" href="#_consumes_12"></a>Consumes</h5>
+<div class="ulist">
+<ul>
+<li>
+<p><code>application/json</code></p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_produces_12"><a class="anchor" href="#_produces_12"></a>Produces</h5>
+<div class="ulist">
+<ul>
+<li>
+<p><code><strong>/</strong></code></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_healthcheckusingget"><a class="anchor" href="#_healthcheckusingget"></a>4.2.10. Check the cluster health.</h4>
+<div class="literalblock">
+<div class="content">
+<pre>GET /kafka/health</pre>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_responses_13"><a class="anchor" href="#_responses_13"></a>Responses</h5>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 10%;">
+<col style="width: 70%;">
+<col style="width: 20%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-middle">HTTP Code</th>
+<th class="tableblock halign-left valign-middle">Description</th>
+<th class="tableblock halign-left valign-middle">Schema</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>200</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">OK</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><a href="#_healthcheckresult">HealthCheckResult</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Unauthorized</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>403</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Forbidden</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>404</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Not Found</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect4">
+<h5 id="_consumes_13"><a class="anchor" href="#_consumes_13"></a>Consumes</h5>
+<div class="ulist">
+<ul>
+<li>
+<p><code>application/json</code></p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_produces_13"><a class="anchor" href="#_produces_13"></a>Produces</h5>
+<div class="ulist">
+<ul>
+<li>
+<p><code><strong>/</strong></code></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_addpartitionusingpost"><a class="anchor" href="#_addpartitionusingpost"></a>4.2.11. Add a partition to the topic</h4>
 <div class="literalblock">
 <div class="content">
 <pre>POST /kafka/partitions/add</pre>
 </div>
 </div>
 <div class="sect4">
-<h5 id="_parameters_9"><a class="anchor" href="#_parameters_9"></a>Parameters</h5>
+<h5 id="_parameters_12"><a class="anchor" href="#_parameters_12"></a>Parameters</h5>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 11%;">
@@ -1541,7 +1943,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </table>
 </div>
 <div class="sect4">
-<h5 id="_responses_10"><a class="anchor" href="#_responses_10"></a>Responses</h5>
+<h5 id="_responses_14"><a class="anchor" href="#_responses_14"></a>Responses</h5>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 10%;">
@@ -1585,7 +1987,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </table>
 </div>
 <div class="sect4">
-<h5 id="_consumes_10"><a class="anchor" href="#_consumes_10"></a>Consumes</h5>
+<h5 id="_consumes_14"><a class="anchor" href="#_consumes_14"></a>Consumes</h5>
 <div class="ulist">
 <ul>
 <li>
@@ -1595,7 +1997,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect4">
-<h5 id="_produces_10"><a class="anchor" href="#_produces_10"></a>Produces</h5>
+<h5 id="_produces_14"><a class="anchor" href="#_produces_14"></a>Produces</h5>
 <div class="ulist">
 <ul>
 <li>
@@ -1606,14 +2008,14 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect3">
-<h4 id="_checkreassignpartitionsusingput"><a class="anchor" href="#_checkreassignpartitionsusingput"></a>4.1.11. Check the partition reassignment process</h4>
+<h4 id="_checkreassignpartitionsusingput"><a class="anchor" href="#_checkreassignpartitionsusingput"></a>4.2.12. Check the partition reassignment process</h4>
 <div class="literalblock">
 <div class="content">
 <pre>PUT /kafka/partitions/reassign/check</pre>
 </div>
 </div>
 <div class="sect4">
-<h5 id="_parameters_10"><a class="anchor" href="#_parameters_10"></a>Parameters</h5>
+<h5 id="_parameters_13"><a class="anchor" href="#_parameters_13"></a>Parameters</h5>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 11%;">
@@ -1641,7 +2043,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </table>
 </div>
 <div class="sect4">
-<h5 id="_responses_11"><a class="anchor" href="#_responses_11"></a>Responses</h5>
+<h5 id="_responses_15"><a class="anchor" href="#_responses_15"></a>Responses</h5>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 10%;">
@@ -1700,7 +2102,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </table>
 </div>
 <div class="sect4">
-<h5 id="_consumes_11"><a class="anchor" href="#_consumes_11"></a>Consumes</h5>
+<h5 id="_consumes_15"><a class="anchor" href="#_consumes_15"></a>Consumes</h5>
 <div class="ulist">
 <ul>
 <li>
@@ -1710,7 +2112,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect4">
-<h5 id="_produces_11"><a class="anchor" href="#_produces_11"></a>Produces</h5>
+<h5 id="_produces_15"><a class="anchor" href="#_produces_15"></a>Produces</h5>
 <div class="ulist">
 <ul>
 <li>
@@ -1721,14 +2123,14 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect3">
-<h4 id="_executereassignpartitionsusingput"><a class="anchor" href="#_executereassignpartitionsusingput"></a>4.1.12. Execute the partition reassignment</h4>
+<h4 id="_executereassignpartitionsusingput"><a class="anchor" href="#_executereassignpartitionsusingput"></a>4.2.13. Execute the partition reassignment</h4>
 <div class="literalblock">
 <div class="content">
 <pre>PUT /kafka/partitions/reassign/execute</pre>
 </div>
 </div>
 <div class="sect4">
-<h5 id="_parameters_11"><a class="anchor" href="#_parameters_11"></a>Parameters</h5>
+<h5 id="_parameters_14"><a class="anchor" href="#_parameters_14"></a>Parameters</h5>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 11%;">
@@ -1756,7 +2158,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </table>
 </div>
 <div class="sect4">
-<h5 id="_responses_12"><a class="anchor" href="#_responses_12"></a>Responses</h5>
+<h5 id="_responses_16"><a class="anchor" href="#_responses_16"></a>Responses</h5>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 10%;">
@@ -1800,7 +2202,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </table>
 </div>
 <div class="sect4">
-<h5 id="_consumes_12"><a class="anchor" href="#_consumes_12"></a>Consumes</h5>
+<h5 id="_consumes_16"><a class="anchor" href="#_consumes_16"></a>Consumes</h5>
 <div class="ulist">
 <ul>
 <li>
@@ -1810,7 +2212,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect4">
-<h5 id="_produces_12"><a class="anchor" href="#_produces_12"></a>Produces</h5>
+<h5 id="_produces_16"><a class="anchor" href="#_produces_16"></a>Produces</h5>
 <div class="ulist">
 <ul>
 <li>
@@ -1821,14 +2223,14 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect3">
-<h4 id="_generatereassignpartitionsusingpost"><a class="anchor" href="#_generatereassignpartitionsusingpost"></a>4.1.13. Generate plan for the partition reassignment</h4>
+<h4 id="_generatereassignpartitionsusingpost"><a class="anchor" href="#_generatereassignpartitionsusingpost"></a>4.2.14. Generate plan for the partition reassignment</h4>
 <div class="literalblock">
 <div class="content">
 <pre>POST /kafka/partitions/reassign/generate</pre>
 </div>
 </div>
 <div class="sect4">
-<h5 id="_parameters_12"><a class="anchor" href="#_parameters_12"></a>Parameters</h5>
+<h5 id="_parameters_15"><a class="anchor" href="#_parameters_15"></a>Parameters</h5>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 11%;">
@@ -1856,370 +2258,6 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </table>
 </div>
 <div class="sect4">
-<h5 id="_responses_13"><a class="anchor" href="#_responses_13"></a>Responses</h5>
-<table class="tableblock frame-all grid-all spread">
-<colgroup>
-<col style="width: 10%;">
-<col style="width: 70%;">
-<col style="width: 20%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-middle">HTTP Code</th>
-<th class="tableblock halign-left valign-middle">Description</th>
-<th class="tableblock halign-left valign-middle">Schema</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>200</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">OK</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; string &gt; array</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>201</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">Created</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">Unauthorized</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>403</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">Forbidden</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>404</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">Not Found</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="sect4">
-<h5 id="_consumes_13"><a class="anchor" href="#_consumes_13"></a>Consumes</h5>
-<div class="ulist">
-<ul>
-<li>
-<p><code>application/json</code></p>
-</li>
-</ul>
-</div>
-</div>
-<div class="sect4">
-<h5 id="_produces_13"><a class="anchor" href="#_produces_13"></a>Produces</h5>
-<div class="ulist">
-<ul>
-<li>
-<p><code><strong>/</strong></code></p>
-</li>
-</ul>
-</div>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_listtopicsusingget"><a class="anchor" href="#_listtopicsusingget"></a>4.1.14. List topics</h4>
-<div class="literalblock">
-<div class="content">
-<pre>GET /kafka/topics</pre>
-</div>
-</div>
-<div class="sect4">
-<h5 id="_responses_14"><a class="anchor" href="#_responses_14"></a>Responses</h5>
-<table class="tableblock frame-all grid-all spread">
-<colgroup>
-<col style="width: 10%;">
-<col style="width: 70%;">
-<col style="width: 20%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-middle">HTTP Code</th>
-<th class="tableblock halign-left valign-middle">Description</th>
-<th class="tableblock halign-left valign-middle">Schema</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>200</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">OK</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; string &gt; array</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">Unauthorized</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>403</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">Forbidden</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>404</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">Not Found</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="sect4">
-<h5 id="_consumes_14"><a class="anchor" href="#_consumes_14"></a>Consumes</h5>
-<div class="ulist">
-<ul>
-<li>
-<p><code>application/json</code></p>
-</li>
-</ul>
-</div>
-</div>
-<div class="sect4">
-<h5 id="_produces_14"><a class="anchor" href="#_produces_14"></a>Produces</h5>
-<div class="ulist">
-<ul>
-<li>
-<p><code><strong>/</strong></code></p>
-</li>
-</ul>
-</div>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_createtopicusingpost"><a class="anchor" href="#_createtopicusingpost"></a>4.1.15. Create a topic</h4>
-<div class="literalblock">
-<div class="content">
-<pre>POST /kafka/topics/create</pre>
-</div>
-</div>
-<div class="sect4">
-<h5 id="_parameters_13"><a class="anchor" href="#_parameters_13"></a>Parameters</h5>
-<table class="tableblock frame-all grid-all spread">
-<colgroup>
-<col style="width: 11%;">
-<col style="width: 16%;">
-<col style="width: 50%;">
-<col style="width: 22%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-middle">Type</th>
-<th class="tableblock halign-left valign-middle">Name</th>
-<th class="tableblock halign-left valign-middle">Description</th>
-<th class="tableblock halign-left valign-middle">Schema</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Query</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>reassignStr</strong><br>
-<em>optional</em></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">reassignStr</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Body</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>topic</strong><br>
-<em>required</em></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">topic</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><a href="#_topicdetail">TopicDetail</a></p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="sect4">
-<h5 id="_responses_15"><a class="anchor" href="#_responses_15"></a>Responses</h5>
-<table class="tableblock frame-all grid-all spread">
-<colgroup>
-<col style="width: 10%;">
-<col style="width: 70%;">
-<col style="width: 20%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-middle">HTTP Code</th>
-<th class="tableblock halign-left valign-middle">Description</th>
-<th class="tableblock halign-left valign-middle">Schema</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>201</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">Created</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><a href="#_topicmeta">TopicMeta</a></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">Unauthorized</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>403</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">Forbidden</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>404</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">Not Found</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="sect4">
-<h5 id="_consumes_15"><a class="anchor" href="#_consumes_15"></a>Consumes</h5>
-<div class="ulist">
-<ul>
-<li>
-<p><code>application/json</code></p>
-</li>
-</ul>
-</div>
-</div>
-<div class="sect4">
-<h5 id="_produces_15"><a class="anchor" href="#_produces_15"></a>Produces</h5>
-<div class="ulist">
-<ul>
-<li>
-<p><code><strong>/</strong></code></p>
-</li>
-</ul>
-</div>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_describetopicusingget"><a class="anchor" href="#_describetopicusingget"></a>4.1.16. Describe a topic by fetching the metadata and config</h4>
-<div class="literalblock">
-<div class="content">
-<pre>GET /kafka/topics/{topic}</pre>
-</div>
-</div>
-<div class="sect4">
-<h5 id="_parameters_14"><a class="anchor" href="#_parameters_14"></a>Parameters</h5>
-<table class="tableblock frame-all grid-all spread">
-<colgroup>
-<col style="width: 11%;">
-<col style="width: 16%;">
-<col style="width: 50%;">
-<col style="width: 22%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-middle">Type</th>
-<th class="tableblock halign-left valign-middle">Name</th>
-<th class="tableblock halign-left valign-middle">Description</th>
-<th class="tableblock halign-left valign-middle">Schema</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Path</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>topic</strong><br>
-<em>required</em></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">topic</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="sect4">
-<h5 id="_responses_16"><a class="anchor" href="#_responses_16"></a>Responses</h5>
-<table class="tableblock frame-all grid-all spread">
-<colgroup>
-<col style="width: 10%;">
-<col style="width: 70%;">
-<col style="width: 20%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-middle">HTTP Code</th>
-<th class="tableblock halign-left valign-middle">Description</th>
-<th class="tableblock halign-left valign-middle">Schema</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>200</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">OK</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><a href="#_topicmeta">TopicMeta</a></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">Unauthorized</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>403</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">Forbidden</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>404</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">Not Found</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="sect4">
-<h5 id="_consumes_16"><a class="anchor" href="#_consumes_16"></a>Consumes</h5>
-<div class="ulist">
-<ul>
-<li>
-<p><code>application/json</code></p>
-</li>
-</ul>
-</div>
-</div>
-<div class="sect4">
-<h5 id="_produces_16"><a class="anchor" href="#_produces_16"></a>Produces</h5>
-<div class="ulist">
-<ul>
-<li>
-<p><code><strong>/</strong></code></p>
-</li>
-</ul>
-</div>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_deletetopicusingdelete"><a class="anchor" href="#_deletetopicusingdelete"></a>4.1.17. Delete a topic (you should enable topic deletion</h4>
-<div class="literalblock">
-<div class="content">
-<pre>DELETE /kafka/topics/{topic}</pre>
-</div>
-</div>
-<div class="sect4">
-<h5 id="_parameters_15"><a class="anchor" href="#_parameters_15"></a>Parameters</h5>
-<table class="tableblock frame-all grid-all spread">
-<colgroup>
-<col style="width: 11%;">
-<col style="width: 16%;">
-<col style="width: 50%;">
-<col style="width: 22%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-middle">Type</th>
-<th class="tableblock halign-left valign-middle">Name</th>
-<th class="tableblock halign-left valign-middle">Description</th>
-<th class="tableblock halign-left valign-middle">Schema</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Path</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>topic</strong><br>
-<em>required</em></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">topic</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="sect4">
 <h5 id="_responses_17"><a class="anchor" href="#_responses_17"></a>Responses</h5>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
@@ -2238,11 +2276,11 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <tr>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>200</strong></p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock">OK</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><a href="#_generalresponse">GeneralResponse</a></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; string &gt; array</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>204</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>201</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Created</p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
 </tr>
 <tr>
@@ -2253,6 +2291,11 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <tr>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>403</strong></p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock">Forbidden</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>404</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Not Found</p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
 </tr>
 </tbody>
@@ -2280,46 +2323,11 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect3">
-<h4 id="_createtopicconfigusingpost"><a class="anchor" href="#_createtopicconfigusingpost"></a>4.1.18. Create topic configs</h4>
+<h4 id="_listtopicsusingget"><a class="anchor" href="#_listtopicsusingget"></a>4.2.15. List topics</h4>
 <div class="literalblock">
 <div class="content">
-<pre>POST /kafka/topics/{topic}/conf</pre>
+<pre>GET /kafka/topics</pre>
 </div>
-</div>
-<div class="sect4">
-<h5 id="_parameters_16"><a class="anchor" href="#_parameters_16"></a>Parameters</h5>
-<table class="tableblock frame-all grid-all spread">
-<colgroup>
-<col style="width: 11%;">
-<col style="width: 16%;">
-<col style="width: 50%;">
-<col style="width: 22%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-middle">Type</th>
-<th class="tableblock halign-left valign-middle">Name</th>
-<th class="tableblock halign-left valign-middle">Description</th>
-<th class="tableblock halign-left valign-middle">Schema</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Path</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>topic</strong><br>
-<em>required</em></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">topic</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Body</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>prop</strong><br>
-<em>required</em></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">prop</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; string, object &gt; map</p></td>
-</tr>
-</tbody>
-</table>
 </div>
 <div class="sect4">
 <h5 id="_responses_18"><a class="anchor" href="#_responses_18"></a>Responses</h5>
@@ -2340,12 +2348,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <tr>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>200</strong></p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock">OK</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; string, object &gt; map</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>201</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">Created</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; string &gt; array</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
@@ -2387,14 +2390,14 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect3">
-<h4 id="_gettopicconfigusingget"><a class="anchor" href="#_gettopicconfigusingget"></a>4.1.19. Get topic configs</h4>
+<h4 id="_createtopicusingpost"><a class="anchor" href="#_createtopicusingpost"></a>4.2.16. Create a topic</h4>
 <div class="literalblock">
 <div class="content">
-<pre>GET /kafka/topics/{topic}/conf</pre>
+<pre>POST /kafka/topics/create</pre>
 </div>
 </div>
 <div class="sect4">
-<h5 id="_parameters_17"><a class="anchor" href="#_parameters_17"></a>Parameters</h5>
+<h5 id="_parameters_16"><a class="anchor" href="#_parameters_16"></a>Parameters</h5>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 11%;">
@@ -2412,11 +2415,18 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </thead>
 <tbody>
 <tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Path</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Query</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>reassignStr</strong><br>
+<em>optional</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">reassignStr</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Body</strong></p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>topic</strong><br>
 <em>required</em></p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock">topic</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><a href="#_topicdetail">TopicDetail</a></p></td>
 </tr>
 </tbody>
 </table>
@@ -2438,9 +2448,9 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </thead>
 <tbody>
 <tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>200</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">OK</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; string, object &gt; map</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>201</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Created</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><a href="#_topicmeta">TopicMeta</a></p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
@@ -2482,14 +2492,204 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect3">
-<h4 id="_updatetopicconfigusingput"><a class="anchor" href="#_updatetopicconfigusingput"></a>4.1.20. Update topic configs</h4>
+<h4 id="_describetopicusingget"><a class="anchor" href="#_describetopicusingget"></a>4.2.17. Describe a topic by fetching the metadata and config</h4>
 <div class="literalblock">
 <div class="content">
-<pre>PUT /kafka/topics/{topic}/conf</pre>
+<pre>GET /kafka/topics/{topic}</pre>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_parameters_17"><a class="anchor" href="#_parameters_17"></a>Parameters</h5>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 11%;">
+<col style="width: 16%;">
+<col style="width: 50%;">
+<col style="width: 22%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-middle">Type</th>
+<th class="tableblock halign-left valign-middle">Name</th>
+<th class="tableblock halign-left valign-middle">Description</th>
+<th class="tableblock halign-left valign-middle">Schema</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Path</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>topic</strong><br>
+<em>required</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">topic</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect4">
+<h5 id="_responses_20"><a class="anchor" href="#_responses_20"></a>Responses</h5>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 10%;">
+<col style="width: 70%;">
+<col style="width: 20%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-middle">HTTP Code</th>
+<th class="tableblock halign-left valign-middle">Description</th>
+<th class="tableblock halign-left valign-middle">Schema</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>200</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">OK</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><a href="#_topicmeta">TopicMeta</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Unauthorized</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>403</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Forbidden</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>404</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Not Found</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect4">
+<h5 id="_consumes_20"><a class="anchor" href="#_consumes_20"></a>Consumes</h5>
+<div class="ulist">
+<ul>
+<li>
+<p><code>application/json</code></p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_produces_20"><a class="anchor" href="#_produces_20"></a>Produces</h5>
+<div class="ulist">
+<ul>
+<li>
+<p><code><strong>/</strong></code></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_deletetopicusingdelete"><a class="anchor" href="#_deletetopicusingdelete"></a>4.2.18. Delete a topic (you should enable topic deletion</h4>
+<div class="literalblock">
+<div class="content">
+<pre>DELETE /kafka/topics/{topic}</pre>
 </div>
 </div>
 <div class="sect4">
 <h5 id="_parameters_18"><a class="anchor" href="#_parameters_18"></a>Parameters</h5>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 11%;">
+<col style="width: 16%;">
+<col style="width: 50%;">
+<col style="width: 22%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-middle">Type</th>
+<th class="tableblock halign-left valign-middle">Name</th>
+<th class="tableblock halign-left valign-middle">Description</th>
+<th class="tableblock halign-left valign-middle">Schema</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Path</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>topic</strong><br>
+<em>required</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">topic</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect4">
+<h5 id="_responses_21"><a class="anchor" href="#_responses_21"></a>Responses</h5>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 10%;">
+<col style="width: 70%;">
+<col style="width: 20%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-middle">HTTP Code</th>
+<th class="tableblock halign-left valign-middle">Description</th>
+<th class="tableblock halign-left valign-middle">Schema</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>200</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">OK</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><a href="#_generalresponse">GeneralResponse</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>204</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Unauthorized</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>403</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Forbidden</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect4">
+<h5 id="_consumes_21"><a class="anchor" href="#_consumes_21"></a>Consumes</h5>
+<div class="ulist">
+<ul>
+<li>
+<p><code>application/json</code></p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_produces_21"><a class="anchor" href="#_produces_21"></a>Produces</h5>
+<div class="ulist">
+<ul>
+<li>
+<p><code><strong>/</strong></code></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_createtopicconfigusingpost"><a class="anchor" href="#_createtopicconfigusingpost"></a>4.2.19. Create topic configs</h4>
+<div class="literalblock">
+<div class="content">
+<pre>POST /kafka/topics/{topic}/conf</pre>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_parameters_19"><a class="anchor" href="#_parameters_19"></a>Parameters</h5>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 11%;">
@@ -2524,7 +2724,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </table>
 </div>
 <div class="sect4">
-<h5 id="_responses_20"><a class="anchor" href="#_responses_20"></a>Responses</h5>
+<h5 id="_responses_22"><a class="anchor" href="#_responses_22"></a>Responses</h5>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 10%;">
@@ -2568,7 +2768,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </table>
 </div>
 <div class="sect4">
-<h5 id="_consumes_20"><a class="anchor" href="#_consumes_20"></a>Consumes</h5>
+<h5 id="_consumes_22"><a class="anchor" href="#_consumes_22"></a>Consumes</h5>
 <div class="ulist">
 <ul>
 <li>
@@ -2578,7 +2778,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect4">
-<h5 id="_produces_20"><a class="anchor" href="#_produces_20"></a>Produces</h5>
+<h5 id="_produces_22"><a class="anchor" href="#_produces_22"></a>Produces</h5>
 <div class="ulist">
 <ul>
 <li>
@@ -2589,112 +2789,10 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect3">
-<h4 id="_deletetopicconfigusingdelete"><a class="anchor" href="#_deletetopicconfigusingdelete"></a>4.1.21. Delete topic configs</h4>
+<h4 id="_gettopicconfigusingget"><a class="anchor" href="#_gettopicconfigusingget"></a>4.2.20. Get topic configs</h4>
 <div class="literalblock">
 <div class="content">
-<pre>DELETE /kafka/topics/{topic}/conf</pre>
-</div>
-</div>
-<div class="sect4">
-<h5 id="_parameters_19"><a class="anchor" href="#_parameters_19"></a>Parameters</h5>
-<table class="tableblock frame-all grid-all spread">
-<colgroup>
-<col style="width: 11%;">
-<col style="width: 16%;">
-<col style="width: 50%;">
-<col style="width: 22%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-middle">Type</th>
-<th class="tableblock halign-left valign-middle">Name</th>
-<th class="tableblock halign-left valign-middle">Description</th>
-<th class="tableblock halign-left valign-middle">Schema</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Path</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>topic</strong><br>
-<em>required</em></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">topic</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Body</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>delProps</strong><br>
-<em>required</em></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">delProps</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; string &gt; array</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="sect4">
-<h5 id="_responses_21"><a class="anchor" href="#_responses_21"></a>Responses</h5>
-<table class="tableblock frame-all grid-all spread">
-<colgroup>
-<col style="width: 10%;">
-<col style="width: 70%;">
-<col style="width: 20%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-middle">HTTP Code</th>
-<th class="tableblock halign-left valign-middle">Description</th>
-<th class="tableblock halign-left valign-middle">Schema</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>200</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">OK</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; string, object &gt; map</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>204</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">Unauthorized</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>403</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">Forbidden</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="sect4">
-<h5 id="_consumes_21"><a class="anchor" href="#_consumes_21"></a>Consumes</h5>
-<div class="ulist">
-<ul>
-<li>
-<p><code>application/json</code></p>
-</li>
-</ul>
-</div>
-</div>
-<div class="sect4">
-<h5 id="_produces_21"><a class="anchor" href="#_produces_21"></a>Produces</h5>
-<div class="ulist">
-<ul>
-<li>
-<p><code><strong>/</strong></code></p>
-</li>
-</ul>
-</div>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_gettopicconfigbykeyusingget"><a class="anchor" href="#_gettopicconfigbykeyusingget"></a>4.1.22. Get topic config by key</h4>
-<div class="literalblock">
-<div class="content">
-<pre>GET /kafka/topics/{topic}/conf/{key}</pre>
+<pre>GET /kafka/topics/{topic}/conf</pre>
 </div>
 </div>
 <div class="sect4">
@@ -2717,13 +2815,6 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <tbody>
 <tr>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Path</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>key</strong><br>
-<em>required</em></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">key</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Path</strong></p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>topic</strong><br>
 <em>required</em></p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock">topic</p></td>
@@ -2733,7 +2824,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </table>
 </div>
 <div class="sect4">
-<h5 id="_responses_22"><a class="anchor" href="#_responses_22"></a>Responses</h5>
+<h5 id="_responses_23"><a class="anchor" href="#_responses_23"></a>Responses</h5>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 10%;">
@@ -2772,7 +2863,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </table>
 </div>
 <div class="sect4">
-<h5 id="_consumes_22"><a class="anchor" href="#_consumes_22"></a>Consumes</h5>
+<h5 id="_consumes_23"><a class="anchor" href="#_consumes_23"></a>Consumes</h5>
 <div class="ulist">
 <ul>
 <li>
@@ -2782,7 +2873,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect4">
-<h5 id="_produces_22"><a class="anchor" href="#_produces_22"></a>Produces</h5>
+<h5 id="_produces_23"><a class="anchor" href="#_produces_23"></a>Produces</h5>
 <div class="ulist">
 <ul>
 <li>
@@ -2793,10 +2884,10 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect3">
-<h4 id="_deletetopicconfigbykeyusingdelete"><a class="anchor" href="#_deletetopicconfigbykeyusingdelete"></a>4.1.23. Delete a topic config by key</h4>
+<h4 id="_updatetopicconfigusingput"><a class="anchor" href="#_updatetopicconfigusingput"></a>4.2.21. Update topic configs</h4>
 <div class="literalblock">
 <div class="content">
-<pre>DELETE /kafka/topics/{topic}/conf/{key}</pre>
+<pre>PUT /kafka/topics/{topic}/conf</pre>
 </div>
 </div>
 <div class="sect4">
@@ -2819,126 +2910,17 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <tbody>
 <tr>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Path</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>key</strong><br>
-<em>required</em></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">key</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Path</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>topic</strong><br>
-<em>required</em></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">topic</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="sect4">
-<h5 id="_responses_23"><a class="anchor" href="#_responses_23"></a>Responses</h5>
-<table class="tableblock frame-all grid-all spread">
-<colgroup>
-<col style="width: 10%;">
-<col style="width: 70%;">
-<col style="width: 20%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-middle">HTTP Code</th>
-<th class="tableblock halign-left valign-middle">Description</th>
-<th class="tableblock halign-left valign-middle">Schema</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>200</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">OK</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">boolean</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>204</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">Unauthorized</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>403</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">Forbidden</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="sect4">
-<h5 id="_consumes_23"><a class="anchor" href="#_consumes_23"></a>Consumes</h5>
-<div class="ulist">
-<ul>
-<li>
-<p><code>application/json</code></p>
-</li>
-</ul>
-</div>
-</div>
-<div class="sect4">
-<h5 id="_produces_23"><a class="anchor" href="#_produces_23"></a>Produces</h5>
-<div class="ulist">
-<ul>
-<li>
-<p><code><strong>/</strong></code></p>
-</li>
-</ul>
-</div>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_createtopicconfigbykeyusingpost"><a class="anchor" href="#_createtopicconfigbykeyusingpost"></a>4.1.24. Create a topic config by key</h4>
-<div class="literalblock">
-<div class="content">
-<pre>POST /kafka/topics/{topic}/conf/{key}={value}</pre>
-</div>
-</div>
-<div class="sect4">
-<h5 id="_parameters_22"><a class="anchor" href="#_parameters_22"></a>Parameters</h5>
-<table class="tableblock frame-all grid-all spread">
-<colgroup>
-<col style="width: 11%;">
-<col style="width: 16%;">
-<col style="width: 50%;">
-<col style="width: 22%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-middle">Type</th>
-<th class="tableblock halign-left valign-middle">Name</th>
-<th class="tableblock halign-left valign-middle">Description</th>
-<th class="tableblock halign-left valign-middle">Schema</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Path</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>key</strong><br>
-<em>required</em></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">key</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Path</strong></p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>topic</strong><br>
 <em>required</em></p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock">topic</p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Path</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>value</strong><br>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Body</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>prop</strong><br>
 <em>required</em></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">value</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">prop</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; string, object &gt; map</p></td>
 </tr>
 </tbody>
 </table>
@@ -3009,14 +2991,320 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect3">
-<h4 id="_updatetopicconfigbykeyusingput"><a class="anchor" href="#_updatetopicconfigbykeyusingput"></a>4.1.25. Update a topic config by key</h4>
+<h4 id="_deletetopicconfigusingdelete"><a class="anchor" href="#_deletetopicconfigusingdelete"></a>4.2.22. Delete topic configs</h4>
 <div class="literalblock">
 <div class="content">
-<pre>PUT /kafka/topics/{topic}/conf/{key}={value}</pre>
+<pre>DELETE /kafka/topics/{topic}/conf</pre>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_parameters_22"><a class="anchor" href="#_parameters_22"></a>Parameters</h5>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 11%;">
+<col style="width: 16%;">
+<col style="width: 50%;">
+<col style="width: 22%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-middle">Type</th>
+<th class="tableblock halign-left valign-middle">Name</th>
+<th class="tableblock halign-left valign-middle">Description</th>
+<th class="tableblock halign-left valign-middle">Schema</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Path</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>topic</strong><br>
+<em>required</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">topic</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Body</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>delProps</strong><br>
+<em>required</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">delProps</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; string &gt; array</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect4">
+<h5 id="_responses_25"><a class="anchor" href="#_responses_25"></a>Responses</h5>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 10%;">
+<col style="width: 70%;">
+<col style="width: 20%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-middle">HTTP Code</th>
+<th class="tableblock halign-left valign-middle">Description</th>
+<th class="tableblock halign-left valign-middle">Schema</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>200</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">OK</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; string, object &gt; map</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>204</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Unauthorized</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>403</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Forbidden</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect4">
+<h5 id="_consumes_25"><a class="anchor" href="#_consumes_25"></a>Consumes</h5>
+<div class="ulist">
+<ul>
+<li>
+<p><code>application/json</code></p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_produces_25"><a class="anchor" href="#_produces_25"></a>Produces</h5>
+<div class="ulist">
+<ul>
+<li>
+<p><code><strong>/</strong></code></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_gettopicconfigbykeyusingget"><a class="anchor" href="#_gettopicconfigbykeyusingget"></a>4.2.23. Get topic config by key</h4>
+<div class="literalblock">
+<div class="content">
+<pre>GET /kafka/topics/{topic}/conf/{key}</pre>
 </div>
 </div>
 <div class="sect4">
 <h5 id="_parameters_23"><a class="anchor" href="#_parameters_23"></a>Parameters</h5>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 11%;">
+<col style="width: 16%;">
+<col style="width: 50%;">
+<col style="width: 22%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-middle">Type</th>
+<th class="tableblock halign-left valign-middle">Name</th>
+<th class="tableblock halign-left valign-middle">Description</th>
+<th class="tableblock halign-left valign-middle">Schema</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Path</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>key</strong><br>
+<em>required</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">key</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Path</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>topic</strong><br>
+<em>required</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">topic</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect4">
+<h5 id="_responses_26"><a class="anchor" href="#_responses_26"></a>Responses</h5>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 10%;">
+<col style="width: 70%;">
+<col style="width: 20%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-middle">HTTP Code</th>
+<th class="tableblock halign-left valign-middle">Description</th>
+<th class="tableblock halign-left valign-middle">Schema</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>200</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">OK</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; string, object &gt; map</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Unauthorized</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>403</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Forbidden</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>404</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Not Found</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect4">
+<h5 id="_consumes_26"><a class="anchor" href="#_consumes_26"></a>Consumes</h5>
+<div class="ulist">
+<ul>
+<li>
+<p><code>application/json</code></p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_produces_26"><a class="anchor" href="#_produces_26"></a>Produces</h5>
+<div class="ulist">
+<ul>
+<li>
+<p><code><strong>/</strong></code></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_deletetopicconfigbykeyusingdelete"><a class="anchor" href="#_deletetopicconfigbykeyusingdelete"></a>4.2.24. Delete a topic config by key</h4>
+<div class="literalblock">
+<div class="content">
+<pre>DELETE /kafka/topics/{topic}/conf/{key}</pre>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_parameters_24"><a class="anchor" href="#_parameters_24"></a>Parameters</h5>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 11%;">
+<col style="width: 16%;">
+<col style="width: 50%;">
+<col style="width: 22%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-middle">Type</th>
+<th class="tableblock halign-left valign-middle">Name</th>
+<th class="tableblock halign-left valign-middle">Description</th>
+<th class="tableblock halign-left valign-middle">Schema</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Path</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>key</strong><br>
+<em>required</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">key</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Path</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>topic</strong><br>
+<em>required</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">topic</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect4">
+<h5 id="_responses_27"><a class="anchor" href="#_responses_27"></a>Responses</h5>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 10%;">
+<col style="width: 70%;">
+<col style="width: 20%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-middle">HTTP Code</th>
+<th class="tableblock halign-left valign-middle">Description</th>
+<th class="tableblock halign-left valign-middle">Schema</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>200</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">OK</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">boolean</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>204</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Unauthorized</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>403</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Forbidden</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect4">
+<h5 id="_consumes_27"><a class="anchor" href="#_consumes_27"></a>Consumes</h5>
+<div class="ulist">
+<ul>
+<li>
+<p><code>application/json</code></p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_produces_27"><a class="anchor" href="#_produces_27"></a>Produces</h5>
+<div class="ulist">
+<ul>
+<li>
+<p><code><strong>/</strong></code></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_createtopicconfigbykeyusingpost"><a class="anchor" href="#_createtopicconfigbykeyusingpost"></a>4.2.25. Create a topic config by key</h4>
+<div class="literalblock">
+<div class="content">
+<pre>POST /kafka/topics/{topic}/conf/{key}={value}</pre>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_parameters_25"><a class="anchor" href="#_parameters_25"></a>Parameters</h5>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 11%;">
@@ -3058,7 +3346,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </table>
 </div>
 <div class="sect4">
-<h5 id="_responses_25"><a class="anchor" href="#_responses_25"></a>Responses</h5>
+<h5 id="_responses_28"><a class="anchor" href="#_responses_28"></a>Responses</h5>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 10%;">
@@ -3102,270 +3390,6 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </table>
 </div>
 <div class="sect4">
-<h5 id="_consumes_25"><a class="anchor" href="#_consumes_25"></a>Consumes</h5>
-<div class="ulist">
-<ul>
-<li>
-<p><code>application/json</code></p>
-</li>
-</ul>
-</div>
-</div>
-<div class="sect4">
-<h5 id="_produces_25"><a class="anchor" href="#_produces_25"></a>Produces</h5>
-<div class="ulist">
-<ul>
-<li>
-<p><code><strong>/</strong></code></p>
-</li>
-</ul>
-</div>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_existtopicusingget"><a class="anchor" href="#_existtopicusingget"></a>4.1.26. Tell if a topic exists</h4>
-<div class="literalblock">
-<div class="content">
-<pre>GET /kafka/topics/{topic}/exist</pre>
-</div>
-</div>
-<div class="sect4">
-<h5 id="_parameters_24"><a class="anchor" href="#_parameters_24"></a>Parameters</h5>
-<table class="tableblock frame-all grid-all spread">
-<colgroup>
-<col style="width: 11%;">
-<col style="width: 16%;">
-<col style="width: 50%;">
-<col style="width: 22%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-middle">Type</th>
-<th class="tableblock halign-left valign-middle">Name</th>
-<th class="tableblock halign-left valign-middle">Description</th>
-<th class="tableblock halign-left valign-middle">Schema</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Path</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>topic</strong><br>
-<em>required</em></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">topic</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="sect4">
-<h5 id="_responses_26"><a class="anchor" href="#_responses_26"></a>Responses</h5>
-<table class="tableblock frame-all grid-all spread">
-<colgroup>
-<col style="width: 10%;">
-<col style="width: 70%;">
-<col style="width: 20%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-middle">HTTP Code</th>
-<th class="tableblock halign-left valign-middle">Description</th>
-<th class="tableblock halign-left valign-middle">Schema</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>200</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">OK</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">boolean</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">Unauthorized</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>403</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">Forbidden</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>404</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">Not Found</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="sect4">
-<h5 id="_consumes_26"><a class="anchor" href="#_consumes_26"></a>Consumes</h5>
-<div class="ulist">
-<ul>
-<li>
-<p><code>application/json</code></p>
-</li>
-</ul>
-</div>
-</div>
-<div class="sect4">
-<h5 id="_produces_26"><a class="anchor" href="#_produces_26"></a>Produces</h5>
-<div class="ulist">
-<ul>
-<li>
-<p><code><strong>/</strong></code></p>
-</li>
-</ul>
-</div>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_writemessageusingpost"><a class="anchor" href="#_writemessageusingpost"></a>4.1.27. Write a message to the topic, for testing purpose</h4>
-<div class="literalblock">
-<div class="content">
-<pre>POST /kafka/topics/{topic}/write</pre>
-</div>
-</div>
-<div class="sect4">
-<h5 id="_parameters_25"><a class="anchor" href="#_parameters_25"></a>Parameters</h5>
-<table class="tableblock frame-all grid-all spread">
-<colgroup>
-<col style="width: 11%;">
-<col style="width: 16%;">
-<col style="width: 50%;">
-<col style="width: 22%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-middle">Type</th>
-<th class="tableblock halign-left valign-middle">Name</th>
-<th class="tableblock halign-left valign-middle">Description</th>
-<th class="tableblock halign-left valign-middle">Schema</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Path</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>topic</strong><br>
-<em>required</em></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">topic</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Body</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>message</strong><br>
-<em>required</em></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">message</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="sect4">
-<h5 id="_responses_27"><a class="anchor" href="#_responses_27"></a>Responses</h5>
-<table class="tableblock frame-all grid-all spread">
-<colgroup>
-<col style="width: 10%;">
-<col style="width: 70%;">
-<col style="width: 20%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-middle">HTTP Code</th>
-<th class="tableblock halign-left valign-middle">Description</th>
-<th class="tableblock halign-left valign-middle">Schema</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>201</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">Created</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><a href="#_generalresponse">GeneralResponse</a></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">Unauthorized</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>403</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">Forbidden</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>404</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">Not Found</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="sect4">
-<h5 id="_consumes_27"><a class="anchor" href="#_consumes_27"></a>Consumes</h5>
-<div class="ulist">
-<ul>
-<li>
-<p><code>text/plain</code></p>
-</li>
-</ul>
-</div>
-</div>
-<div class="sect4">
-<h5 id="_produces_27"><a class="anchor" href="#_produces_27"></a>Produces</h5>
-<div class="ulist">
-<ul>
-<li>
-<p><code><strong>/</strong></code></p>
-</li>
-</ul>
-</div>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_listtopicbriefusingget"><a class="anchor" href="#_listtopicbriefusingget"></a>4.1.28. List topics Brief</h4>
-<div class="literalblock">
-<div class="content">
-<pre>GET /kafka/topicsbrief</pre>
-</div>
-</div>
-<div class="sect4">
-<h5 id="_responses_28"><a class="anchor" href="#_responses_28"></a>Responses</h5>
-<table class="tableblock frame-all grid-all spread">
-<colgroup>
-<col style="width: 10%;">
-<col style="width: 70%;">
-<col style="width: 20%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-middle">HTTP Code</th>
-<th class="tableblock halign-left valign-middle">Description</th>
-<th class="tableblock halign-left valign-middle">Schema</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>200</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">OK</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; <a href="#_topicbrief">TopicBrief</a> &gt; array</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">Unauthorized</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>403</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">Forbidden</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>404</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">Not Found</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="sect4">
 <h5 id="_consumes_28"><a class="anchor" href="#_consumes_28"></a>Consumes</h5>
 <div class="ulist">
 <ul>
@@ -3386,18 +3410,54 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 </div>
-</div>
-<div class="sect2">
-<h3 id="_zookeeper-controller_resource"><a class="anchor" href="#_zookeeper-controller_resource"></a>4.2. Zookeeper-controller</h3>
-<div class="paragraph">
-<p>Zookeeper Controller</p>
-</div>
 <div class="sect3">
-<h4 id="_zkconnstateusingget"><a class="anchor" href="#_zkconnstateusingget"></a>4.2.1. Get the connection state of zookeeper</h4>
+<h4 id="_updatetopicconfigbykeyusingput"><a class="anchor" href="#_updatetopicconfigbykeyusingput"></a>4.2.26. Update a topic config by key</h4>
 <div class="literalblock">
 <div class="content">
-<pre>GET /zk/connstate</pre>
+<pre>PUT /kafka/topics/{topic}/conf/{key}={value}</pre>
 </div>
+</div>
+<div class="sect4">
+<h5 id="_parameters_26"><a class="anchor" href="#_parameters_26"></a>Parameters</h5>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 11%;">
+<col style="width: 16%;">
+<col style="width: 50%;">
+<col style="width: 22%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-middle">Type</th>
+<th class="tableblock halign-left valign-middle">Name</th>
+<th class="tableblock halign-left valign-middle">Description</th>
+<th class="tableblock halign-left valign-middle">Schema</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Path</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>key</strong><br>
+<em>required</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">key</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Path</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>topic</strong><br>
+<em>required</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">topic</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Path</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>value</strong><br>
+<em>required</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">value</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
+</tr>
+</tbody>
+</table>
 </div>
 <div class="sect4">
 <h5 id="_responses_29"><a class="anchor" href="#_responses_29"></a>Responses</h5>
@@ -3418,7 +3478,12 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <tr>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>200</strong></p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock">OK</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; string, object &gt; map</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>201</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Created</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
@@ -3460,11 +3525,39 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect3">
-<h4 id="_getenvusingget"><a class="anchor" href="#_getenvusingget"></a>4.2.2. Get the environment information of zookeeper</h4>
+<h4 id="_existtopicusingget"><a class="anchor" href="#_existtopicusingget"></a>4.2.27. Tell if a topic exists</h4>
 <div class="literalblock">
 <div class="content">
-<pre>GET /zk/env</pre>
+<pre>GET /kafka/topics/{topic}/exist</pre>
 </div>
+</div>
+<div class="sect4">
+<h5 id="_parameters_27"><a class="anchor" href="#_parameters_27"></a>Parameters</h5>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 11%;">
+<col style="width: 16%;">
+<col style="width: 50%;">
+<col style="width: 22%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-middle">Type</th>
+<th class="tableblock halign-left valign-middle">Name</th>
+<th class="tableblock halign-left valign-middle">Description</th>
+<th class="tableblock halign-left valign-middle">Schema</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Path</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>topic</strong><br>
+<em>required</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">topic</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
+</tr>
+</tbody>
+</table>
 </div>
 <div class="sect4">
 <h5 id="_responses_30"><a class="anchor" href="#_responses_30"></a>Responses</h5>
@@ -3485,7 +3578,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <tr>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>200</strong></p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock">OK</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; string, <a href="#_zkserverenvironment">ZkServerEnvironment</a> &gt; map</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">boolean</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
@@ -3527,14 +3620,14 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect3">
-<h4 id="_lsusingget"><a class="anchor" href="#_lsusingget"></a>4.2.3. List a zookeeper path</h4>
+<h4 id="_writemessageusingpost"><a class="anchor" href="#_writemessageusingpost"></a>4.2.28. Write a message to the topic, for testing purpose</h4>
 <div class="literalblock">
 <div class="content">
-<pre>GET /zk/ls/{path}</pre>
+<pre>POST /kafka/topics/{topic}/write</pre>
 </div>
 </div>
 <div class="sect4">
-<h5 id="_parameters_26"><a class="anchor" href="#_parameters_26"></a>Parameters</h5>
+<h5 id="_parameters_28"><a class="anchor" href="#_parameters_28"></a>Parameters</h5>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 11%;">
@@ -3553,9 +3646,16 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <tbody>
 <tr>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Path</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>path</strong><br>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>topic</strong><br>
 <em>required</em></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">path</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">topic</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Body</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>message</strong><br>
+<em>required</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">message</p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
 </tr>
 </tbody>
@@ -3563,6 +3663,246 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 <div class="sect4">
 <h5 id="_responses_31"><a class="anchor" href="#_responses_31"></a>Responses</h5>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 10%;">
+<col style="width: 70%;">
+<col style="width: 20%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-middle">HTTP Code</th>
+<th class="tableblock halign-left valign-middle">Description</th>
+<th class="tableblock halign-left valign-middle">Schema</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>201</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Created</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><a href="#_generalresponse">GeneralResponse</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Unauthorized</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>403</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Forbidden</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>404</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Not Found</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect4">
+<h5 id="_consumes_31"><a class="anchor" href="#_consumes_31"></a>Consumes</h5>
+<div class="ulist">
+<ul>
+<li>
+<p><code>text/plain</code></p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_produces_31"><a class="anchor" href="#_produces_31"></a>Produces</h5>
+<div class="ulist">
+<ul>
+<li>
+<p><code><strong>/</strong></code></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_listtopicbriefusingget"><a class="anchor" href="#_listtopicbriefusingget"></a>4.2.29. List topics Brief</h4>
+<div class="literalblock">
+<div class="content">
+<pre>GET /kafka/topicsbrief</pre>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_responses_32"><a class="anchor" href="#_responses_32"></a>Responses</h5>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 10%;">
+<col style="width: 70%;">
+<col style="width: 20%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-middle">HTTP Code</th>
+<th class="tableblock halign-left valign-middle">Description</th>
+<th class="tableblock halign-left valign-middle">Schema</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>200</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">OK</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; <a href="#_topicbrief">TopicBrief</a> &gt; array</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Unauthorized</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>403</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Forbidden</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>404</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Not Found</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect4">
+<h5 id="_consumes_32"><a class="anchor" href="#_consumes_32"></a>Consumes</h5>
+<div class="ulist">
+<ul>
+<li>
+<p><code>application/json</code></p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_produces_32"><a class="anchor" href="#_produces_32"></a>Produces</h5>
+<div class="ulist">
+<ul>
+<li>
+<p><code><strong>/</strong></code></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_user-controller_resource"><a class="anchor" href="#_user-controller_resource"></a>4.3. User-controller</h3>
+<div class="paragraph">
+<p>Security User Management Controller.</p>
+</div>
+<div class="sect3">
+<h4 id="_adduserusingpost"><a class="anchor" href="#_adduserusingpost"></a>4.3.1. Add user.</h4>
+<div class="literalblock">
+<div class="content">
+<pre>POST /users</pre>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_parameters_29"><a class="anchor" href="#_parameters_29"></a>Parameters</h5>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 11%;">
+<col style="width: 16%;">
+<col style="width: 50%;">
+<col style="width: 22%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-middle">Type</th>
+<th class="tableblock halign-left valign-middle">Name</th>
+<th class="tableblock halign-left valign-middle">Description</th>
+<th class="tableblock halign-left valign-middle">Schema</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Body</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>user</strong><br>
+<em>required</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">user</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><a href="#_user">User</a></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect4">
+<h5 id="_responses_33"><a class="anchor" href="#_responses_33"></a>Responses</h5>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 10%;">
+<col style="width: 70%;">
+<col style="width: 20%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-middle">HTTP Code</th>
+<th class="tableblock halign-left valign-middle">Description</th>
+<th class="tableblock halign-left valign-middle">Schema</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>200</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">OK</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><a href="#_generalresponse">GeneralResponse</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>201</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Created</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Unauthorized</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>403</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Forbidden</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>404</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Not Found</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect4">
+<h5 id="_consumes_33"><a class="anchor" href="#_consumes_33"></a>Consumes</h5>
+<div class="ulist">
+<ul>
+<li>
+<p><code>application/json</code></p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_produces_33"><a class="anchor" href="#_produces_33"></a>Produces</h5>
+<div class="ulist">
+<ul>
+<li>
+<p><code><strong>/</strong></code></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_listuserusingget"><a class="anchor" href="#_listuserusingget"></a>4.3.2. Get user list.</h4>
+<div class="literalblock">
+<div class="content">
+<pre>GET /users</pre>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_responses_34"><a class="anchor" href="#_responses_34"></a>Responses</h5>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 10%;">
@@ -3601,7 +3941,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </table>
 </div>
 <div class="sect4">
-<h5 id="_consumes_31"><a class="anchor" href="#_consumes_31"></a>Consumes</h5>
+<h5 id="_consumes_34"><a class="anchor" href="#_consumes_34"></a>Consumes</h5>
 <div class="ulist">
 <ul>
 <li>
@@ -3611,7 +3951,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect4">
-<h5 id="_produces_31"><a class="anchor" href="#_produces_31"></a>Produces</h5>
+<h5 id="_produces_34"><a class="anchor" href="#_produces_34"></a>Produces</h5>
 <div class="ulist">
 <ul>
 <li>
@@ -3622,14 +3962,539 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect3">
-<h4 id="_getstatusingget"><a class="anchor" href="#_getstatusingget"></a>4.2.4. Get the service state of zookeeper</h4>
+<h4 id="_modifyuserusingput"><a class="anchor" href="#_modifyuserusingput"></a>4.3.3. Modify user information.</h4>
+<div class="literalblock">
+<div class="content">
+<pre>PUT /users</pre>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_parameters_30"><a class="anchor" href="#_parameters_30"></a>Parameters</h5>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 11%;">
+<col style="width: 16%;">
+<col style="width: 50%;">
+<col style="width: 22%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-middle">Type</th>
+<th class="tableblock halign-left valign-middle">Name</th>
+<th class="tableblock halign-left valign-middle">Description</th>
+<th class="tableblock halign-left valign-middle">Schema</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Body</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>user</strong><br>
+<em>required</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">user</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><a href="#_user">User</a></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect4">
+<h5 id="_responses_35"><a class="anchor" href="#_responses_35"></a>Responses</h5>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 10%;">
+<col style="width: 70%;">
+<col style="width: 20%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-middle">HTTP Code</th>
+<th class="tableblock halign-left valign-middle">Description</th>
+<th class="tableblock halign-left valign-middle">Schema</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>200</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">OK</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><a href="#_generalresponse">GeneralResponse</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>201</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Created</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Unauthorized</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>403</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Forbidden</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>404</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Not Found</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect4">
+<h5 id="_consumes_35"><a class="anchor" href="#_consumes_35"></a>Consumes</h5>
+<div class="ulist">
+<ul>
+<li>
+<p><code>application/json</code></p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_produces_35"><a class="anchor" href="#_produces_35"></a>Produces</h5>
+<div class="ulist">
+<ul>
+<li>
+<p><code><strong>/</strong></code></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_deluserusingdelete"><a class="anchor" href="#_deluserusingdelete"></a>4.3.4. Delete user.</h4>
+<div class="literalblock">
+<div class="content">
+<pre>DELETE /users/{username}</pre>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_parameters_31"><a class="anchor" href="#_parameters_31"></a>Parameters</h5>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 11%;">
+<col style="width: 16%;">
+<col style="width: 50%;">
+<col style="width: 22%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-middle">Type</th>
+<th class="tableblock halign-left valign-middle">Name</th>
+<th class="tableblock halign-left valign-middle">Description</th>
+<th class="tableblock halign-left valign-middle">Schema</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Path</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>username</strong><br>
+<em>required</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">username</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect4">
+<h5 id="_responses_36"><a class="anchor" href="#_responses_36"></a>Responses</h5>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 10%;">
+<col style="width: 70%;">
+<col style="width: 20%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-middle">HTTP Code</th>
+<th class="tableblock halign-left valign-middle">Description</th>
+<th class="tableblock halign-left valign-middle">Schema</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>200</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">OK</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><a href="#_generalresponse">GeneralResponse</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>204</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Unauthorized</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>403</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Forbidden</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect4">
+<h5 id="_consumes_36"><a class="anchor" href="#_consumes_36"></a>Consumes</h5>
+<div class="ulist">
+<ul>
+<li>
+<p><code>application/json</code></p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_produces_36"><a class="anchor" href="#_produces_36"></a>Produces</h5>
+<div class="ulist">
+<ul>
+<li>
+<p><code><strong>/</strong></code></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_zookeeper-controller_resource"><a class="anchor" href="#_zookeeper-controller_resource"></a>4.4. Zookeeper-controller</h3>
+<div class="paragraph">
+<p>Zookeeper Controller</p>
+</div>
+<div class="sect3">
+<h4 id="_zkconnstateusingget"><a class="anchor" href="#_zkconnstateusingget"></a>4.4.1. Get the connection state of zookeeper</h4>
+<div class="literalblock">
+<div class="content">
+<pre>GET /zk/connstate</pre>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_responses_37"><a class="anchor" href="#_responses_37"></a>Responses</h5>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 10%;">
+<col style="width: 70%;">
+<col style="width: 20%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-middle">HTTP Code</th>
+<th class="tableblock halign-left valign-middle">Description</th>
+<th class="tableblock halign-left valign-middle">Schema</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>200</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">OK</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Unauthorized</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>403</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Forbidden</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>404</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Not Found</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect4">
+<h5 id="_consumes_37"><a class="anchor" href="#_consumes_37"></a>Consumes</h5>
+<div class="ulist">
+<ul>
+<li>
+<p><code>application/json</code></p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_produces_37"><a class="anchor" href="#_produces_37"></a>Produces</h5>
+<div class="ulist">
+<ul>
+<li>
+<p><code><strong>/</strong></code></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_getenvusingget"><a class="anchor" href="#_getenvusingget"></a>4.4.2. Get the environment information of zookeeper</h4>
+<div class="literalblock">
+<div class="content">
+<pre>GET /zk/env</pre>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_responses_38"><a class="anchor" href="#_responses_38"></a>Responses</h5>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 10%;">
+<col style="width: 70%;">
+<col style="width: 20%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-middle">HTTP Code</th>
+<th class="tableblock halign-left valign-middle">Description</th>
+<th class="tableblock halign-left valign-middle">Schema</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>200</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">OK</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; string, <a href="#_zkserverenvironment">ZkServerEnvironment</a> &gt; map</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Unauthorized</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>403</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Forbidden</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>404</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Not Found</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect4">
+<h5 id="_consumes_38"><a class="anchor" href="#_consumes_38"></a>Consumes</h5>
+<div class="ulist">
+<ul>
+<li>
+<p><code>application/json</code></p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_produces_38"><a class="anchor" href="#_produces_38"></a>Produces</h5>
+<div class="ulist">
+<ul>
+<li>
+<p><code><strong>/</strong></code></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_getusingget"><a class="anchor" href="#_getusingget"></a>4.4.3. Get data of a zookeeper path</h4>
+<div class="literalblock">
+<div class="content">
+<pre>GET /zk/get/path</pre>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_parameters_32"><a class="anchor" href="#_parameters_32"></a>Parameters</h5>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 11%;">
+<col style="width: 16%;">
+<col style="width: 50%;">
+<col style="width: 22%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-middle">Type</th>
+<th class="tableblock halign-left valign-middle">Name</th>
+<th class="tableblock halign-left valign-middle">Description</th>
+<th class="tableblock halign-left valign-middle">Schema</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Query</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>path</strong><br>
+<em>required</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">path</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect4">
+<h5 id="_responses_39"><a class="anchor" href="#_responses_39"></a>Responses</h5>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 10%;">
+<col style="width: 70%;">
+<col style="width: 20%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-middle">HTTP Code</th>
+<th class="tableblock halign-left valign-middle">Description</th>
+<th class="tableblock halign-left valign-middle">Schema</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>200</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">OK</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; string, string &gt; map</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Unauthorized</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>403</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Forbidden</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>404</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Not Found</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect4">
+<h5 id="_consumes_39"><a class="anchor" href="#_consumes_39"></a>Consumes</h5>
+<div class="ulist">
+<ul>
+<li>
+<p><code>application/json</code></p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_produces_39"><a class="anchor" href="#_produces_39"></a>Produces</h5>
+<div class="ulist">
+<ul>
+<li>
+<p><code><strong>/</strong></code></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_lsusingget"><a class="anchor" href="#_lsusingget"></a>4.4.4. List a zookeeper path</h4>
+<div class="literalblock">
+<div class="content">
+<pre>GET /zk/ls/path</pre>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_parameters_33"><a class="anchor" href="#_parameters_33"></a>Parameters</h5>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 11%;">
+<col style="width: 16%;">
+<col style="width: 50%;">
+<col style="width: 22%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-middle">Type</th>
+<th class="tableblock halign-left valign-middle">Name</th>
+<th class="tableblock halign-left valign-middle">Description</th>
+<th class="tableblock halign-left valign-middle">Schema</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Query</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>path</strong><br>
+<em>required</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">path</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect4">
+<h5 id="_responses_40"><a class="anchor" href="#_responses_40"></a>Responses</h5>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 10%;">
+<col style="width: 70%;">
+<col style="width: 20%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-middle">HTTP Code</th>
+<th class="tableblock halign-left valign-middle">Description</th>
+<th class="tableblock halign-left valign-middle">Schema</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>200</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">OK</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; string &gt; array</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Unauthorized</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>403</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Forbidden</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>404</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Not Found</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect4">
+<h5 id="_consumes_40"><a class="anchor" href="#_consumes_40"></a>Consumes</h5>
+<div class="ulist">
+<ul>
+<li>
+<p><code>application/json</code></p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_produces_40"><a class="anchor" href="#_produces_40"></a>Produces</h5>
+<div class="ulist">
+<ul>
+<li>
+<p><code><strong>/</strong></code></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_getstatusingget"><a class="anchor" href="#_getstatusingget"></a>4.4.5. Get the service state of zookeeper</h4>
 <div class="literalblock">
 <div class="content">
 <pre>GET /zk/stat</pre>
 </div>
 </div>
 <div class="sect4">
-<h5 id="_responses_32"><a class="anchor" href="#_responses_32"></a>Responses</h5>
+<h5 id="_responses_41"><a class="anchor" href="#_responses_41"></a>Responses</h5>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 10%;">
@@ -3668,7 +4533,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </table>
 </div>
 <div class="sect4">
-<h5 id="_consumes_32"><a class="anchor" href="#_consumes_32"></a>Consumes</h5>
+<h5 id="_consumes_41"><a class="anchor" href="#_consumes_41"></a>Consumes</h5>
 <div class="ulist">
 <ul>
 <li>
@@ -3678,7 +4543,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect4">
-<h5 id="_produces_32"><a class="anchor" href="#_produces_32"></a>Produces</h5>
+<h5 id="_produces_41"><a class="anchor" href="#_produces_41"></a>Produces</h5>
 <div class="ulist">
 <ul>
 <li>
@@ -3883,7 +4748,50 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </table>
 </div>
 <div class="sect2">
-<h3 id="_hostandport"><a class="anchor" href="#_hostandport"></a>5.5. HostAndPort</h3>
+<h3 id="_25ace99c7bfccf8d17a8f035a9b4bd2f"><a class="anchor" href="#_25ace99c7bfccf8d17a8f035a9b4bd2f"></a>5.5. HashMap«string,object»</h3>
+<div class="paragraph">
+<p><em>Type</em> : &lt; string, object &gt; map</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_healthcheckresult"><a class="anchor" href="#_healthcheckresult"></a>5.6. HealthCheckResult</h3>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 16%;">
+<col style="width: 61%;">
+<col style="width: 22%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-middle">Name</th>
+<th class="tableblock halign-left valign-middle">Description</th>
+<th class="tableblock halign-left valign-middle">Schema</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>msg</strong><br>
+<em>optional</em></p></td>
+<td class="tableblock halign-left valign-middle"></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>status</strong><br>
+<em>optional</em></p></td>
+<td class="tableblock halign-left valign-middle"></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>timestamp</strong><br>
+<em>optional</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Example</strong> : <code>"yyyy-MM-dd HH:mm:ss"</code></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_hostandport"><a class="anchor" href="#_hostandport"></a>5.7. HostAndPort</h3>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 42%;">
@@ -3910,13 +4818,234 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </table>
 </div>
 <div class="sect2">
-<h3 id="_bbed2f02db402d6ae09a0dcf86682c45"><a class="anchor" href="#_bbed2f02db402d6ae09a0dcf86682c45"></a>5.6. Map«int,long»</h3>
+<h3 id="_jmxconfiguration"><a class="anchor" href="#_jmxconfiguration"></a>5.8. JMXConfiguration</h3>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 42%;">
+<col style="width: 57%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-middle">Name</th>
+<th class="tableblock halign-left valign-middle">Schema</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>exclude</strong><br>
+<em>optional</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><a href="#_jmxfilter">JMXFilter</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>include</strong><br>
+<em>optional</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><a href="#_jmxfilter">JMXFilter</a></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_jmxfilter"><a class="anchor" href="#_jmxfilter"></a>5.9. JMXFilter</h3>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 42%;">
+<col style="width: 57%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-middle">Name</th>
+<th class="tableblock halign-left valign-middle">Schema</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>attribute</strong><br>
+<em>optional</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">object</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>beanNames</strong><br>
+<em>optional</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; string &gt; array</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>beanRegexes</strong><br>
+<em>optional</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; <a href="#_pattern">Pattern</a> &gt; array</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>domain</strong><br>
+<em>optional</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>domainRegex</strong><br>
+<em>optional</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><a href="#_pattern">Pattern</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>emptyBeanName</strong><br>
+<em>optional</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">boolean</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>filter</strong><br>
+<em>optional</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; string, object &gt; map</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_jmxmetricdata"><a class="anchor" href="#_jmxmetricdata"></a>5.10. JMXMetricData</h3>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 16%;">
+<col style="width: 61%;">
+<col style="width: 22%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-middle">Name</th>
+<th class="tableblock halign-left valign-middle">Description</th>
+<th class="tableblock halign-left valign-middle">Schema</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>collected</strong><br>
+<em>optional</em></p></td>
+<td class="tableblock halign-left valign-middle"></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">boolean</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>host</strong><br>
+<em>optional</em></p></td>
+<td class="tableblock halign-left valign-middle"></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>metrics</strong><br>
+<em>optional</em></p></td>
+<td class="tableblock halign-left valign-middle"></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; <a href="#_25ace99c7bfccf8d17a8f035a9b4bd2f">HashMap«string,object»</a> &gt; array</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>msg</strong><br>
+<em>optional</em></p></td>
+<td class="tableblock halign-left valign-middle"></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>timestamp</strong><br>
+<em>optional</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Example</strong> : <code>"yyyy-MM-dd HH:mm:ss"</code></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_jmxmetricdatav1"><a class="anchor" href="#_jmxmetricdatav1"></a>5.11. JMXMetricDataV1</h3>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 16%;">
+<col style="width: 61%;">
+<col style="width: 22%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-middle">Name</th>
+<th class="tableblock halign-left valign-middle">Description</th>
+<th class="tableblock halign-left valign-middle">Schema</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>collected</strong><br>
+<em>optional</em></p></td>
+<td class="tableblock halign-left valign-middle"></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">boolean</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>host</strong><br>
+<em>optional</em></p></td>
+<td class="tableblock halign-left valign-middle"></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>mbeanInfo</strong><br>
+<em>optional</em></p></td>
+<td class="tableblock halign-left valign-middle"></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">object</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>msg</strong><br>
+<em>optional</em></p></td>
+<td class="tableblock halign-left valign-middle"></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>timestamp</strong><br>
+<em>optional</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Example</strong> : <code>"yyyy-MM-dd HH:mm:ss"</code></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_jmxquery"><a class="anchor" href="#_jmxquery"></a>5.12. JMXQuery</h3>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 42%;">
+<col style="width: 57%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-middle">Name</th>
+<th class="tableblock halign-left valign-middle">Schema</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>filters</strong><br>
+<em>optional</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; <a href="#_jmxconfiguration">JMXConfiguration</a> &gt; array</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_bbed2f02db402d6ae09a0dcf86682c45"><a class="anchor" href="#_bbed2f02db402d6ae09a0dcf86682c45"></a>5.13. Map«int,long»</h3>
 <div class="paragraph">
 <p><em>Type</em> : &lt; string, integer(int64) &gt; map</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_reassignwrapper"><a class="anchor" href="#_reassignwrapper"></a>5.7. ReassignWrapper</h3>
+<h3 id="_pattern"><a class="anchor" href="#_pattern"></a>5.14. Pattern</h3>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 42%;">
+<col style="width: 57%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-middle">Name</th>
+<th class="tableblock halign-left valign-middle">Schema</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>cursor</strong><br>
+<em>optional</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">integer(int32)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_reassignwrapper"><a class="anchor" href="#_reassignwrapper"></a>5.15. ReassignWrapper</h3>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 42%;">
@@ -3943,13 +5072,13 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </table>
 </div>
 <div class="sect2">
-<h3 id="_topicandpartition"><a class="anchor" href="#_topicandpartition"></a>5.8. TopicAndPartition</h3>
+<h3 id="_topicandpartition"><a class="anchor" href="#_topicandpartition"></a>5.16. TopicAndPartition</h3>
 <div class="paragraph">
 <p><em>Type</em> : object</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_topicbrief"><a class="anchor" href="#_topicbrief"></a>5.9. TopicBrief</h3>
+<h3 id="_topicbrief"><a class="anchor" href="#_topicbrief"></a>5.17. TopicBrief</h3>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 42%;">
@@ -3981,7 +5110,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </table>
 </div>
 <div class="sect2">
-<h3 id="_topicdetail"><a class="anchor" href="#_topicdetail"></a>5.10. TopicDetail</h3>
+<h3 id="_topicdetail"><a class="anchor" href="#_topicdetail"></a>5.18. TopicDetail</h3>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 42%;">
@@ -4018,7 +5147,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </table>
 </div>
 <div class="sect2">
-<h3 id="_topicmeta"><a class="anchor" href="#_topicmeta"></a>5.11. TopicMeta</h3>
+<h3 id="_topicmeta"><a class="anchor" href="#_topicmeta"></a>5.19. TopicMeta</h3>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 42%;">
@@ -4060,7 +5189,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </table>
 </div>
 <div class="sect2">
-<h3 id="_topicpartitioninfo"><a class="anchor" href="#_topicpartitioninfo"></a>5.12. TopicPartitionInfo</h3>
+<h3 id="_topicpartitioninfo"><a class="anchor" href="#_topicpartitioninfo"></a>5.20. TopicPartitionInfo</h3>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 42%;">
@@ -4117,7 +5246,39 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </table>
 </div>
 <div class="sect2">
-<h3 id="_zkserverclient"><a class="anchor" href="#_zkserverclient"></a>5.13. ZkServerClient</h3>
+<h3 id="_user"><a class="anchor" href="#_user"></a>5.21. User</h3>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 42%;">
+<col style="width: 57%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-middle">Name</th>
+<th class="tableblock halign-left valign-middle">Schema</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>password</strong><br>
+<em>optional</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>role</strong><br>
+<em>optional</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>username</strong><br>
+<em>optional</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_zkserverclient"><a class="anchor" href="#_zkserverclient"></a>5.22. ZkServerClient</h3>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 42%;">
@@ -4164,7 +5325,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </table>
 </div>
 <div class="sect2">
-<h3 id="_zkserverenvironment"><a class="anchor" href="#_zkserverenvironment"></a>5.14. ZkServerEnvironment</h3>
+<h3 id="_zkserverenvironment"><a class="anchor" href="#_zkserverenvironment"></a>5.23. ZkServerEnvironment</h3>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 42%;">
@@ -4186,7 +5347,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </table>
 </div>
 <div class="sect2">
-<h3 id="_zkserverstat"><a class="anchor" href="#_zkserverstat"></a>5.15. ZkServerStat</h3>
+<h3 id="_zkserverstat"><a class="anchor" href="#_zkserverstat"></a>5.24. ZkServerStat</h3>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 42%;">
@@ -4232,7 +5393,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <tr>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>mode</strong><br>
 <em>optional</em></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">enum (Leader, Follower, Observer)</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">enum (Leader, Follower, Observer, Standalone)</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>nodes</strong><br>
@@ -4272,7 +5433,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2018-01-18 09:48:52 +08:00
+Last updated 2018-11-13 00:36:04 +08:00
 </div>
 </div>
 </body>

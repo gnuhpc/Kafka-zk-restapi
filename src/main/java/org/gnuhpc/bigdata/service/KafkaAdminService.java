@@ -101,7 +101,6 @@ import org.apache.kafka.common.errors.InvalidTopicException;
 import org.apache.kafka.common.internals.Topic;
 import org.apache.kafka.common.protocol.Errors;
 import org.apache.kafka.common.requests.DescribeLogDirsResponse.LogDirInfo;
-import org.apache.kafka.common.serialization.Serdes;
 import org.gnuhpc.bigdata.CollectionConvertor;
 import org.gnuhpc.bigdata.componet.OffsetStorage;
 import org.gnuhpc.bigdata.config.KafkaConfig;
@@ -502,11 +501,13 @@ public class KafkaAdminService {
       log.warn("Describe log dirs exception:" + exception);
       throw new ApiException("Describe log dirs exception:" + exception);
     } finally {
+      log.info("After describe log dir, result is:" + logDirInfosByBroker);
       if (logDirList != null && !logDirList.isEmpty()) {
         logDirInfosByBroker.entrySet().forEach(e -> {
           e.getValue().entrySet().removeIf(m -> !logDirList.contains(m.getKey()));
         });
       }
+      log.info("After describe log dir filtered by logdirList, result is:" + logDirInfosByBroker);
       if (topicPartitionMap != null && !topicPartitionMap.isEmpty()) {
         logDirInfosByBroker
             .entrySet()
@@ -527,6 +528,10 @@ public class KafkaAdminService {
                 });
       }
     }
+
+    log.info("After describe log dir filtered by topicPartitionMap, result is:" + logDirInfosByBroker);
+    logDirInfosByBroker.entrySet().forEach(e->e.getValue().entrySet().removeIf(m->m.getValue().replicaInfos.isEmpty()));
+    logDirInfosByBroker.entrySet().removeIf(e->e.getValue().isEmpty());
 
     return logDirInfosByBroker;
   }

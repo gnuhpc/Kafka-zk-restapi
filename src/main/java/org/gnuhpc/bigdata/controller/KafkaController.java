@@ -5,7 +5,6 @@ import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -86,14 +85,15 @@ public class KafkaController {
     return kafkaAdminService.listLogDirsByBroker(brokerList);
   }
 
-  @GetMapping(value = "/brokers/logdirs/detail")
+  @PostMapping(value = "/brokers/logdirs/detail")
   @ApiOperation(value = "Describe log dirs by broker list and topic list")
   public Map<Integer, Map<String, LogDirInfo>> describeLogDirs(
       @RequestParam(required = false) List<Integer> brokerList,
       @RequestParam(required = false) List<String> logDirList,
-      @RequestParam(required = false) Map<String, List<Integer>> topicPartitionMap) {
+      @RequestBody(required = false) Map<String, List<Integer>> topicPartitionMap) {
     return kafkaAdminService.describeLogDirsByBrokerAndTopic(brokerList, logDirList, topicPartitionMap);
   }
+
 
   @GetMapping(value = "/brokers/replicalogdirs")
   @ApiOperation(value = "Describe replica log dirs.")

@@ -536,6 +536,13 @@ public class KafkaAdminService {
     return logDirInfosByBroker;
   }
 
+  public ReplicaLogDirInfo describeReplicaLogDir(TopicPartitionReplica topicPartitionReplica) {
+    Map<TopicPartitionReplica, ReplicaLogDirInfo> replicaLogDirInfoMap =
+        describeReplicaLogDirs(Collections.singletonList(topicPartitionReplica));
+
+    return replicaLogDirInfoMap.get(topicPartitionReplica);
+  }
+
   public Map<TopicPartitionReplica, ReplicaLogDirInfo> describeReplicaLogDirs(
       List<TopicPartitionReplica> replicas) {
     org.apache.kafka.clients.admin.AdminClient kafkaAdminClient = createKafkaAdminClient();

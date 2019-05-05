@@ -50,13 +50,16 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-/** Created by gnuhpc on 2017/7/16. */
+/**
+ * Created by gnuhpc on 2017/7/16.
+ */
 @Log4j
 @RequestMapping("/kafka")
 @RestController
 public class KafkaController {
 
-  @Autowired private KafkaAdminService kafkaAdminService;
+  @Autowired
+  private KafkaAdminService kafkaAdminService;
 
 //  @Autowired private KafkaProducerService kafkaProducerService;
 
@@ -91,15 +94,16 @@ public class KafkaController {
       @RequestParam(required = false) List<Integer> brokerList,
       @RequestParam(required = false) List<String> logDirList,
       @RequestBody(required = false) Map<String, List<Integer>> topicPartitionMap) {
-    return kafkaAdminService.describeLogDirsByBrokerAndTopic(brokerList, logDirList, topicPartitionMap);
+    return kafkaAdminService
+        .describeLogDirsByBrokerAndTopic(brokerList, logDirList, topicPartitionMap);
   }
 
-
-  @GetMapping(value = "/brokers/replicalogdirs")
-  @ApiOperation(value = "Describe replica log dirs.")
-  public Map<TopicPartitionReplica, ReplicaLogDirInfo> describeReplicaLogDirs(
-      @RequestParam List<TopicPartitionReplica> replicas) {
-    return kafkaAdminService.describeReplicaLogDirs(replicas);
+  @GetMapping(value = "/brokers/replicalogdir/{brokerId}/{topic}/{partition}")
+  @ApiOperation(value = "Describe replica log dir.")
+  public ReplicaLogDirInfo describeReplicaLogDirs(@PathVariable int brokerId,
+      @PathVariable String topic, @PathVariable int partition) {
+    TopicPartitionReplica replica = new TopicPartitionReplica(topic, partition, brokerId);
+    return kafkaAdminService.describeReplicaLogDir(replica);
   }
 
   @GetMapping(value = "/brokers/{brokerId}/conf")
@@ -179,7 +183,8 @@ public class KafkaController {
       @RequestParam(required = false, defaultValue = "StringDeserializer") String keyDecoder,
       @RequestParam(required = false, defaultValue = "StringDeserializer") String valueDecoder,
       @RequestParam(required = false) String avroSchema,
-      @RequestParam(required = false, defaultValue = "30000") long fetchTimeoutMs) throws ApiException {
+      @RequestParam(required = false, defaultValue = "30000") long fetchTimeoutMs)
+      throws ApiException {
     return kafkaAdminService.getRecordsByOffset(topic, partition, offset, maxRecords, keyDecoder,
         valueDecoder, avroSchema, fetchTimeoutMs);
   }
@@ -241,7 +246,8 @@ public class KafkaController {
 
   @PostMapping(value = "/partitions/reassign/generate")
   @ApiOperation(value = "Generate plan for the partition reassignment")
-  public List<ReassignModel> generateReassignPartitions(@RequestBody ReassignWrapper reassignWrapper) {
+  public List<ReassignModel> generateReassignPartitions(
+      @RequestBody ReassignWrapper reassignWrapper) {
     return kafkaAdminService.generateReassignPartition(reassignWrapper);
   }
 
@@ -260,9 +266,9 @@ public class KafkaController {
   @ApiOperation(value = "Check the partition reassignment process")
   @ApiResponses(
       value = {
-        @ApiResponse(code = 1, message = "Reassignment Completed"),
-        @ApiResponse(code = 0, message = "Reassignment In Progress"),
-        @ApiResponse(code = -1, message = "Reassignment Failed")
+          @ApiResponse(code = 1, message = "Reassignment Completed"),
+          @ApiResponse(code = 0, message = "Reassignment In Progress"),
+          @ApiResponse(code = -1, message = "Reassignment Failed")
       })
   public ReassignStatus checkReassignPartitions(@RequestBody ReassignModel reassign) {
     return kafkaAdminService.checkReassignStatus(reassign);
@@ -314,7 +320,7 @@ public class KafkaController {
   public List<ConsumerGroupMeta> getConsumerGroupsMeta() {
     Set<String> consumerGroupList = kafkaAdminService.listAllNewConsumerGroups();
     List<ConsumerGroupMeta> consumerGroupMetaList = new ArrayList<>();
-    for (String consumerGroup:consumerGroupList) {
+    for (String consumerGroup : consumerGroupList) {
       if (kafkaAdminService.isNewConsumerGroup(consumerGroup)) {
         consumerGroupMetaList.add(kafkaAdminService.getConsumerGroupMeta(consumerGroup));
       } else {
@@ -369,10 +375,10 @@ public class KafkaController {
       @PathVariable int partition,
       @PathVariable String consumergroup,
       @PathVariable
-          @ApiParam(
-              value =
-                  "[earliest/latest/{long}/yyyy-MM-dd HH:mm:ss.SSS] can be supported. "
-                      + "The date type is only valid for new consumer group.")
+      @ApiParam(
+          value =
+              "[earliest/latest/{long}/yyyy-MM-dd HH:mm:ss.SSS] can be supported. "
+                  + "The date type is only valid for new consumer group.")
           String offset,
       @PathVariable ConsumerType type) {
     return kafkaAdminService.resetOffset(topic, partition, consumergroup, type, offset);

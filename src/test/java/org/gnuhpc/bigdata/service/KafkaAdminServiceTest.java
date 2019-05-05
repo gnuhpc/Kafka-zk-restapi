@@ -109,7 +109,7 @@ public class KafkaAdminServiceTest {
   private static final List<Integer> TEST_KAFKA_BOOTSTRAP_SERVERS_ID = Arrays.asList(10, 11, 12);
   private static final int KAFKA_NODES_COUNT = TEST_KAFKA_BOOTSTRAP_SERVERS_ID.size();
   private static final String TEST_ZK = "127.0.0.1:2181";
-  private static final int TEST_CONTROLLER_ID = 10;
+  private static final int TEST_CONTROLLER_ID = 11;
 //  private static final List<String> TEST_KAFKA_LOG_DIRS =
 //      Arrays.asList(
 //          "/home/xiangli/bigdata/kafka_2.11-1.1.1/kafka-logs,/home/xiangli/bigdata/kafka_2.11-1.1.1/kafka111_2-logs,/home/xiangli/bigdata/kafka_2.11-1.1.1/kafka111_3-logs",
@@ -1524,16 +1524,18 @@ public class KafkaAdminServiceTest {
 
     Map<TopicPartitionReplica, Integer> replicasReassignStatus =
         reassignResult.getReplicasReassignStatus();
-    int replicaReassignState = replicasReassignStatus.get(topicPartitionReplica);
-    assertTrue(
-        replicaReassignState == ReassignmentState.ReassignmentInProgress.code()
-            || replicaReassignState == ReassignmentState.ReassignmentCompleted.code());
-    if (partitionReassignState == ReassignmentState.ReassignmentCompleted.code()
-        && replicaReassignState == ReassignmentState.ReassignmentCompleted.code()) {
-      // If all completed, removeThrottle will be true
-      assertTrue(reassignResult.isRemoveThrottle());
-    } else {
-      assertFalse(reassignResult.isRemoveThrottle());
+    if (replicasReassignStatus != null && !replicasReassignStatus.isEmpty()) {
+      int replicaReassignState = replicasReassignStatus.get(topicPartitionReplica);
+      assertTrue(
+          replicaReassignState == ReassignmentState.ReassignmentInProgress.code()
+              || replicaReassignState == ReassignmentState.ReassignmentCompleted.code());
+      if (partitionReassignState == ReassignmentState.ReassignmentCompleted.code()
+          && replicaReassignState == ReassignmentState.ReassignmentCompleted.code()) {
+        // If all completed, removeThrottle will be true
+        assertTrue(reassignResult.isRemoveThrottle());
+      } else {
+        assertFalse(reassignResult.isRemoveThrottle());
+      }
     }
 
     // Wait reassign to complete

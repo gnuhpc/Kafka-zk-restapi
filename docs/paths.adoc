@@ -200,10 +200,10 @@ __optional__|brokerList|< integer(int32) > array(multi)
 * `*/*`
 
 
-[[_describelogdirsusingget]]
+[[_describelogdirsusingpost]]
 ==== Describe log dirs by broker list and topic list
 ....
-GET /kafka/brokers/logdirs/detail
+POST /kafka/brokers/logdirs/detail
 ....
 
 
@@ -216,8 +216,8 @@ GET /kafka/brokers/logdirs/detail
 __optional__|brokerList|< integer(int32) > array(multi)
 |**Query**|**logDirList** +
 __optional__|logDirList|< string > array(multi)
-|**Query**|**topicList** +
-__optional__|topicList|< string > array(multi)
+|**Body**|**topicPartitionMap** +
+__optional__|topicPartitionMap|< string, < integer(int32) > array > map
 |===
 
 
@@ -227,6 +227,7 @@ __optional__|topicList|< string > array(multi)
 |===
 |HTTP Code|Description|Schema
 |**200**|OK|< string, < string, <<_logdirinfo,LogDirInfo>> > map > map
+|**201**|Created|No Content
 |**401**|Unauthorized|No Content
 |**403**|Forbidden|No Content
 |**404**|Not Found|No Content
@@ -244,9 +245,9 @@ __optional__|topicList|< string > array(multi)
 
 
 [[_describereplicalogdirsusingget]]
-==== Describe replica log dirs.
+==== Describe replica log dir.
 ....
-GET /kafka/brokers/replicalogdirs
+GET /kafka/brokers/replicalogdir/{brokerId}/{topic}/{partition}
 ....
 
 
@@ -255,8 +256,12 @@ GET /kafka/brokers/replicalogdirs
 [options="header", cols=".^2,.^3,.^9,.^4"]
 |===
 |Type|Name|Description|Schema
-|**Query**|**replicas** +
-__required__|replicas|string
+|**Path**|**brokerId** +
+__required__|brokerId|integer(int32)
+|**Path**|**partition** +
+__required__|partition|integer(int32)
+|**Path**|**topic** +
+__required__|topic|string
 |===
 
 
@@ -265,7 +270,7 @@ __required__|replicas|string
 [options="header", cols=".^2,.^14,.^4"]
 |===
 |HTTP Code|Description|Schema
-|**200**|OK|< string, <<_replicalogdirinfo,ReplicaLogDirInfo>> > map
+|**200**|OK|<<_replicalogdirinfo,ReplicaLogDirInfo>>
 |**401**|Unauthorized|No Content
 |**403**|Forbidden|No Content
 |**404**|Not Found|No Content
@@ -473,7 +478,7 @@ GET /kafka/cluster
 
 
 [[_getmessageusingget]]
-==== Get the message from the offset of the partition in the topic, decoder is not supported yet
+==== Get the message from the offset of the partition in the topic
 ....
 GET /kafka/consumer/{topic}/{partition}/{offset}
 ....
@@ -481,17 +486,25 @@ GET /kafka/consumer/{topic}/{partition}/{offset}
 
 ===== Parameters
 
-[options="header", cols=".^2,.^3,.^9,.^4"]
+[options="header", cols=".^2,.^3,.^9,.^4,.^2"]
 |===
-|Type|Name|Description|Schema
+|Type|Name|Description|Schema|Default
 |**Path**|**offset** +
-__required__|offset|integer(int64)
+__required__|offset|integer(int64)|
 |**Path**|**partition** +
-__required__|partition|integer(int32)
+__required__|partition|integer(int32)|
 |**Path**|**topic** +
-__required__|topic|string
-|**Query**|**decoder** +
-__optional__|decoder|string
+__required__|topic|string|
+|**Query**|**avroSchema** +
+__optional__|avroSchema|string|
+|**Query**|**fetchTimeoutMs** +
+__optional__|fetchTimeoutMs|integer(int64)|`"30000"`
+|**Query**|**keyDecoder** +
+__optional__|keyDecoder|string|`"StringDeserializer"`
+|**Query**|**maxRecords** +
+__optional__|maxRecords|integer(int32)|
+|**Query**|**valueDecoder** +
+__optional__|valueDecoder|string|`"StringDeserializer"`
 |===
 
 
@@ -500,7 +513,7 @@ __optional__|decoder|string
 [options="header", cols=".^2,.^14,.^4"]
 |===
 |HTTP Code|Description|Schema
-|**200**|OK|<<_record,Record>>
+|**200**|OK|< <<_record,Record>> > array
 |**401**|Unauthorized|No Content
 |**403**|Forbidden|No Content
 |**404**|Not Found|No Content
@@ -691,20 +704,10 @@ __optional__|type|enum (NEW, OLD)
 
 
 [[_getconsumergroupsmetausingget]]
-==== Get the meta data of the specified new consumer groups, including state, coordinator, assignmentStrategy, members
+==== Get all the meta data of new consumer groups, including state, coordinator, assignmentStrategy, members
 ....
 GET /kafka/consumergroups/meta
 ....
-
-
-===== Parameters
-
-[options="header", cols=".^2,.^3,.^9,.^4"]
-|===
-|Type|Name|Description|Schema
-|**Query**|**consumerGroupList** +
-__required__|consumerGroupList|< string > array(multi)
-|===
 
 
 ===== Responses
@@ -1103,6 +1106,36 @@ __required__|reassignWrapper|<<_reassignwrapper,ReassignWrapper>>
 |===
 |HTTP Code|Description|Schema
 |**200**|OK|< <<_reassignmodel,ReassignModel>> > array
+|**201**|Created|No Content
+|**401**|Unauthorized|No Content
+|**403**|Forbidden|No Content
+|**404**|Not Found|No Content
+|===
+
+
+===== Consumes
+
+* `application/json`
+
+
+===== Produces
+
+* `*/*`
+
+
+[[_stopreassignpartitionsusingput]]
+==== Stop the partition reassignment process
+....
+PUT /kafka/partitions/reassign/stop
+....
+
+
+===== Responses
+
+[options="header", cols=".^2,.^14,.^4"]
+|===
+|HTTP Code|Description|Schema
+|**200**|OK|<<_generalresponse,GeneralResponse>>
 |**201**|Created|No Content
 |**401**|Unauthorized|No Content
 |**403**|Forbidden|No Content

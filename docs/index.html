@@ -450,19 +450,19 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <ul class="sectlevel3">
 <li><a href="#_listbrokersusingget">4.2.1. List brokers in this cluster</a></li>
 <li><a href="#_listlogdirsusingget">4.2.2. List log dirs by broker list</a></li>
-<li><a href="#_describelogdirsusingget">4.2.3. Describe log dirs by broker list and topic list</a></li>
-<li><a href="#_describereplicalogdirsusingget">4.2.4. Describe replica log dirs.</a></li>
+<li><a href="#_describelogdirsusingpost">4.2.3. Describe log dirs by broker list and topic list</a></li>
+<li><a href="#_describereplicalogdirsusingget">4.2.4. Describe replica log dir.</a></li>
 <li><a href="#_getbrokerconfigusingget">4.2.5. Get broker configs, including dynamic configs</a></li>
 <li><a href="#_getbrokerdynconfigusingget">4.2.6. Get broker dynamic configs</a></li>
 <li><a href="#_updatebrokerdynconfigusingput">4.2.7. Update broker configs</a></li>
 <li><a href="#_removebrokerdynconfigusingdelete">4.2.8. Remove broker dynamic configs</a></li>
 <li><a href="#_describeclusterusingget">4.2.9. Describe cluster, nodes, controller info.</a></li>
-<li><a href="#_getmessageusingget">4.2.10. Get the message from the offset of the partition in the topic, decoder is not supported yet</a></li>
+<li><a href="#_getmessageusingget">4.2.10. Get the message from the offset of the partition in the topic</a></li>
 <li><a href="#_deleteoldconsumergroupusingdelete">4.2.11. Delete Consumer Group</a></li>
 <li><a href="#_getlastcommittimestampusingget">4.2.12. getLastCommitTimestamp</a></li>
 <li><a href="#_resetoffsetusingput">4.2.13. Reset consumer group offset, earliest/latest can be used. Support reset by time for new consumer group, pass a parameter that satisfies yyyy-MM-dd HH:mm:ss.SSS to offset.</a></li>
 <li><a href="#_listallconsumergroupsusingget">4.2.14. List all consumer groups from zk and kafka</a></li>
-<li><a href="#_getconsumergroupsmetausingget">4.2.15. Get the meta data of the specified new consumer groups, including state, coordinator, assignmentStrategy, members</a></li>
+<li><a href="#_getconsumergroupsmetausingget">4.2.15. Get all the meta data of new consumer groups, including state, coordinator, assignmentStrategy, members</a></li>
 <li><a href="#_getconsumergroupmetausingget">4.2.16. Get the meta data of the specify new consumer group, including state, coordinator, assignmentStrategy, members</a></li>
 <li><a href="#_describeconsumergroupusingget">4.2.17. Describe consumer group, showing lag and offset, may be slow if multi topics are listened</a></li>
 <li><a href="#_listtopicbyconsumergroupusingget">4.2.18. Get the topics involved of the specify consumer group</a></li>
@@ -473,17 +473,18 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_checkreassignpartitionsusingput">4.2.23. Check the partition reassignment process</a></li>
 <li><a href="#_executereassignpartitionsusingput">4.2.24. Execute the partition reassignment</a></li>
 <li><a href="#_generatereassignpartitionsusingpost">4.2.25. Generate plan for the partition reassignment</a></li>
-<li><a href="#_listtopicsusingget">4.2.26. List topics</a></li>
-<li><a href="#_deletetopiclistusingdelete">4.2.27. Delete a topic list (you should enable topic deletion</a></li>
-<li><a href="#_createtopicusingpost">4.2.28. Create topics</a></li>
-<li><a href="#_describetopicusingget">4.2.29. Describe a topic by fetching the metadata and config</a></li>
-<li><a href="#_gettopicconfigusingget">4.2.30. Get topic configs</a></li>
-<li><a href="#_updatetopicconfigusingput">4.2.31. Update topic configs</a></li>
-<li><a href="#_gettopicconfigbykeyusingget">4.2.32. Get topic config by key</a></li>
-<li><a href="#_updatetopicconfigbykeyusingput">4.2.33. Update a topic config by key</a></li>
-<li><a href="#_gettopicdynconfigusingget">4.2.34. Get topic dyn configs</a></li>
-<li><a href="#_existtopicusingget">4.2.35. Tell if a topic exists</a></li>
-<li><a href="#_listtopicbriefusingget">4.2.36. List topics Brief</a></li>
+<li><a href="#_stopreassignpartitionsusingput">4.2.26. Stop the partition reassignment process</a></li>
+<li><a href="#_listtopicsusingget">4.2.27. List topics</a></li>
+<li><a href="#_deletetopiclistusingdelete">4.2.28. Delete a topic list (you should enable topic deletion</a></li>
+<li><a href="#_createtopicusingpost">4.2.29. Create topics</a></li>
+<li><a href="#_describetopicusingget">4.2.30. Describe a topic by fetching the metadata and config</a></li>
+<li><a href="#_gettopicconfigusingget">4.2.31. Get topic configs</a></li>
+<li><a href="#_updatetopicconfigusingput">4.2.32. Update topic configs</a></li>
+<li><a href="#_gettopicconfigbykeyusingget">4.2.33. Get topic config by key</a></li>
+<li><a href="#_updatetopicconfigbykeyusingput">4.2.34. Update a topic config by key</a></li>
+<li><a href="#_gettopicdynconfigusingget">4.2.35. Get topic dyn configs</a></li>
+<li><a href="#_existtopicusingget">4.2.36. Tell if a topic exists</a></li>
+<li><a href="#_listtopicbriefusingget">4.2.37. List topics Brief</a></li>
 </ul>
 </li>
 <li><a href="#_user-controller_resource">4.3. User-controller</a>
@@ -540,12 +541,11 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_topicmeta">5.31. TopicMeta</a></li>
 <li><a href="#_topicpartition">5.32. TopicPartition</a></li>
 <li><a href="#_topicpartitioninfo">5.33. TopicPartitionInfo</a></li>
-<li><a href="#_topicpartitionreplica">5.34. TopicPartitionReplica</a></li>
-<li><a href="#_topicpartitionreplicaassignment">5.35. TopicPartitionReplicaAssignment</a></li>
-<li><a href="#_user">5.36. User</a></li>
-<li><a href="#_zkserverclient">5.37. ZkServerClient</a></li>
-<li><a href="#_zkserverenvironment">5.38. ZkServerEnvironment</a></li>
-<li><a href="#_zkserverstat">5.39. ZkServerStat</a></li>
+<li><a href="#_topicpartitionreplicaassignment">5.34. TopicPartitionReplicaAssignment</a></li>
+<li><a href="#_user">5.35. User</a></li>
+<li><a href="#_zkserverclient">5.36. ZkServerClient</a></li>
+<li><a href="#_zkserverenvironment">5.37. ZkServerEnvironment</a></li>
+<li><a href="#_zkserverstat">5.38. ZkServerStat</a></li>
 </ul>
 </li>
 </ul>
@@ -1095,10 +1095,10 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect3">
-<h4 id="_describelogdirsusingget"><a class="anchor" href="#_describelogdirsusingget"></a>4.2.3. Describe log dirs by broker list and topic list</h4>
+<h4 id="_describelogdirsusingpost"><a class="anchor" href="#_describelogdirsusingpost"></a>4.2.3. Describe log dirs by broker list and topic list</h4>
 <div class="literalblock">
 <div class="content">
-<pre>GET /kafka/brokers/logdirs/detail</pre>
+<pre>POST /kafka/brokers/logdirs/detail</pre>
 </div>
 </div>
 <div class="sect4">
@@ -1134,11 +1134,11 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; string &gt; array(multi)</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Query</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>topicList</strong><br>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Body</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>topicPartitionMap</strong><br>
 <em>optional</em></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">topicList</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; string &gt; array(multi)</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">topicPartitionMap</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; string, &lt; integer(int32) &gt; array &gt; map</p></td>
 </tr>
 </tbody>
 </table>
@@ -1163,6 +1163,11 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>200</strong></p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock">OK</p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; string, &lt; string, <a href="#_logdirinfo">LogDirInfo</a> &gt; map &gt; map</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>201</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Created</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
@@ -1204,10 +1209,10 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect3">
-<h4 id="_describereplicalogdirsusingget"><a class="anchor" href="#_describereplicalogdirsusingget"></a>4.2.4. Describe replica log dirs.</h4>
+<h4 id="_describereplicalogdirsusingget"><a class="anchor" href="#_describereplicalogdirsusingget"></a>4.2.4. Describe replica log dir.</h4>
 <div class="literalblock">
 <div class="content">
-<pre>GET /kafka/brokers/replicalogdirs</pre>
+<pre>GET /kafka/brokers/replicalogdir/{brokerId}/{topic}/{partition}</pre>
 </div>
 </div>
 <div class="sect4">
@@ -1229,10 +1234,24 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </thead>
 <tbody>
 <tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Query</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>replicas</strong><br>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Path</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>brokerId</strong><br>
 <em>required</em></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">replicas</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">brokerId</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">integer(int32)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Path</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>partition</strong><br>
+<em>required</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">partition</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">integer(int32)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Path</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>topic</strong><br>
+<em>required</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">topic</p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
 </tr>
 </tbody>
@@ -1257,7 +1276,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <tr>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>200</strong></p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock">OK</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; string, <a href="#_replicalogdirinfo">ReplicaLogDirInfo</a> &gt; map</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><a href="#_replicalogdirinfo">ReplicaLogDirInfo</a></p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
@@ -1765,7 +1784,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect3">
-<h4 id="_getmessageusingget"><a class="anchor" href="#_getmessageusingget"></a>4.2.10. Get the message from the offset of the partition in the topic, decoder is not supported yet</h4>
+<h4 id="_getmessageusingget"><a class="anchor" href="#_getmessageusingget"></a>4.2.10. Get the message from the offset of the partition in the topic</h4>
 <div class="literalblock">
 <div class="content">
 <pre>GET /kafka/consumer/{topic}/{partition}/{offset}</pre>
@@ -1775,10 +1794,11 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <h5 id="_parameters_11"><a class="anchor" href="#_parameters_11"></a>Parameters</h5>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
-<col style="width: 11%;">
-<col style="width: 16%;">
-<col style="width: 50%;">
-<col style="width: 22%;">
+<col style="width: 10%;">
+<col style="width: 15%;">
+<col style="width: 45%;">
+<col style="width: 20%;">
+<col style="width: 10%;">
 </colgroup>
 <thead>
 <tr>
@@ -1786,6 +1806,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <th class="tableblock halign-left valign-middle">Name</th>
 <th class="tableblock halign-left valign-middle">Description</th>
 <th class="tableblock halign-left valign-middle">Schema</th>
+<th class="tableblock halign-left valign-middle">Default</th>
 </tr>
 </thead>
 <tbody>
@@ -1795,6 +1816,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <em>required</em></p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock">offset</p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock">integer(int64)</p></td>
+<td class="tableblock halign-left valign-middle"></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Path</strong></p></td>
@@ -1802,6 +1824,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <em>required</em></p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock">partition</p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock">integer(int32)</p></td>
+<td class="tableblock halign-left valign-middle"></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Path</strong></p></td>
@@ -1809,13 +1832,47 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <em>required</em></p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock">topic</p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
+<td class="tableblock halign-left valign-middle"></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Query</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>decoder</strong><br>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>avroSchema</strong><br>
 <em>optional</em></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">decoder</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">avroSchema</p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
+<td class="tableblock halign-left valign-middle"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Query</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>fetchTimeoutMs</strong><br>
+<em>optional</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">fetchTimeoutMs</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">integer(int64)</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><code>"30000"</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Query</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>keyDecoder</strong><br>
+<em>optional</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">keyDecoder</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><code>"StringDeserializer"</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Query</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>maxRecords</strong><br>
+<em>optional</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">maxRecords</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">integer(int32)</p></td>
+<td class="tableblock halign-left valign-middle"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Query</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>valueDecoder</strong><br>
+<em>optional</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">valueDecoder</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><code>"StringDeserializer"</code></p></td>
 </tr>
 </tbody>
 </table>
@@ -1839,7 +1896,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <tr>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>200</strong></p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock">OK</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><a href="#_record">Record</a></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; <a href="#_record">Record</a> &gt; array</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
@@ -2322,39 +2379,11 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect3">
-<h4 id="_getconsumergroupsmetausingget"><a class="anchor" href="#_getconsumergroupsmetausingget"></a>4.2.15. Get the meta data of the specified new consumer groups, including state, coordinator, assignmentStrategy, members</h4>
+<h4 id="_getconsumergroupsmetausingget"><a class="anchor" href="#_getconsumergroupsmetausingget"></a>4.2.15. Get all the meta data of new consumer groups, including state, coordinator, assignmentStrategy, members</h4>
 <div class="literalblock">
 <div class="content">
 <pre>GET /kafka/consumergroups/meta</pre>
 </div>
-</div>
-<div class="sect4">
-<h5 id="_parameters_16"><a class="anchor" href="#_parameters_16"></a>Parameters</h5>
-<table class="tableblock frame-all grid-all spread">
-<colgroup>
-<col style="width: 11%;">
-<col style="width: 16%;">
-<col style="width: 50%;">
-<col style="width: 22%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-middle">Type</th>
-<th class="tableblock halign-left valign-middle">Name</th>
-<th class="tableblock halign-left valign-middle">Description</th>
-<th class="tableblock halign-left valign-middle">Schema</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Query</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>consumerGroupList</strong><br>
-<em>required</em></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">consumerGroupList</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; string &gt; array(multi)</p></td>
-</tr>
-</tbody>
-</table>
 </div>
 <div class="sect4">
 <h5 id="_responses_18"><a class="anchor" href="#_responses_18"></a>Responses</h5>
@@ -2424,7 +2453,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect4">
-<h5 id="_parameters_17"><a class="anchor" href="#_parameters_17"></a>Parameters</h5>
+<h5 id="_parameters_16"><a class="anchor" href="#_parameters_16"></a>Parameters</h5>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 11%;">
@@ -2519,7 +2548,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect4">
-<h5 id="_parameters_18"><a class="anchor" href="#_parameters_18"></a>Parameters</h5>
+<h5 id="_parameters_17"><a class="anchor" href="#_parameters_17"></a>Parameters</h5>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 11%;">
@@ -2621,7 +2650,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect4">
-<h5 id="_parameters_19"><a class="anchor" href="#_parameters_19"></a>Parameters</h5>
+<h5 id="_parameters_18"><a class="anchor" href="#_parameters_18"></a>Parameters</h5>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 11%;">
@@ -2723,7 +2752,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect4">
-<h5 id="_parameters_20"><a class="anchor" href="#_parameters_20"></a>Parameters</h5>
+<h5 id="_parameters_19"><a class="anchor" href="#_parameters_19"></a>Parameters</h5>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 11%;">
@@ -2966,7 +2995,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect4">
-<h5 id="_parameters_21"><a class="anchor" href="#_parameters_21"></a>Parameters</h5>
+<h5 id="_parameters_20"><a class="anchor" href="#_parameters_20"></a>Parameters</h5>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 11%;">
@@ -3066,7 +3095,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect4">
-<h5 id="_parameters_22"><a class="anchor" href="#_parameters_22"></a>Parameters</h5>
+<h5 id="_parameters_21"><a class="anchor" href="#_parameters_21"></a>Parameters</h5>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 11%;">
@@ -3181,7 +3210,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect4">
-<h5 id="_parameters_23"><a class="anchor" href="#_parameters_23"></a>Parameters</h5>
+<h5 id="_parameters_22"><a class="anchor" href="#_parameters_22"></a>Parameters</h5>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 11%;">
@@ -3302,7 +3331,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect4">
-<h5 id="_parameters_24"><a class="anchor" href="#_parameters_24"></a>Parameters</h5>
+<h5 id="_parameters_23"><a class="anchor" href="#_parameters_23"></a>Parameters</h5>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 11%;">
@@ -3395,10 +3424,10 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect3">
-<h4 id="_listtopicsusingget"><a class="anchor" href="#_listtopicsusingget"></a>4.2.26. List topics</h4>
+<h4 id="_stopreassignpartitionsusingput"><a class="anchor" href="#_stopreassignpartitionsusingput"></a>4.2.26. Stop the partition reassignment process</h4>
 <div class="literalblock">
 <div class="content">
-<pre>GET /kafka/topics</pre>
+<pre>PUT /kafka/partitions/reassign/stop</pre>
 </div>
 </div>
 <div class="sect4">
@@ -3420,7 +3449,12 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <tr>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>200</strong></p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock">OK</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; string &gt; array</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><a href="#_generalresponse">GeneralResponse</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>201</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Created</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
@@ -3462,14 +3496,81 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect3">
-<h4 id="_deletetopiclistusingdelete"><a class="anchor" href="#_deletetopiclistusingdelete"></a>4.2.27. Delete a topic list (you should enable topic deletion</h4>
+<h4 id="_listtopicsusingget"><a class="anchor" href="#_listtopicsusingget"></a>4.2.27. List topics</h4>
+<div class="literalblock">
+<div class="content">
+<pre>GET /kafka/topics</pre>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_responses_30"><a class="anchor" href="#_responses_30"></a>Responses</h5>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 10%;">
+<col style="width: 70%;">
+<col style="width: 20%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-middle">HTTP Code</th>
+<th class="tableblock halign-left valign-middle">Description</th>
+<th class="tableblock halign-left valign-middle">Schema</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>200</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">OK</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; string &gt; array</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Unauthorized</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>403</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Forbidden</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>404</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Not Found</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect4">
+<h5 id="_consumes_30"><a class="anchor" href="#_consumes_30"></a>Consumes</h5>
+<div class="ulist">
+<ul>
+<li>
+<p><code>application/json</code></p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_produces_30"><a class="anchor" href="#_produces_30"></a>Produces</h5>
+<div class="ulist">
+<ul>
+<li>
+<p><code><strong>/</strong></code></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_deletetopiclistusingdelete"><a class="anchor" href="#_deletetopiclistusingdelete"></a>4.2.28. Delete a topic list (you should enable topic deletion</h4>
 <div class="literalblock">
 <div class="content">
 <pre>DELETE /kafka/topics</pre>
 </div>
 </div>
 <div class="sect4">
-<h5 id="_parameters_25"><a class="anchor" href="#_parameters_25"></a>Parameters</h5>
+<h5 id="_parameters_24"><a class="anchor" href="#_parameters_24"></a>Parameters</h5>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 11%;">
@@ -3497,7 +3598,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </table>
 </div>
 <div class="sect4">
-<h5 id="_responses_30"><a class="anchor" href="#_responses_30"></a>Responses</h5>
+<h5 id="_responses_31"><a class="anchor" href="#_responses_31"></a>Responses</h5>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 10%;">
@@ -3536,7 +3637,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </table>
 </div>
 <div class="sect4">
-<h5 id="_consumes_30"><a class="anchor" href="#_consumes_30"></a>Consumes</h5>
+<h5 id="_consumes_31"><a class="anchor" href="#_consumes_31"></a>Consumes</h5>
 <div class="ulist">
 <ul>
 <li>
@@ -3546,7 +3647,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect4">
-<h5 id="_produces_30"><a class="anchor" href="#_produces_30"></a>Produces</h5>
+<h5 id="_produces_31"><a class="anchor" href="#_produces_31"></a>Produces</h5>
 <div class="ulist">
 <ul>
 <li>
@@ -3557,14 +3658,14 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect3">
-<h4 id="_createtopicusingpost"><a class="anchor" href="#_createtopicusingpost"></a>4.2.28. Create topics</h4>
+<h4 id="_createtopicusingpost"><a class="anchor" href="#_createtopicusingpost"></a>4.2.29. Create topics</h4>
 <div class="literalblock">
 <div class="content">
 <pre>POST /kafka/topics/create</pre>
 </div>
 </div>
 <div class="sect4">
-<h5 id="_parameters_26"><a class="anchor" href="#_parameters_26"></a>Parameters</h5>
+<h5 id="_parameters_25"><a class="anchor" href="#_parameters_25"></a>Parameters</h5>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 11%;">
@@ -3592,7 +3693,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </table>
 </div>
 <div class="sect4">
-<h5 id="_responses_31"><a class="anchor" href="#_responses_31"></a>Responses</h5>
+<h5 id="_responses_32"><a class="anchor" href="#_responses_32"></a>Responses</h5>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 10%;">
@@ -3611,101 +3712,6 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>201</strong></p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock">Created</p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; string, <a href="#_generalresponse">GeneralResponse</a> &gt; map</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">Unauthorized</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>403</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">Forbidden</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>404</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">Not Found</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="sect4">
-<h5 id="_consumes_31"><a class="anchor" href="#_consumes_31"></a>Consumes</h5>
-<div class="ulist">
-<ul>
-<li>
-<p><code>application/json</code></p>
-</li>
-</ul>
-</div>
-</div>
-<div class="sect4">
-<h5 id="_produces_31"><a class="anchor" href="#_produces_31"></a>Produces</h5>
-<div class="ulist">
-<ul>
-<li>
-<p><code><strong>/</strong></code></p>
-</li>
-</ul>
-</div>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_describetopicusingget"><a class="anchor" href="#_describetopicusingget"></a>4.2.29. Describe a topic by fetching the metadata and config</h4>
-<div class="literalblock">
-<div class="content">
-<pre>GET /kafka/topics/{topic}</pre>
-</div>
-</div>
-<div class="sect4">
-<h5 id="_parameters_27"><a class="anchor" href="#_parameters_27"></a>Parameters</h5>
-<table class="tableblock frame-all grid-all spread">
-<colgroup>
-<col style="width: 11%;">
-<col style="width: 16%;">
-<col style="width: 50%;">
-<col style="width: 22%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-middle">Type</th>
-<th class="tableblock halign-left valign-middle">Name</th>
-<th class="tableblock halign-left valign-middle">Description</th>
-<th class="tableblock halign-left valign-middle">Schema</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Path</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>topic</strong><br>
-<em>required</em></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">topic</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="sect4">
-<h5 id="_responses_32"><a class="anchor" href="#_responses_32"></a>Responses</h5>
-<table class="tableblock frame-all grid-all spread">
-<colgroup>
-<col style="width: 10%;">
-<col style="width: 70%;">
-<col style="width: 20%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-middle">HTTP Code</th>
-<th class="tableblock halign-left valign-middle">Description</th>
-<th class="tableblock halign-left valign-middle">Schema</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>200</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">OK</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><a href="#_topicmeta">TopicMeta</a></p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
@@ -3747,14 +3753,14 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect3">
-<h4 id="_gettopicconfigusingget"><a class="anchor" href="#_gettopicconfigusingget"></a>4.2.30. Get topic configs</h4>
+<h4 id="_describetopicusingget"><a class="anchor" href="#_describetopicusingget"></a>4.2.30. Describe a topic by fetching the metadata and config</h4>
 <div class="literalblock">
 <div class="content">
-<pre>GET /kafka/topics/{topic}/conf</pre>
+<pre>GET /kafka/topics/{topic}</pre>
 </div>
 </div>
 <div class="sect4">
-<h5 id="_parameters_28"><a class="anchor" href="#_parameters_28"></a>Parameters</h5>
+<h5 id="_parameters_26"><a class="anchor" href="#_parameters_26"></a>Parameters</h5>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 11%;">
@@ -3800,7 +3806,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <tr>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>200</strong></p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock">OK</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; <a href="#_customconfigentry">CustomConfigEntry</a> &gt; array</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><a href="#_topicmeta">TopicMeta</a></p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
@@ -3842,14 +3848,14 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect3">
-<h4 id="_updatetopicconfigusingput"><a class="anchor" href="#_updatetopicconfigusingput"></a>4.2.31. Update topic configs</h4>
+<h4 id="_gettopicconfigusingget"><a class="anchor" href="#_gettopicconfigusingget"></a>4.2.31. Get topic configs</h4>
 <div class="literalblock">
 <div class="content">
-<pre>PUT /kafka/topics/{topic}/conf</pre>
+<pre>GET /kafka/topics/{topic}/conf</pre>
 </div>
 </div>
 <div class="sect4">
-<h5 id="_parameters_29"><a class="anchor" href="#_parameters_29"></a>Parameters</h5>
+<h5 id="_parameters_27"><a class="anchor" href="#_parameters_27"></a>Parameters</h5>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 11%;">
@@ -3872,13 +3878,6 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <em>required</em></p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock">topic</p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Body</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>props</strong><br>
-<em>required</em></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">props</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; string, object &gt; map</p></td>
 </tr>
 </tbody>
 </table>
@@ -3903,11 +3902,6 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>200</strong></p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock">OK</p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; <a href="#_customconfigentry">CustomConfigEntry</a> &gt; array</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>201</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">Created</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
@@ -3949,14 +3943,14 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect3">
-<h4 id="_gettopicconfigbykeyusingget"><a class="anchor" href="#_gettopicconfigbykeyusingget"></a>4.2.32. Get topic config by key</h4>
+<h4 id="_updatetopicconfigusingput"><a class="anchor" href="#_updatetopicconfigusingput"></a>4.2.32. Update topic configs</h4>
 <div class="literalblock">
 <div class="content">
-<pre>GET /kafka/topics/{topic}/conf/{key}</pre>
+<pre>PUT /kafka/topics/{topic}/conf</pre>
 </div>
 </div>
 <div class="sect4">
-<h5 id="_parameters_30"><a class="anchor" href="#_parameters_30"></a>Parameters</h5>
+<h5 id="_parameters_28"><a class="anchor" href="#_parameters_28"></a>Parameters</h5>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 11%;">
@@ -3975,132 +3969,23 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <tbody>
 <tr>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Path</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>key</strong><br>
-<em>required</em></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">key</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Path</strong></p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>topic</strong><br>
 <em>required</em></p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock">topic</p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Body</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>props</strong><br>
+<em>required</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">props</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; string, object &gt; map</p></td>
 </tr>
 </tbody>
 </table>
 </div>
 <div class="sect4">
 <h5 id="_responses_35"><a class="anchor" href="#_responses_35"></a>Responses</h5>
-<table class="tableblock frame-all grid-all spread">
-<colgroup>
-<col style="width: 10%;">
-<col style="width: 70%;">
-<col style="width: 20%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-middle">HTTP Code</th>
-<th class="tableblock halign-left valign-middle">Description</th>
-<th class="tableblock halign-left valign-middle">Schema</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>200</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">OK</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; string, object &gt; map</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">Unauthorized</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>403</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">Forbidden</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>404</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">Not Found</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="sect4">
-<h5 id="_consumes_35"><a class="anchor" href="#_consumes_35"></a>Consumes</h5>
-<div class="ulist">
-<ul>
-<li>
-<p><code>application/json</code></p>
-</li>
-</ul>
-</div>
-</div>
-<div class="sect4">
-<h5 id="_produces_35"><a class="anchor" href="#_produces_35"></a>Produces</h5>
-<div class="ulist">
-<ul>
-<li>
-<p><code><strong>/</strong></code></p>
-</li>
-</ul>
-</div>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_updatetopicconfigbykeyusingput"><a class="anchor" href="#_updatetopicconfigbykeyusingput"></a>4.2.33. Update a topic config by key</h4>
-<div class="literalblock">
-<div class="content">
-<pre>PUT /kafka/topics/{topic}/conf/{key}={value}</pre>
-</div>
-</div>
-<div class="sect4">
-<h5 id="_parameters_31"><a class="anchor" href="#_parameters_31"></a>Parameters</h5>
-<table class="tableblock frame-all grid-all spread">
-<colgroup>
-<col style="width: 11%;">
-<col style="width: 16%;">
-<col style="width: 50%;">
-<col style="width: 22%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-middle">Type</th>
-<th class="tableblock halign-left valign-middle">Name</th>
-<th class="tableblock halign-left valign-middle">Description</th>
-<th class="tableblock halign-left valign-middle">Schema</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Path</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>key</strong><br>
-<em>required</em></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">key</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Path</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>topic</strong><br>
-<em>required</em></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">topic</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Path</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>value</strong><br>
-<em>required</em></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">value</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="sect4">
-<h5 id="_responses_36"><a class="anchor" href="#_responses_36"></a>Responses</h5>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 10%;">
@@ -4144,6 +4029,108 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </table>
 </div>
 <div class="sect4">
+<h5 id="_consumes_35"><a class="anchor" href="#_consumes_35"></a>Consumes</h5>
+<div class="ulist">
+<ul>
+<li>
+<p><code>application/json</code></p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_produces_35"><a class="anchor" href="#_produces_35"></a>Produces</h5>
+<div class="ulist">
+<ul>
+<li>
+<p><code><strong>/</strong></code></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_gettopicconfigbykeyusingget"><a class="anchor" href="#_gettopicconfigbykeyusingget"></a>4.2.33. Get topic config by key</h4>
+<div class="literalblock">
+<div class="content">
+<pre>GET /kafka/topics/{topic}/conf/{key}</pre>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_parameters_29"><a class="anchor" href="#_parameters_29"></a>Parameters</h5>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 11%;">
+<col style="width: 16%;">
+<col style="width: 50%;">
+<col style="width: 22%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-middle">Type</th>
+<th class="tableblock halign-left valign-middle">Name</th>
+<th class="tableblock halign-left valign-middle">Description</th>
+<th class="tableblock halign-left valign-middle">Schema</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Path</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>key</strong><br>
+<em>required</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">key</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Path</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>topic</strong><br>
+<em>required</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">topic</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect4">
+<h5 id="_responses_36"><a class="anchor" href="#_responses_36"></a>Responses</h5>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 10%;">
+<col style="width: 70%;">
+<col style="width: 20%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-middle">HTTP Code</th>
+<th class="tableblock halign-left valign-middle">Description</th>
+<th class="tableblock halign-left valign-middle">Schema</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>200</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">OK</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; string, object &gt; map</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Unauthorized</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>403</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Forbidden</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>404</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Not Found</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect4">
 <h5 id="_consumes_36"><a class="anchor" href="#_consumes_36"></a>Consumes</h5>
 <div class="ulist">
 <ul>
@@ -4165,14 +4152,14 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect3">
-<h4 id="_gettopicdynconfigusingget"><a class="anchor" href="#_gettopicdynconfigusingget"></a>4.2.34. Get topic dyn configs</h4>
+<h4 id="_updatetopicconfigbykeyusingput"><a class="anchor" href="#_updatetopicconfigbykeyusingput"></a>4.2.34. Update a topic config by key</h4>
 <div class="literalblock">
 <div class="content">
-<pre>GET /kafka/topics/{topic}/dynconf</pre>
+<pre>PUT /kafka/topics/{topic}/conf/{key}={value}</pre>
 </div>
 </div>
 <div class="sect4">
-<h5 id="_parameters_32"><a class="anchor" href="#_parameters_32"></a>Parameters</h5>
+<h5 id="_parameters_30"><a class="anchor" href="#_parameters_30"></a>Parameters</h5>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 11%;">
@@ -4191,9 +4178,23 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <tbody>
 <tr>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Path</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>key</strong><br>
+<em>required</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">key</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Path</strong></p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>topic</strong><br>
 <em>required</em></p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock">topic</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Path</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>value</strong><br>
+<em>required</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">value</p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
 </tr>
 </tbody>
@@ -4218,7 +4219,12 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <tr>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>200</strong></p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock">OK</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; string, object &gt; map</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; <a href="#_customconfigentry">CustomConfigEntry</a> &gt; array</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>201</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Created</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
@@ -4260,14 +4266,14 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect3">
-<h4 id="_existtopicusingget"><a class="anchor" href="#_existtopicusingget"></a>4.2.35. Tell if a topic exists</h4>
+<h4 id="_gettopicdynconfigusingget"><a class="anchor" href="#_gettopicdynconfigusingget"></a>4.2.35. Get topic dyn configs</h4>
 <div class="literalblock">
 <div class="content">
-<pre>GET /kafka/topics/{topic}/exist</pre>
+<pre>GET /kafka/topics/{topic}/dynconf</pre>
 </div>
 </div>
 <div class="sect4">
-<h5 id="_parameters_33"><a class="anchor" href="#_parameters_33"></a>Parameters</h5>
+<h5 id="_parameters_31"><a class="anchor" href="#_parameters_31"></a>Parameters</h5>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 11%;">
@@ -4313,7 +4319,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <tr>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>200</strong></p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock">OK</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">boolean</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; string, object &gt; map</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
@@ -4355,11 +4361,39 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect3">
-<h4 id="_listtopicbriefusingget"><a class="anchor" href="#_listtopicbriefusingget"></a>4.2.36. List topics Brief</h4>
+<h4 id="_existtopicusingget"><a class="anchor" href="#_existtopicusingget"></a>4.2.36. Tell if a topic exists</h4>
 <div class="literalblock">
 <div class="content">
-<pre>GET /kafka/topicsbrief</pre>
+<pre>GET /kafka/topics/{topic}/exist</pre>
 </div>
+</div>
+<div class="sect4">
+<h5 id="_parameters_32"><a class="anchor" href="#_parameters_32"></a>Parameters</h5>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 11%;">
+<col style="width: 16%;">
+<col style="width: 50%;">
+<col style="width: 22%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-middle">Type</th>
+<th class="tableblock halign-left valign-middle">Name</th>
+<th class="tableblock halign-left valign-middle">Description</th>
+<th class="tableblock halign-left valign-middle">Schema</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Path</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>topic</strong><br>
+<em>required</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">topic</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
+</tr>
+</tbody>
+</table>
 </div>
 <div class="sect4">
 <h5 id="_responses_39"><a class="anchor" href="#_responses_39"></a>Responses</h5>
@@ -4380,7 +4414,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <tr>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>200</strong></p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock">OK</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; <a href="#_topicbrief">TopicBrief</a> &gt; array</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">boolean</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
@@ -4421,46 +4455,12 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 </div>
-</div>
-<div class="sect2">
-<h3 id="_user-controller_resource"><a class="anchor" href="#_user-controller_resource"></a>4.3. User-controller</h3>
-<div class="paragraph">
-<p>Security User Management Controller.</p>
-</div>
 <div class="sect3">
-<h4 id="_adduserusingpost"><a class="anchor" href="#_adduserusingpost"></a>4.3.1. Add user.</h4>
+<h4 id="_listtopicbriefusingget"><a class="anchor" href="#_listtopicbriefusingget"></a>4.2.37. List topics Brief</h4>
 <div class="literalblock">
 <div class="content">
-<pre>POST /users</pre>
+<pre>GET /kafka/topicsbrief</pre>
 </div>
-</div>
-<div class="sect4">
-<h5 id="_parameters_34"><a class="anchor" href="#_parameters_34"></a>Parameters</h5>
-<table class="tableblock frame-all grid-all spread">
-<colgroup>
-<col style="width: 11%;">
-<col style="width: 16%;">
-<col style="width: 50%;">
-<col style="width: 22%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-middle">Type</th>
-<th class="tableblock halign-left valign-middle">Name</th>
-<th class="tableblock halign-left valign-middle">Description</th>
-<th class="tableblock halign-left valign-middle">Schema</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Body</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>user</strong><br>
-<em>required</em></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">user</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><a href="#_user">User</a></p></td>
-</tr>
-</tbody>
-</table>
 </div>
 <div class="sect4">
 <h5 id="_responses_40"><a class="anchor" href="#_responses_40"></a>Responses</h5>
@@ -4481,12 +4481,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <tr>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>200</strong></p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock">OK</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><a href="#_generalresponse">GeneralResponse</a></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>201</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">Created</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; <a href="#_topicbrief">TopicBrief</a> &gt; array</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
@@ -4527,12 +4522,46 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 </div>
+</div>
+<div class="sect2">
+<h3 id="_user-controller_resource"><a class="anchor" href="#_user-controller_resource"></a>4.3. User-controller</h3>
+<div class="paragraph">
+<p>Security User Management Controller.</p>
+</div>
 <div class="sect3">
-<h4 id="_listuserusingget"><a class="anchor" href="#_listuserusingget"></a>4.3.2. Get user list.</h4>
+<h4 id="_adduserusingpost"><a class="anchor" href="#_adduserusingpost"></a>4.3.1. Add user.</h4>
 <div class="literalblock">
 <div class="content">
-<pre>GET /users</pre>
+<pre>POST /users</pre>
 </div>
+</div>
+<div class="sect4">
+<h5 id="_parameters_33"><a class="anchor" href="#_parameters_33"></a>Parameters</h5>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 11%;">
+<col style="width: 16%;">
+<col style="width: 50%;">
+<col style="width: 22%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-middle">Type</th>
+<th class="tableblock halign-left valign-middle">Name</th>
+<th class="tableblock halign-left valign-middle">Description</th>
+<th class="tableblock halign-left valign-middle">Schema</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Body</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>user</strong><br>
+<em>required</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">user</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><a href="#_user">User</a></p></td>
+</tr>
+</tbody>
+</table>
 </div>
 <div class="sect4">
 <h5 id="_responses_41"><a class="anchor" href="#_responses_41"></a>Responses</h5>
@@ -4553,7 +4582,12 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <tr>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>200</strong></p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock">OK</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; string &gt; array</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><a href="#_generalresponse">GeneralResponse</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>201</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Created</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
@@ -4595,6 +4629,73 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect3">
+<h4 id="_listuserusingget"><a class="anchor" href="#_listuserusingget"></a>4.3.2. Get user list.</h4>
+<div class="literalblock">
+<div class="content">
+<pre>GET /users</pre>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_responses_42"><a class="anchor" href="#_responses_42"></a>Responses</h5>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 10%;">
+<col style="width: 70%;">
+<col style="width: 20%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-middle">HTTP Code</th>
+<th class="tableblock halign-left valign-middle">Description</th>
+<th class="tableblock halign-left valign-middle">Schema</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>200</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">OK</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; string &gt; array</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Unauthorized</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>403</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Forbidden</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>404</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Not Found</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect4">
+<h5 id="_consumes_42"><a class="anchor" href="#_consumes_42"></a>Consumes</h5>
+<div class="ulist">
+<ul>
+<li>
+<p><code>application/json</code></p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_produces_42"><a class="anchor" href="#_produces_42"></a>Produces</h5>
+<div class="ulist">
+<ul>
+<li>
+<p><code><strong>/</strong></code></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect3">
 <h4 id="_modifyuserusingput"><a class="anchor" href="#_modifyuserusingput"></a>4.3.3. Modify user information.</h4>
 <div class="literalblock">
 <div class="content">
@@ -4602,7 +4703,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect4">
-<h5 id="_parameters_35"><a class="anchor" href="#_parameters_35"></a>Parameters</h5>
+<h5 id="_parameters_34"><a class="anchor" href="#_parameters_34"></a>Parameters</h5>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 11%;">
@@ -4630,7 +4731,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </table>
 </div>
 <div class="sect4">
-<h5 id="_responses_42"><a class="anchor" href="#_responses_42"></a>Responses</h5>
+<h5 id="_responses_43"><a class="anchor" href="#_responses_43"></a>Responses</h5>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 10%;">
@@ -4674,7 +4775,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </table>
 </div>
 <div class="sect4">
-<h5 id="_consumes_42"><a class="anchor" href="#_consumes_42"></a>Consumes</h5>
+<h5 id="_consumes_43"><a class="anchor" href="#_consumes_43"></a>Consumes</h5>
 <div class="ulist">
 <ul>
 <li>
@@ -4684,7 +4785,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect4">
-<h5 id="_produces_42"><a class="anchor" href="#_produces_42"></a>Produces</h5>
+<h5 id="_produces_43"><a class="anchor" href="#_produces_43"></a>Produces</h5>
 <div class="ulist">
 <ul>
 <li>
@@ -4702,7 +4803,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect4">
-<h5 id="_parameters_36"><a class="anchor" href="#_parameters_36"></a>Parameters</h5>
+<h5 id="_parameters_35"><a class="anchor" href="#_parameters_35"></a>Parameters</h5>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 11%;">
@@ -4730,7 +4831,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </table>
 </div>
 <div class="sect4">
-<h5 id="_responses_43"><a class="anchor" href="#_responses_43"></a>Responses</h5>
+<h5 id="_responses_44"><a class="anchor" href="#_responses_44"></a>Responses</h5>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 10%;">
@@ -4769,7 +4870,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </table>
 </div>
 <div class="sect4">
-<h5 id="_consumes_43"><a class="anchor" href="#_consumes_43"></a>Consumes</h5>
+<h5 id="_consumes_44"><a class="anchor" href="#_consumes_44"></a>Consumes</h5>
 <div class="ulist">
 <ul>
 <li>
@@ -4779,7 +4880,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect4">
-<h5 id="_produces_43"><a class="anchor" href="#_produces_43"></a>Produces</h5>
+<h5 id="_produces_44"><a class="anchor" href="#_produces_44"></a>Produces</h5>
 <div class="ulist">
 <ul>
 <li>
@@ -4803,73 +4904,6 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect4">
-<h5 id="_responses_44"><a class="anchor" href="#_responses_44"></a>Responses</h5>
-<table class="tableblock frame-all grid-all spread">
-<colgroup>
-<col style="width: 10%;">
-<col style="width: 70%;">
-<col style="width: 20%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-middle">HTTP Code</th>
-<th class="tableblock halign-left valign-middle">Description</th>
-<th class="tableblock halign-left valign-middle">Schema</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>200</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">OK</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">Unauthorized</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>403</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">Forbidden</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>404</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">Not Found</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="sect4">
-<h5 id="_consumes_44"><a class="anchor" href="#_consumes_44"></a>Consumes</h5>
-<div class="ulist">
-<ul>
-<li>
-<p><code>application/json</code></p>
-</li>
-</ul>
-</div>
-</div>
-<div class="sect4">
-<h5 id="_produces_44"><a class="anchor" href="#_produces_44"></a>Produces</h5>
-<div class="ulist">
-<ul>
-<li>
-<p><code><strong>/</strong></code></p>
-</li>
-</ul>
-</div>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_getenvusingget"><a class="anchor" href="#_getenvusingget"></a>4.4.2. Get the environment information of zookeeper</h4>
-<div class="literalblock">
-<div class="content">
-<pre>GET /zk/env</pre>
-</div>
-</div>
-<div class="sect4">
 <h5 id="_responses_45"><a class="anchor" href="#_responses_45"></a>Responses</h5>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
@@ -4888,7 +4922,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <tr>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>200</strong></p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock">OK</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; string, <a href="#_zkserverenvironment">ZkServerEnvironment</a> &gt; map</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
@@ -4930,39 +4964,11 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect3">
-<h4 id="_getusingget"><a class="anchor" href="#_getusingget"></a>4.4.3. Get data of a zookeeper path</h4>
+<h4 id="_getenvusingget"><a class="anchor" href="#_getenvusingget"></a>4.4.2. Get the environment information of zookeeper</h4>
 <div class="literalblock">
 <div class="content">
-<pre>GET /zk/get/path</pre>
+<pre>GET /zk/env</pre>
 </div>
-</div>
-<div class="sect4">
-<h5 id="_parameters_37"><a class="anchor" href="#_parameters_37"></a>Parameters</h5>
-<table class="tableblock frame-all grid-all spread">
-<colgroup>
-<col style="width: 11%;">
-<col style="width: 16%;">
-<col style="width: 50%;">
-<col style="width: 22%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-middle">Type</th>
-<th class="tableblock halign-left valign-middle">Name</th>
-<th class="tableblock halign-left valign-middle">Description</th>
-<th class="tableblock halign-left valign-middle">Schema</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Query</strong></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>path</strong><br>
-<em>required</em></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">path</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
-</tr>
-</tbody>
-</table>
 </div>
 <div class="sect4">
 <h5 id="_responses_46"><a class="anchor" href="#_responses_46"></a>Responses</h5>
@@ -4983,7 +4989,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <tr>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>200</strong></p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock">OK</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; string, string &gt; map</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; string, <a href="#_zkserverenvironment">ZkServerEnvironment</a> &gt; map</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
@@ -5025,14 +5031,14 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect3">
-<h4 id="_lsusingget"><a class="anchor" href="#_lsusingget"></a>4.4.4. List a zookeeper path</h4>
+<h4 id="_getusingget"><a class="anchor" href="#_getusingget"></a>4.4.3. Get data of a zookeeper path</h4>
 <div class="literalblock">
 <div class="content">
-<pre>GET /zk/ls/path</pre>
+<pre>GET /zk/get/path</pre>
 </div>
 </div>
 <div class="sect4">
-<h5 id="_parameters_38"><a class="anchor" href="#_parameters_38"></a>Parameters</h5>
+<h5 id="_parameters_36"><a class="anchor" href="#_parameters_36"></a>Parameters</h5>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 11%;">
@@ -5078,7 +5084,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <tr>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>200</strong></p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock">OK</p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; string &gt; array</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; string, string &gt; map</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
@@ -5120,6 +5126,101 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect3">
+<h4 id="_lsusingget"><a class="anchor" href="#_lsusingget"></a>4.4.4. List a zookeeper path</h4>
+<div class="literalblock">
+<div class="content">
+<pre>GET /zk/ls/path</pre>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_parameters_37"><a class="anchor" href="#_parameters_37"></a>Parameters</h5>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 11%;">
+<col style="width: 16%;">
+<col style="width: 50%;">
+<col style="width: 22%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-middle">Type</th>
+<th class="tableblock halign-left valign-middle">Name</th>
+<th class="tableblock halign-left valign-middle">Description</th>
+<th class="tableblock halign-left valign-middle">Schema</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>Query</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>path</strong><br>
+<em>required</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">path</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect4">
+<h5 id="_responses_48"><a class="anchor" href="#_responses_48"></a>Responses</h5>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 10%;">
+<col style="width: 70%;">
+<col style="width: 20%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-middle">HTTP Code</th>
+<th class="tableblock halign-left valign-middle">Description</th>
+<th class="tableblock halign-left valign-middle">Schema</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>200</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">OK</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">&lt; string &gt; array</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>401</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Unauthorized</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>403</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Forbidden</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>404</strong></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">Not Found</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">No Content</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect4">
+<h5 id="_consumes_48"><a class="anchor" href="#_consumes_48"></a>Consumes</h5>
+<div class="ulist">
+<ul>
+<li>
+<p><code>application/json</code></p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_produces_48"><a class="anchor" href="#_produces_48"></a>Produces</h5>
+<div class="ulist">
+<ul>
+<li>
+<p><code><strong>/</strong></code></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect3">
 <h4 id="_getstatusingget"><a class="anchor" href="#_getstatusingget"></a>4.4.5. Get the service state of zookeeper</h4>
 <div class="literalblock">
 <div class="content">
@@ -5127,7 +5228,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect4">
-<h5 id="_responses_48"><a class="anchor" href="#_responses_48"></a>Responses</h5>
+<h5 id="_responses_49"><a class="anchor" href="#_responses_49"></a>Responses</h5>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 10%;">
@@ -5166,7 +5267,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </table>
 </div>
 <div class="sect4">
-<h5 id="_consumes_48"><a class="anchor" href="#_consumes_48"></a>Consumes</h5>
+<h5 id="_consumes_49"><a class="anchor" href="#_consumes_49"></a>Consumes</h5>
 <div class="ulist">
 <ul>
 <li>
@@ -5176,7 +5277,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect4">
-<h5 id="_produces_48"><a class="anchor" href="#_produces_48"></a>Produces</h5>
+<h5 id="_produces_49"><a class="anchor" href="#_produces_49"></a>Produces</h5>
 <div class="ulist">
 <ul>
 <li>
@@ -6113,14 +6214,14 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </thead>
 <tbody>
 <tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>decoder</strong><br>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>key</strong><br>
 <em>optional</em></p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>key</strong><br>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>keyDecoder</strong><br>
 <em>optional</em></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">object</p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>offset</strong><br>
@@ -6139,6 +6240,11 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </tr>
 <tr>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>value</strong><br>
+<em>optional</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>valueDecoder</strong><br>
 <em>optional</em></p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
 </tr>
@@ -6235,6 +6341,11 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </tr>
 <tr>
 <td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>numPartition</strong><br>
+<em>optional</em></p></td>
+<td class="tableblock halign-left valign-middle"><p class="tableblock">integer(int32)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>replicationFactor</strong><br>
 <em>optional</em></p></td>
 <td class="tableblock halign-left valign-middle"><p class="tableblock">integer(int32)</p></td>
 </tr>
@@ -6400,44 +6511,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </table>
 </div>
 <div class="sect2">
-<h3 id="_topicpartitionreplica"><a class="anchor" href="#_topicpartitionreplica"></a>5.34. TopicPartitionReplica</h3>
-<table class="tableblock frame-all grid-all spread">
-<colgroup>
-<col style="width: 42%;">
-<col style="width: 57%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-middle">Name</th>
-<th class="tableblock halign-left valign-middle">Schema</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>brokerId</strong><br>
-<em>optional</em></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">integer(int32)</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>hash</strong><br>
-<em>optional</em></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">integer(int32)</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>partition</strong><br>
-<em>optional</em></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">integer(int32)</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-middle"><p class="tableblock"><strong>topic</strong><br>
-<em>optional</em></p></td>
-<td class="tableblock halign-left valign-middle"><p class="tableblock">string</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="sect2">
-<h3 id="_topicpartitionreplicaassignment"><a class="anchor" href="#_topicpartitionreplicaassignment"></a>5.35. TopicPartitionReplicaAssignment</h3>
+<h3 id="_topicpartitionreplicaassignment"><a class="anchor" href="#_topicpartitionreplicaassignment"></a>5.34. TopicPartitionReplicaAssignment</h3>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 42%;">
@@ -6474,7 +6548,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </table>
 </div>
 <div class="sect2">
-<h3 id="_user"><a class="anchor" href="#_user"></a>5.36. User</h3>
+<h3 id="_user"><a class="anchor" href="#_user"></a>5.35. User</h3>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 42%;">
@@ -6506,7 +6580,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </table>
 </div>
 <div class="sect2">
-<h3 id="_zkserverclient"><a class="anchor" href="#_zkserverclient"></a>5.37. ZkServerClient</h3>
+<h3 id="_zkserverclient"><a class="anchor" href="#_zkserverclient"></a>5.36. ZkServerClient</h3>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 42%;">
@@ -6553,7 +6627,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </table>
 </div>
 <div class="sect2">
-<h3 id="_zkserverenvironment"><a class="anchor" href="#_zkserverenvironment"></a>5.38. ZkServerEnvironment</h3>
+<h3 id="_zkserverenvironment"><a class="anchor" href="#_zkserverenvironment"></a>5.37. ZkServerEnvironment</h3>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 42%;">
@@ -6575,7 +6649,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </table>
 </div>
 <div class="sect2">
-<h3 id="_zkserverstat"><a class="anchor" href="#_zkserverstat"></a>5.39. ZkServerStat</h3>
+<h3 id="_zkserverstat"><a class="anchor" href="#_zkserverstat"></a>5.38. ZkServerStat</h3>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
 <col style="width: 42%;">

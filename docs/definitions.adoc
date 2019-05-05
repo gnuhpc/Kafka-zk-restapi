@@ -419,10 +419,10 @@ __optional__|< string > array
 [options="header", cols=".^3,.^4"]
 |===
 |Name|Schema
-|**decoder** +
-__optional__|string
 |**key** +
-__optional__|object
+__optional__|string
+|**keyDecoder** +
+__optional__|string
 |**offset** +
 __optional__|integer(int64)
 |**timestamp** +
@@ -430,6 +430,8 @@ __optional__|integer(int64)
 |**topic** +
 __optional__|string
 |**value** +
+__optional__|string
+|**valueDecoder** +
 __optional__|string
 |===
 
@@ -475,6 +477,8 @@ __optional__|integer(int64)
 |**isrRate** +
 __optional__|number(double)
 |**numPartition** +
+__optional__|integer(int32)
+|**replicationFactor** +
 __optional__|integer(int32)
 |**topic** +
 __optional__|string
@@ -548,23 +552,6 @@ __optional__|<<_node,Node>>
 __optional__|integer(int32)
 |**replicas** +
 __optional__|< <<_node,Node>> > array
-|===
-
-
-[[_topicpartitionreplica]]
-=== TopicPartitionReplica
-
-[options="header", cols=".^3,.^4"]
-|===
-|Name|Schema
-|**brokerId** +
-__optional__|integer(int32)
-|**hash** +
-__optional__|integer(int32)
-|**partition** +
-__optional__|integer(int32)
-|**topic** +
-__optional__|string
 |===
 
 

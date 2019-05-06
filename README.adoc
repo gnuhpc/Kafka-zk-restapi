@@ -88,9 +88,9 @@ Step 3: Use user controller API to add user to security file security/security.y
 === Support Kafka Version Information
 Currently, this rest api (master branch) supports Kafka 1.1.1 brokers. The master branch is the most active branch.
 
-*For 0.11.x, please checkout the branch 0.11.x by calling the command:*
+*For other version of kafka rather than 1.1.1, please checkout the coresponding branch by calling the command:*
 
-git clone -b 0.11.x https://github.com/gnuhpc/Kafka-zk-restapi.git
+git clone -b BRANCHNAME https://github.com/gnuhpc/Kafka-zk-restapi.git
 
 === URI scheme
 [%hardbreaks]
@@ -122,5 +122,6 @@ __Version__ : 1.1.1
 __Contact__ : gnuhpc
 __Contact Email__ : gnuhpc@gmail.com
 __Github__ : https://github.com/gnuhpc
+__Github__ : https://github.com/tinawenqiao
 
 

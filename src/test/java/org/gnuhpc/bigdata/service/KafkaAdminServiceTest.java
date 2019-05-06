@@ -2527,7 +2527,7 @@ public class KafkaAdminServiceTest {
 
     Schema schema = new Schema.Parser().parse(schemaStr);
 
-    User user = new User("cmbc", 1, "green");
+    User user = new User("tina", 1, "green");
     ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
     BinaryEncoder binaryEncoder =
         EncoderFactory.get().directBinaryEncoder(byteArrayOutputStream, null);

@@ -1332,6 +1332,7 @@ public class KafkaAdminService {
   public List<PartitionAssignmentState> describeOldConsumerGroup(
       String consumerGroup, boolean filtered, String topic) {
     List<PartitionAssignmentState> partitionAssignmentStateList = new ArrayList<>();
+    List<PartitionAssignmentState> partitionAssignmentStateListFiltered = new ArrayList<>();
 
     if (filtered && !existTopic(topic)) {
       return partitionAssignmentStateList;
@@ -1358,7 +1359,7 @@ public class KafkaAdminService {
       partitionAssignmentStateList =
           mapper.readValue(
               source, getCollectionType(mapper, List.class, PartitionAssignmentState.class));
-      List<PartitionAssignmentState> partitionAssignmentStateListFiltered;
+
       if (filtered && existTopic(topic)) {
         partitionAssignmentStateListFiltered =
             partitionAssignmentStateList
@@ -1372,13 +1373,11 @@ public class KafkaAdminService {
       partitionAssignmentStateListFiltered.sort(
           Comparator.comparing(PartitionAssignmentState::getTopic)
               .thenComparing(PartitionAssignmentState::getPartition));
-    } catch (JsonProcessingException jsonProcessingException) {
-      log.error("Describe old consumer group exception.", jsonProcessingException);
-    } catch (IOException ioexception) {
-      log.error("Describe old consumer group exception.", ioexception);
+    } catch (Exception exception) {
+      log.error("Describe old consumer group exception.", exception);
     }
 
-    return partitionAssignmentStateList;
+    return partitionAssignmentStateListFiltered;
   }
 
   private JavaType getCollectionType(
@@ -1453,16 +1452,16 @@ public class KafkaAdminService {
 
   public List<ConsumerGroupDesc> describeOldConsumerGroupByTopic(
       String consumerGroup, @TopicExistConstraint String topic) {
-    if (!isOldConsumerGroup(consumerGroup)) {
+    if (consumerGroup != null && !isOldConsumerGroup(consumerGroup)) {
       throw new ApiException("ConsumerGroup:" + consumerGroup + " non-exist");
     }
 
     List<ConsumerGroupDesc> consumerGroupDescList = new ArrayList<>();
     if (consumerGroup == null || consumerGroup.length() == 0) {
       // To search all consumer groups
-      Set<String> allNewConsumerGroups = listAllNewConsumerGroups();
+      Set<String> allOldConsumerGroups = listAllOldConsumerGroups();
 
-      for (String cg : allNewConsumerGroups) {
+      for (String cg : allOldConsumerGroups) {
         consumerGroupDescList.addAll(getOldConsumerGroupDescByConsumerGroupAndTopic(cg, topic));
       }
       return consumerGroupDescList;

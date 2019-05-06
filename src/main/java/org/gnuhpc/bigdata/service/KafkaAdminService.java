@@ -1993,7 +1993,7 @@ public class KafkaAdminService {
           Record record = Record.builder().topic(topic).keyDecoder(keyDecoder)
               .valueDecoder(valueDecoder).build();
           ConsumerRecord<Object, Object> initCr = it.next();
-          record.setOffset(offset);
+          record.setOffset(initCr.offset());
           record.setTimestamp(initCr.timestamp());
           record.setKey(initCr.key());
           record.setValue(initCr.value());
@@ -2097,7 +2097,7 @@ public class KafkaAdminService {
           Record record =
               Record.builder().topic(topic).keyDecoder(keyDecoder).valueDecoder(valueDecoder)
                   .build();
-          record.setOffset(offset);
+          record.setOffset(initCr.offset());
           record.setTimestamp(initCr.timestamp());
           record.setKey(initCr.key());
           record.setValue(avroDeserialize(initCr.value(), avroSchema));

@@ -10,6 +10,7 @@ import org.gnuhpc.bigdata.model.ZkServerStat;
 import org.gnuhpc.bigdata.service.ZookeeperService;
 import org.gnuhpc.bigdata.utils.ZookeeperUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Api(value = "Control Zookeeper with Rest API")
 public class ZookeeperController {
 
+  @Lazy
   @Autowired private ZookeeperUtils zookeeperUtils;
 
   @Autowired private ZookeeperService zookeeperService;

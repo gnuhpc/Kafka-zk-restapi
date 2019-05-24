@@ -18,6 +18,7 @@ import org.gnuhpc.bigdata.utils.KafkaUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
@@ -30,6 +31,7 @@ import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
 @Log4j
 @Data
 @EnableKafka
+@Lazy
 @Configuration
 @Getter
 public class KafkaConfig {
@@ -49,6 +51,7 @@ public class KafkaConfig {
   @Value("${kafka.healthcheck.topic}")
   private String healthCheckTopic;
 
+  @Lazy
   @Bean(initMethod = "init", destroyMethod = "destroy")
   public KafkaUtils kafkaUtils() {
     return new KafkaUtils();

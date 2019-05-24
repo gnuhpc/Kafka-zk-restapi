@@ -38,6 +38,7 @@ import org.gnuhpc.bigdata.model.TopicMeta;
 import org.gnuhpc.bigdata.service.KafkaAdminService;
 import org.gnuhpc.bigdata.validator.ConsumerGroupExistConstraint;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -58,6 +59,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class KafkaController {
 
+  @Lazy
   @Autowired
   private KafkaAdminService kafkaAdminService;
 

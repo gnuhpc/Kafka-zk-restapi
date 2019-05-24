@@ -132,6 +132,7 @@ import org.gnuhpc.bigdata.utils.ZookeeperUtils;
 import org.gnuhpc.bigdata.validator.ConsumerGroupExistConstraint;
 import org.gnuhpc.bigdata.validator.TopicExistConstraint;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 import scala.Function0;
@@ -148,6 +149,7 @@ import scala.runtime.BoxedUnit;
 @Service
 @Log4j
 @Validated
+@Lazy
 public class KafkaAdminService {
 
   private static final int channelSocketTimeoutMs = 600;
@@ -163,12 +165,15 @@ public class KafkaAdminService {
   public static final String ReplicaAlterLogDirsIoMaxBytesPerSecondProp =
       "replica.alter.log.dirs.io.max.bytes.per.second";
 
+  @Lazy
   @Autowired
   private ZookeeperUtils zookeeperUtils;
 
+  @Lazy
   @Autowired
   private KafkaUtils kafkaUtils;
 
+  @Lazy
   @Autowired
   private KafkaConfig kafkaConfig;
 
@@ -186,16 +191,9 @@ public class KafkaAdminService {
 
   @PostConstruct
   private void init() {
-  }
-
-  private org.apache.kafka.clients.admin.AdminClient createKafkaAdminClient() {
-    if (this.kafkaAdminClient == null) {
-      Properties adminClientProp = new Properties();
-      adminClientProp.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaConfig.getBrokers());
-      this.kafkaAdminClient = KafkaAdminClient.create(adminClientProp);
-    }
-
-    return this.kafkaAdminClient;
+    Properties adminClientProp = new Properties();
+    adminClientProp.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaConfig.getBrokers());
+    this.kafkaAdminClient = KafkaAdminClient.create(adminClientProp);
   }
 
   public HashMap<String, GeneralResponse> createTopic(List<TopicDetail> topicList) {
@@ -234,8 +232,6 @@ public class KafkaAdminService {
 
       newTopicList.add(newTopic);
     }
-
-    org.apache.kafka.clients.admin.AdminClient kafkaAdminClient = createKafkaAdminClient();
 
     CreateTopicsOptions createTopicsOptions = new CreateTopicsOptions();
     createTopicsOptions.timeoutMs((int) kafkaAdminClientAlterTimeoutMs);
@@ -282,7 +278,6 @@ public class KafkaAdminService {
 
   public Set<String> getAllTopics() {
     Set<String> topicNames;
-    org.apache.kafka.clients.admin.AdminClient kafkaAdminClient = createKafkaAdminClient();
     ListTopicsOptions options = new ListTopicsOptions();
     // includes internal topics such as __consumer_offsets
     options.listInternal(true);
@@ -300,7 +295,6 @@ public class KafkaAdminService {
   }
 
   public List<TopicBrief> listTopicBrief() {
-    org.apache.kafka.clients.admin.AdminClient kafkaAdminClient = createKafkaAdminClient();
 
     DescribeTopicsResult describeTopicsResult = kafkaAdminClient.describeTopics(listTopics());
     Map<String, TopicDescription> topicMap;
@@ -345,7 +339,7 @@ public class KafkaAdminService {
   }
 
   public boolean existTopic(String topicName) {
-    KafkaZkClient kafkaZkClient = zookeeperUtils.createKafkaZkClient();
+    KafkaZkClient kafkaZkClient = zookeeperUtils.getKafkaZkClient();
     boolean exists = kafkaZkClient.topicExists(topicName);
 
     return exists;
@@ -355,7 +349,6 @@ public class KafkaAdminService {
     //    Map<String, Object> clusterDetail = new HashMap<>();
     ClusterInfo clusterInfo = new ClusterInfo();
 
-    org.apache.kafka.clients.admin.AdminClient kafkaAdminClient = createKafkaAdminClient();
     DescribeClusterOptions describeClusterOptions =
         new DescribeClusterOptions().timeoutMs((int) kafkaAdminClientGetTimeoutMs);
 
@@ -395,8 +388,8 @@ public class KafkaAdminService {
   }
 
   public List<BrokerInfo> listBrokers() {
-    CuratorFramework zkClient = zookeeperUtils.createZkClient();
-    KafkaZkClient kafkaZkClient = zookeeperUtils.createKafkaZkClient();
+    CuratorFramework zkClient = zookeeperUtils.getCuratorClient();
+    KafkaZkClient kafkaZkClient = zookeeperUtils.getKafkaZkClient();
     List<Broker> brokerList =
         CollectionConvertor.seqConvertJavaList(kafkaZkClient.getAllBrokersInCluster());
 
@@ -463,7 +456,6 @@ public class KafkaAdminService {
   public Map<Integer, Map<String, LogDirInfo>> describeLogDirsByBrokerAndTopic(
       List<Integer> brokerList, List<String> logDirList,
       Map<String, List<Integer>> topicPartitionMap) {
-    org.apache.kafka.clients.admin.AdminClient kafkaAdminClient = createKafkaAdminClient();
 
     List<Integer> brokerIdsInCluster =
         listBrokers().stream().map(brokerInfo -> brokerInfo.getId()).collect(Collectors.toList());
@@ -545,7 +537,6 @@ public class KafkaAdminService {
 
   public Map<TopicPartitionReplica, ReplicaLogDirInfo> describeReplicaLogDirs(
       List<TopicPartitionReplica> replicas) {
-    org.apache.kafka.clients.admin.AdminClient kafkaAdminClient = createKafkaAdminClient();
     Map<TopicPartitionReplica, ReplicaLogDirInfo> replicaLogDirInfoMap;
 
     DescribeReplicaLogDirsOptions describeReplicaLogDirsOptions =
@@ -576,7 +567,7 @@ public class KafkaAdminService {
   }
 
   public Properties getConfigInZk(ConfigResource.Type type, String name) {
-    KafkaZkClient kafkaZkClient = zookeeperUtils.createKafkaZkClient();
+    KafkaZkClient kafkaZkClient = zookeeperUtils.getKafkaZkClient();
     AdminZkClient adminZkClient = new AdminZkClient(kafkaZkClient);
     Properties properties = new Properties();
 
@@ -620,7 +611,7 @@ public class KafkaAdminService {
 
   public Properties updateBrokerDynConf(int brokerId, Properties propsToBeUpdated) {
     Properties props = getConfigInZk(Type.BROKER, String.valueOf(brokerId));
-    KafkaZkClient kafkaZkClient = zookeeperUtils.createKafkaZkClient();
+    KafkaZkClient kafkaZkClient = zookeeperUtils.getKafkaZkClient();
     AdminZkClient adminZkClient = new AdminZkClient(kafkaZkClient);
 
     for (String key : propsToBeUpdated.stringPropertyNames()) {
@@ -641,7 +632,7 @@ public class KafkaAdminService {
   }
 
   public void removeConfigInZk(Type type, String name, List<String> configKeysToBeRemoved) {
-    KafkaZkClient kafkaZkClient = zookeeperUtils.createKafkaZkClient();
+    KafkaZkClient kafkaZkClient = zookeeperUtils.getKafkaZkClient();
     AdminZkClient adminZkClient = new AdminZkClient(kafkaZkClient);
 
     Properties props = getConfigInZk(type, name);
@@ -664,7 +655,6 @@ public class KafkaAdminService {
 
   public TopicDescription getTopicDescription(@TopicExistConstraint String topicName) {
     TopicDescription topicDescription = null;
-    org.apache.kafka.clients.admin.AdminClient kafkaAdminClient = createKafkaAdminClient();
 
     DescribeTopicsResult describeTopicsResult =
         kafkaAdminClient.describeTopics(Collections.singletonList(topicName));
@@ -717,7 +707,6 @@ public class KafkaAdminService {
   }
 
   public Map<String, GeneralResponse> deleteTopicList(List<String> topicList) {
-    org.apache.kafka.clients.admin.AdminClient kafkaAdminClient = createKafkaAdminClient();
     HashMap<String, GeneralResponse> deleteResults = new HashMap<>();
 
     List<String> topicListToBeDeleted = new ArrayList<>(topicList);
@@ -774,7 +763,6 @@ public class KafkaAdminService {
 
   public Collection<ConfigEntry> describeConfig(ConfigResource.Type type, String name) {
     Map<ConfigResource, Config> configs;
-    org.apache.kafka.clients.admin.AdminClient kafkaAdminClient = createKafkaAdminClient();
     ConfigResource configResource = new ConfigResource(type, name);
 
     DescribeConfigsResult ret =
@@ -791,7 +779,6 @@ public class KafkaAdminService {
 
   public boolean alterConfig(
       ConfigResource.Type type, String name, Collection<ConfigEntry> configEntries) {
-    org.apache.kafka.clients.admin.AdminClient kafkaAdminClient = createKafkaAdminClient();
     Config config = new Config(configEntries);
     AlterConfigsResult alterConfigsResult =
         kafkaAdminClient.alterConfigs(
@@ -890,7 +877,7 @@ public class KafkaAdminService {
 
   private Set<String> listAllOldConsumerGroups() {
     log.info("Finish getting old consumers");
-    KafkaZkClient kafkaZkClient = zookeeperUtils.createKafkaZkClient();
+    KafkaZkClient kafkaZkClient = zookeeperUtils.getKafkaZkClient();
 
     Set<String> oldConsumerGroups =
         CollectionConvertor.seqConvertJavaList(kafkaZkClient.getChildren(ZkUtils.ConsumersPath()))
@@ -942,7 +929,7 @@ public class KafkaAdminService {
   }
 
   private Set<String> listOldConsumerGroupsByTopic(@TopicExistConstraint String topic) {
-    KafkaZkClient kafkaZkClient = zookeeperUtils.createKafkaZkClient();
+    KafkaZkClient kafkaZkClient = zookeeperUtils.getKafkaZkClient();
 
     List<String> consumersFromZk =
         CollectionConvertor.seqConvertJavaList(kafkaZkClient.getChildren(ZkUtils.ConsumersPath()));
@@ -960,7 +947,7 @@ public class KafkaAdminService {
   }
 
   public Set<String> listTopicsByConsumerGroup(String consumerGroup, ConsumerType type) {
-    KafkaZkClient kafkaZkClient = zookeeperUtils.createKafkaZkClient();
+    KafkaZkClient kafkaZkClient = zookeeperUtils.getKafkaZkClient();
     Set<String> topicList = new HashSet<>();
 
     if (type == null) {
@@ -1472,7 +1459,6 @@ public class KafkaAdminService {
 
   public Map<String, GeneralResponse> addPartitions(List<AddPartition> addPartitions) {
     Map<String, GeneralResponse> addPartitionsResult = new HashMap<>();
-    org.apache.kafka.clients.admin.AdminClient kafkaAdminClient = createKafkaAdminClient();
 
     Map<String, NewPartitions> newPartitionsMap = new HashMap<>();
     addPartitions.forEach(
@@ -1535,7 +1521,7 @@ public class KafkaAdminService {
 
   // Return <Current partition replica assignment, Proposed partition reassignment>
   public List<ReassignModel> generateReassignPartition(ReassignWrapper reassignWrapper) {
-    KafkaZkClient kafkaZkClient = zookeeperUtils.createKafkaZkClient();
+    KafkaZkClient kafkaZkClient = zookeeperUtils.getKafkaZkClient();
     List<ReassignModel> result = new ArrayList<>();
 
     Seq brokerSeq =
@@ -1584,8 +1570,7 @@ public class KafkaAdminService {
         (replicaAlterLogDirsThrottle == null) ? Long.valueOf(-1) : replicaAlterLogDirsThrottle;
     timeoutMs = (timeoutMs == null) ? Long.valueOf(10000) : timeoutMs;
 
-    org.apache.kafka.clients.admin.AdminClient kafkaAdminClient = createKafkaAdminClient();
-    KafkaZkClient kafkaZkClient = zookeeperUtils.createKafkaZkClient();
+    KafkaZkClient kafkaZkClient = zookeeperUtils.getKafkaZkClient();
     AdminZkClient adminZkClient = new AdminZkClient(kafkaZkClient);
 
     TwoTuple<
@@ -1685,7 +1670,7 @@ public class KafkaAdminService {
       }
     }
 
-    KafkaZkClient kafkaZkClient = zookeeperUtils.createKafkaZkClient();
+    KafkaZkClient kafkaZkClient = zookeeperUtils.getKafkaZkClient();
 
     List<Broker> brokerList =
         CollectionConvertor.seqConvertJavaList(kafkaZkClient.getAllBrokersInCluster());
@@ -1732,7 +1717,7 @@ public class KafkaAdminService {
   private Map<TopicPartition, Integer> checkIfPartitionReassignmentSucceeded(
       scala.collection.Map<TopicPartition, Seq<Object>> partitionsToBeReassigned) {
     Map<TopicPartition, Integer> reassignedPartitionsStatus = new HashMap<>();
-    KafkaZkClient kafkaZkClient = zookeeperUtils.createKafkaZkClient();
+    KafkaZkClient kafkaZkClient = zookeeperUtils.getKafkaZkClient();
 
     scala.collection.immutable.Map<TopicPartition, Seq<Object>> partitionsBeingReassigned =
         kafkaZkClient.getPartitionReassignment();
@@ -1814,7 +1799,7 @@ public class KafkaAdminService {
   genReassignPlan(String reassignJsonStr) {
     Tuple2 resultTuple2;
 
-    KafkaZkClient kafkaZkClient = zookeeperUtils.createKafkaZkClient();
+    KafkaZkClient kafkaZkClient = zookeeperUtils.getKafkaZkClient();
 
     try {
       // Parse and validate reassignment json string, return (partitionsToBeReassigned,
@@ -1842,7 +1827,7 @@ public class KafkaAdminService {
   public GeneralResponse stopReassignPartitions() {
     GeneralResponse response = GeneralResponse.builder().build();
 
-    KafkaZkClient kafkaZkClient = zookeeperUtils.createKafkaZkClient();
+    KafkaZkClient kafkaZkClient = zookeeperUtils.getKafkaZkClient();
     log.info("Deleting zk path /admin/reassign_partitions");
     try {
       kafkaZkClient.deletePartitionReassignment();
@@ -2349,7 +2334,7 @@ public class KafkaAdminService {
     Map<String, Map<Integer, Long>> result = new ConcurrentHashMap<>();
 
     if (type != null && type == ConsumerType.OLD) {
-      CuratorFramework zkClient = zookeeperUtils.createZkClient();
+      CuratorFramework zkClient = zookeeperUtils.getCuratorClient();
       // Get Old Consumer commit time
       try {
         Map<Integer, Long> oldConsumerOffsetMap = new ConcurrentHashMap<>();

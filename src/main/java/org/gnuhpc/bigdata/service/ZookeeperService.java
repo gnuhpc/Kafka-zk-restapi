@@ -11,11 +11,13 @@ import org.gnuhpc.bigdata.model.ZkServerEnvironment;
 import org.gnuhpc.bigdata.model.ZkServerStat;
 import org.gnuhpc.bigdata.utils.ZookeeperUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 @Service
 @Log4j
 public class ZookeeperService {
+  @Lazy
   @Autowired private ZookeeperUtils zookeeperUtils;
 
   public Map<HostAndPort, ZkServerStat> stat() {

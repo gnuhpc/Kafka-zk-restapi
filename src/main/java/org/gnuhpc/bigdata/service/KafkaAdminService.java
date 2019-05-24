@@ -269,6 +269,75 @@ public class KafkaAdminService {
     return createResults;
   }
 
+  public Map createTopicCheck(List<TopicDetail> topicList) {
+    HashMap<String, Object> checkResults = new HashMap<>();
+    String message = "";
+    boolean paramsValid = true;
+    boolean isAssess = false;
+    int applyTopicCount = topicList.size();
+
+    if (applyTopicCount > 10) {
+      paramsValid = false;
+      message = "Everyone can apply for a maximum of 10 topics. ";
+    } else {
+      if (applyTopicCount > 5) {
+        isAssess = true;
+        message = "Apply for " + applyTopicCount + " needs assessments. ";
+      } else {
+        for (TopicDetail topic : topicList) {
+          String topicName = topic.getName();
+          int replicationFactor = topic.getFactor();
+          int partitions = topic.getPartitions();
+          try {
+            Topic.validate(topicName);
+
+            if (Topic.hasCollisionChars(topicName)) {
+              throw new InvalidTopicException("Invalid topic name, it contains '.' or '_'. ");
+            }
+          } catch (Exception exception) {
+            paramsValid = false;
+            message =
+                message + "Msg for topic" + topicName + " : " + exception.getMessage() + ". ";
+          }
+          if (existTopic(topicName)) {
+            paramsValid = false;
+            message = message + "Msg for topic" + topicName + " : " + "Topic already exists. ";
+          }
+          int currentBrokerCount = describeCluster().getNodes().size();
+          if (replicationFactor <= 0 || replicationFactor > currentBrokerCount) {
+            paramsValid = false;
+            message = message + "Msg for topic " + topicName + " : "
+                + "Invalid replication factor, it can't be less than 0 or larger than current broker count. ";
+          }
+          if (partitions <= 0) {
+            paramsValid = false;
+            message = message + "Msg for topic " + topicName + " : "
+                + "Invalid partition number, it can't be less than 0. ";
+          } else if (partitions > currentBrokerCount * 20) {
+            isAssess = true;
+            message =
+                message + "Msg for topic " + topicName + " : " + "Partition number is too large. ";
+          }
+        }
+      }
+    }
+
+    Map<String, String> returnCode = new HashMap<>();
+    if (paramsValid) {
+      returnCode.put("type", "S");
+    } else {
+      returnCode.put("type", "E");
+    }
+    returnCode.put("message", message);
+
+    Map<String, Object> reply = new HashMap<>();
+    reply.put("returnCode", returnCode);
+    reply.put("isAssess", isAssess ? "Y" : "N");
+
+    checkResults.put("reply", reply);
+    return checkResults;
+  }
+
   public List<String> listTopics() {
     List<String> topicNamesList = new ArrayList<String>();
     topicNamesList.addAll(getAllTopics());
@@ -521,9 +590,11 @@ public class KafkaAdminService {
       }
     }
 
-    log.info("After describe log dir filtered by topicPartitionMap, result is:" + logDirInfosByBroker);
-    logDirInfosByBroker.entrySet().forEach(e->e.getValue().entrySet().removeIf(m->m.getValue().replicaInfos.isEmpty()));
-    logDirInfosByBroker.entrySet().removeIf(e->e.getValue().isEmpty());
+    log.info(
+        "After describe log dir filtered by topicPartitionMap, result is:" + logDirInfosByBroker);
+    logDirInfosByBroker.entrySet()
+        .forEach(e -> e.getValue().entrySet().removeIf(m -> m.getValue().replicaInfos.isEmpty()));
+    logDirInfosByBroker.entrySet().removeIf(e -> e.getValue().isEmpty());
 
     return logDirInfosByBroker;
   }

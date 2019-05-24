@@ -156,6 +156,13 @@ public class KafkaController {
     return kafkaAdminService.createTopic(topicList);
   }
 
+  @PostMapping(value = "/topics/create/check", consumes = "application/json")
+  @ApiOperation(value = "Create topics check")
+  public Map createTopicCheck(
+      @RequestBody List<TopicDetail> topicList) {
+    return kafkaAdminService.createTopicCheck(topicList);
+  }
+
   @ApiOperation(value = "Tell if a topic exists")
   @GetMapping(value = "/topics/{topic}/exist")
   public boolean existTopic(@PathVariable String topic) {

@@ -33,7 +33,9 @@ import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.ExponentialBackoffRetry;
+import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.DescribeReplicaLogDirsResult.ReplicaLogDirInfo;
+import org.apache.kafka.clients.admin.KafkaAdminClient;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -186,6 +188,9 @@ public class KafkaAdminServiceTest {
     mockZookeeperUtils.setZookeeperConfig(mockZookeeperConfig);
     mockZookeeperUtils.setKafkaZkClient(kafkaZkClient);
     mockZookeeperUtils.setCuratorClient(curatorClient);
+    Properties adminClientProp = new Properties();
+    adminClientProp.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, TEST_KAFKA_BOOTSTRAP_SERVERS);
+    kafkaAdminServiceUnderTest.setKafkaAdminClient(KafkaAdminClient.create(adminClientProp));
 
     clean();
     allTopicsInClusterBeforeTest = kafkaAdminServiceUnderTest.getAllTopics();

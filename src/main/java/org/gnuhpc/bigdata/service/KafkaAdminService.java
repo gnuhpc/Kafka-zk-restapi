@@ -52,6 +52,8 @@ import kafka.server.ConfigType;
 import kafka.utils.ZkUtils;
 import kafka.zk.AdminZkClient;
 import kafka.zk.KafkaZkClient;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.log4j.Log4j;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericDatumReader;
@@ -146,6 +148,8 @@ import scala.runtime.BoxedUnit;
 /**
  * Created by gnuhpc on 2017/7/17.
  */
+@Getter
+@Setter
 @Service
 @Log4j
 @Validated

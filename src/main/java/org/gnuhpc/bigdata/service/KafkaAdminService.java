@@ -383,19 +383,21 @@ public class KafkaAdminService {
                         topicDescription.partitions();
                     int replicateCount = 0;
                     int isrCount = 0;
+                    int replicationFactor = 0;
                     for (org.apache.kafka.common.TopicPartitionInfo topicPartitionInfo :
                         topicPartitionInfoList) {
                       replicateCount += topicPartitionInfo.replicas().size();
                       isrCount += topicPartitionInfo.isr().size();
+                      replicationFactor = topicPartitionInfo.replicas().size();
                     }
                     if (replicateCount == 0) {
                       return new TopicBrief(topic, topicDescription.partitions().size(), 0,
-                          replicateCount);
+                          replicationFactor);
                     } else {
                       return new TopicBrief(
                           topic,
                           topicDescription.partitions().size(),
-                          ((double) isrCount / replicateCount), replicateCount);
+                          ((double) isrCount / replicateCount), replicationFactor);
                     }
                   })
               .collect(toList());

@@ -193,6 +193,10 @@ public class KafkaAdminService {
 
   private scala.Option<String> none = scala.Option.apply(null);
 
+  @Lazy
+  @Autowired
+  private ConfluentSchemaService confluentSchemaService;
+
   @PostConstruct
   private void init() {
     Properties adminClientProp = new Properties();
@@ -2000,8 +2004,8 @@ public class KafkaAdminService {
               + valueDecoder
               + " not found. ByteArrayDeserializer, ByteBufferDeserializer, BytesDeserializer, "
               + "DoubleDeserializer, FloatDeserializer, "
-              + "IntegerDeserializer, LongDeserializer, ShortDeserializer, StringDeserializer, AvroDeserializer "
-              + "are supported.");
+              + "IntegerDeserializer, LongDeserializer, ShortDeserializer, StringDeserializer, "
+              + "AvroDeserializer, KafkaAvroDeserializer are supported.");
     }
 
     if (valueDecoder == null || valueDecoder.isEmpty()) {
@@ -2017,9 +2021,16 @@ public class KafkaAdminService {
       if (avroSchema == null || avroSchema.isEmpty()) {
         throw new ApiException("Bad request. Schema is needed when choosing AvroDeserializer.");
       } else {
-        return getAvroRecordsByOffset(topic, partition, offset, keyDecoder, avroSchema, maxRecords,
+        return getAvroRecordsByOffset(topic, partition, offset, keyDecoder, valueDecoder,
+            avroSchema, maxRecords,
             timeoutMs);
       }
+    }
+
+    if (valueDecoder != null && valueDecoder.equals("KafkaAvroDeserializer")) {
+      return getAvroRecordsByOffset(topic, partition, offset, keyDecoder, valueDecoder, avroSchema,
+          maxRecords,
+          timeoutMs);
     }
 
     KafkaConsumer consumer;
@@ -2124,11 +2135,10 @@ public class KafkaAdminService {
   }
 
   public List<Record> getAvroRecordsByOffset(String topic, int partition, long offset,
-      String keyDecoder,
+      String keyDecoder, String valueDecoder,
       String avroSchema, int maxRecords, long timeoutMs) throws ApiException {
     TopicPartition tp = new TopicPartition(topic, partition);
     KafkaConsumer consumer = null;
-    final String valueDecoder = "AvroDeserializer";
     try {
       consumer = kafkaUtils.createNewConsumer(
           String.valueOf(System.currentTimeMillis()), keyDecoder,
@@ -2162,7 +2172,15 @@ public class KafkaAdminService {
           record.setOffset(initCr.offset());
           record.setTimestamp(initCr.timestamp());
           record.setKey(initCr.key());
-          record.setValue(avroDeserialize(initCr.value(), avroSchema));
+          if (valueDecoder.equals("KafkaAvroDeserializer") && (avroSchema == null || avroSchema
+              .isEmpty())) {
+            record.setValue(confluentSchemaService.deserializeBytesToObject(topic, initCr.value()));
+          } else if (valueDecoder.equals("KafkaAvroDeserializer") && avroSchema != null && !avroSchema.isEmpty()){
+            //If avro schema is provided
+            record.setValue(avroDeserialize(initCr.value(), avroSchema, true));
+          } else {
+            record.setValue(avroDeserialize(initCr.value(), avroSchema, false));
+          }
           log.info(
               "Value: "
                   + initCr.value()
@@ -2182,9 +2200,9 @@ public class KafkaAdminService {
               + " offset:"
               + offset
               + " using keyDecoder:" + keyDecoder + ", valueDecoder:"
-              + "ByteArrayDeserializer"
-              + " exception. "
-              + exception.getLocalizedMessage());
+              + valueDecoder
+              + " exception : "
+              + exception);
     } finally {
       consumer.close();
     }
@@ -2192,15 +2210,21 @@ public class KafkaAdminService {
     return recordList;
   }
 
-  private Object avroDeserialize(byte[] bytes, String avroSchema) {
+  private Object avroDeserialize(byte[] bytes, String avroSchema, boolean isInSchemaRegistry) {
     Schema schema = new Schema.Parser().parse(avroSchema);
     DatumReader reader = new GenericDatumReader<GenericRecord>(schema);
     ByteBuffer buffer = ByteBuffer.wrap(bytes);
     Object object = null;
+    int startOffset = 0;
+
+    if (isInSchemaRegistry) {
+      //In schema registry, one MAGIC byte and for bytes for shemaId is add before real data.
+      startOffset = 5;
+    }
     try {
       object =
           reader.read(
-              null, DecoderFactory.get().binaryDecoder(buffer.array(), 0, bytes.length, null));
+              null, DecoderFactory.get().binaryDecoder(buffer.array(), startOffset, bytes.length, null));
     } catch (IOException exception) {
       throw new ApiException("Avro Deserialize exception. " + exception);
     }

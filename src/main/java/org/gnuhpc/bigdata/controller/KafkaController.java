@@ -188,7 +188,7 @@ public class KafkaController {
       @PathVariable String topic,
       @PathVariable int partition,
       @PathVariable long offset,
-      @RequestParam(required = false) int maxRecords,
+      @RequestParam(required = false, defaultValue = "10") int maxRecords,
       @RequestParam(required = false, defaultValue = "StringDeserializer") String keyDecoder,
       @RequestParam(required = false, defaultValue = "StringDeserializer") String valueDecoder,
       @RequestParam(required = false) String avroSchema,

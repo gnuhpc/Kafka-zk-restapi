@@ -266,6 +266,28 @@
       <artifactId>avro</artifactId>
       <version>1.8.2</version>
     </dependency>
+
+    <!-- Confluent schema registry lib  -->
+    <dependency>
+      <groupId>io.confluent</groupId>
+      <artifactId>kafka-avro-serializer</artifactId>
+      <version>4.1.1</version>
+    </dependency>
+    <dependency>
+      <groupId>io.confluent</groupId>
+      <artifactId>kafka-schema-registry-client</artifactId>
+      <version>4.1.1</version>
+    </dependency>
+    <dependency>
+      <groupId>io.confluent</groupId>
+      <artifactId>common-utils</artifactId>
+      <version>4.1.1</version>
+    </dependency>
+    <dependency>
+      <groupId>io.confluent</groupId>
+      <artifactId>common-config</artifactId>
+      <version>4.1.1</version>
+    </dependency>
   </dependencies>
 
   <build>

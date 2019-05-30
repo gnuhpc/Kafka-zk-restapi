@@ -58,6 +58,7 @@ public class KafkaUtils {
       put("ByteBufferDeserializer", ByteBuffer.class);
       put("BytesDeserializer", Bytes.class);
       put("AvroDeserializer", byte[].class);
+      put("KafkaAvroDeserializer", byte[].class);
     }
   };
 
@@ -73,6 +74,7 @@ public class KafkaUtils {
       put("ByteBufferSerializer", ByteBuffer.class);
       put("BytesSerializer", Bytes.class);
       put("AvroSerializer", byte[].class);
+      put("KafkaAvroSerializer", byte[].class);
     }
   };
 

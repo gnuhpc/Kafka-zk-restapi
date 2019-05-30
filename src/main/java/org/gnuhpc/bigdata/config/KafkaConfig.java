@@ -39,6 +39,9 @@ public class KafkaConfig {
   @Value("${kafka.brokers}")
   private String brokers;
 
+  @Value("${kafka.schemaregistry}")
+  private String schemaregistry;
+
   @Value("${kafka.offset.topic}")
   private String internalTopic;
 

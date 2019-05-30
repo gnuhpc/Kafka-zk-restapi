@@ -7,6 +7,7 @@ import java.util.List;
 import org.gnuhpc.bigdata.model.SchemaRegistryMetadata;
 import org.gnuhpc.bigdata.service.ConfluentSchemaService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Api(value = "Control schema registry with Rest API")
 public class SchemaRegistryController {
 
+  @Lazy
   @Autowired
   private ConfluentSchemaService confluentSchemaService;
 

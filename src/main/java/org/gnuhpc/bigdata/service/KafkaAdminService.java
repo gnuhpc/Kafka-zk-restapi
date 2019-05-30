@@ -311,20 +311,23 @@ public class KafkaAdminService {
             paramsValid = false;
             message = message + "Msg for topic" + topicName + " : " + "Topic already exists. ";
           }
-          int currentBrokerCount = describeCluster().getNodes().size();
-          if (replicationFactor <= 0 || replicationFactor > currentBrokerCount) {
-            paramsValid = false;
-            message = message + "Msg for topic " + topicName + " : "
-                + "Invalid replication factor, it can't be less than 0 or larger than current broker count. ";
-          }
-          if (partitions <= 0) {
-            paramsValid = false;
-            message = message + "Msg for topic " + topicName + " : "
-                + "Invalid partition number, it can't be less than 0. ";
-          } else if (partitions > currentBrokerCount * 20) {
-            isAssess = true;
-            message =
-                message + "Msg for topic " + topicName + " : " + "Partition number is too large. ";
+          if (topic.getReplicasAssignments() == null || topic.getReplicasAssignments().isEmpty()) {
+            int currentBrokerCount = describeCluster().getNodes().size();
+            if (replicationFactor <= 0 || replicationFactor > currentBrokerCount) {
+              paramsValid = false;
+              message = message + "Msg for topic " + topicName + " : "
+                  + "Invalid replication factor, it can't be less than 0 or larger than current broker count. ";
+            }
+            if (partitions <= 0) {
+              paramsValid = false;
+              message = message + "Msg for topic " + topicName + " : "
+                  + "Invalid partition number, it can't be less than 0. ";
+            } else if (partitions > currentBrokerCount * 20) {
+              isAssess = true;
+              message =
+                  message + "Msg for topic " + topicName + " : "
+                      + "Partition number is too large. ";
+            }
           }
         }
       }

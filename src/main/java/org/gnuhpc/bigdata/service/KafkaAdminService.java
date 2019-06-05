@@ -52,6 +52,8 @@ import kafka.server.ConfigType;
 import kafka.utils.ZkUtils;
 import kafka.zk.AdminZkClient;
 import kafka.zk.KafkaZkClient;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.log4j.Log4j;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericDatumReader;
@@ -132,6 +134,7 @@ import org.gnuhpc.bigdata.utils.ZookeeperUtils;
 import org.gnuhpc.bigdata.validator.ConsumerGroupExistConstraint;
 import org.gnuhpc.bigdata.validator.TopicExistConstraint;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 import scala.Function0;
@@ -145,9 +148,12 @@ import scala.runtime.BoxedUnit;
 /**
  * Created by gnuhpc on 2017/7/17.
  */
+@Getter
+@Setter
 @Service
 @Log4j
 @Validated
+@Lazy
 public class KafkaAdminService {
 
   private static final int channelSocketTimeoutMs = 600;
@@ -163,12 +169,15 @@ public class KafkaAdminService {
   public static final String ReplicaAlterLogDirsIoMaxBytesPerSecondProp =
       "replica.alter.log.dirs.io.max.bytes.per.second";
 
+  @Lazy
   @Autowired
   private ZookeeperUtils zookeeperUtils;
 
+  @Lazy
   @Autowired
   private KafkaUtils kafkaUtils;
 
+  @Lazy
   @Autowired
   private KafkaConfig kafkaConfig;
 
@@ -184,18 +193,15 @@ public class KafkaAdminService {
 
   private scala.Option<String> none = scala.Option.apply(null);
 
+  @Lazy
+  @Autowired
+  private ConfluentSchemaService confluentSchemaService;
+
   @PostConstruct
   private void init() {
-  }
-
-  private org.apache.kafka.clients.admin.AdminClient createKafkaAdminClient() {
-    if (this.kafkaAdminClient == null) {
-      Properties adminClientProp = new Properties();
-      adminClientProp.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaConfig.getBrokers());
-      this.kafkaAdminClient = KafkaAdminClient.create(adminClientProp);
-    }
-
-    return this.kafkaAdminClient;
+    Properties adminClientProp = new Properties();
+    adminClientProp.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaConfig.getBrokers());
+    this.kafkaAdminClient = KafkaAdminClient.create(adminClientProp);
   }
 
   public HashMap<String, GeneralResponse> createTopic(List<TopicDetail> topicList) {
@@ -235,8 +241,6 @@ public class KafkaAdminService {
       newTopicList.add(newTopic);
     }
 
-    org.apache.kafka.clients.admin.AdminClient kafkaAdminClient = createKafkaAdminClient();
-
     CreateTopicsOptions createTopicsOptions = new CreateTopicsOptions();
     createTopicsOptions.timeoutMs((int) kafkaAdminClientAlterTimeoutMs);
     CreateTopicsResult createTopicsResult =
@@ -273,6 +277,78 @@ public class KafkaAdminService {
     return createResults;
   }
 
+  public Map createTopicCheck(List<TopicDetail> topicList) {
+    HashMap<String, Object> checkResults = new HashMap<>();
+    String message = "";
+    boolean paramsValid = true;
+    boolean isAssess = false;
+    int applyTopicCount = topicList.size();
+
+    if (applyTopicCount > 10) {
+      paramsValid = false;
+      message = "Everyone can apply for a maximum of 10 topics. ";
+    } else {
+      if (applyTopicCount > 5) {
+        isAssess = true;
+        message = "Apply for " + applyTopicCount + " needs assessments. ";
+      } else {
+        for (TopicDetail topic : topicList) {
+          String topicName = topic.getName();
+          int replicationFactor = topic.getFactor();
+          int partitions = topic.getPartitions();
+          try {
+            Topic.validate(topicName);
+
+            if (Topic.hasCollisionChars(topicName)) {
+              throw new InvalidTopicException("Invalid topic name, it contains '.' or '_'. ");
+            }
+          } catch (Exception exception) {
+            paramsValid = false;
+            message =
+                message + "Msg for topic" + topicName + " : " + exception.getMessage() + ". ";
+          }
+          if (existTopic(topicName)) {
+            paramsValid = false;
+            message = message + "Msg for topic" + topicName + " : " + "Topic already exists. ";
+          }
+          if (topic.getReplicasAssignments() == null || topic.getReplicasAssignments().isEmpty()) {
+            int currentBrokerCount = describeCluster().getNodes().size();
+            if (replicationFactor <= 0 || replicationFactor > currentBrokerCount) {
+              paramsValid = false;
+              message = message + "Msg for topic " + topicName + " : "
+                  + "Invalid replication factor, it can't be less than 0 or larger than current broker count. ";
+            }
+            if (partitions <= 0) {
+              paramsValid = false;
+              message = message + "Msg for topic " + topicName + " : "
+                  + "Invalid partition number, it can't be less than 0. ";
+            } else if (partitions > currentBrokerCount * 20) {
+              isAssess = true;
+              message =
+                  message + "Msg for topic " + topicName + " : "
+                      + "Partition number is too large. ";
+            }
+          }
+        }
+      }
+    }
+
+    Map<String, String> returnCode = new HashMap<>();
+    if (paramsValid) {
+      returnCode.put("type", "S");
+    } else {
+      returnCode.put("type", "E");
+    }
+    returnCode.put("message", message);
+
+    Map<String, Object> reply = new HashMap<>();
+    reply.put("returnCode", returnCode);
+    reply.put("isAssess", isAssess ? "Y" : "N");
+
+    checkResults.put("reply", reply);
+    return checkResults;
+  }
+
   public List<String> listTopics() {
     List<String> topicNamesList = new ArrayList<String>();
     topicNamesList.addAll(getAllTopics());
@@ -282,7 +358,6 @@ public class KafkaAdminService {
 
   public Set<String> getAllTopics() {
     Set<String> topicNames;
-    org.apache.kafka.clients.admin.AdminClient kafkaAdminClient = createKafkaAdminClient();
     ListTopicsOptions options = new ListTopicsOptions();
     // includes internal topics such as __consumer_offsets
     options.listInternal(true);
@@ -300,7 +375,6 @@ public class KafkaAdminService {
   }
 
   public List<TopicBrief> listTopicBrief() {
-    org.apache.kafka.clients.admin.AdminClient kafkaAdminClient = createKafkaAdminClient();
 
     DescribeTopicsResult describeTopicsResult = kafkaAdminClient.describeTopics(listTopics());
     Map<String, TopicDescription> topicMap;
@@ -320,19 +394,21 @@ public class KafkaAdminService {
                         topicDescription.partitions();
                     int replicateCount = 0;
                     int isrCount = 0;
+                    int replicationFactor = 0;
                     for (org.apache.kafka.common.TopicPartitionInfo topicPartitionInfo :
                         topicPartitionInfoList) {
                       replicateCount += topicPartitionInfo.replicas().size();
                       isrCount += topicPartitionInfo.isr().size();
+                      replicationFactor = topicPartitionInfo.replicas().size();
                     }
                     if (replicateCount == 0) {
                       return new TopicBrief(topic, topicDescription.partitions().size(), 0,
-                          replicateCount);
+                          replicationFactor);
                     } else {
                       return new TopicBrief(
                           topic,
                           topicDescription.partitions().size(),
-                          ((double) isrCount / replicateCount), replicateCount);
+                          ((double) isrCount / replicateCount), replicationFactor);
                     }
                   })
               .collect(toList());
@@ -345,7 +421,7 @@ public class KafkaAdminService {
   }
 
   public boolean existTopic(String topicName) {
-    KafkaZkClient kafkaZkClient = zookeeperUtils.createKafkaZkClient();
+    KafkaZkClient kafkaZkClient = zookeeperUtils.getKafkaZkClient();
     boolean exists = kafkaZkClient.topicExists(topicName);
 
     return exists;
@@ -355,7 +431,6 @@ public class KafkaAdminService {
     //    Map<String, Object> clusterDetail = new HashMap<>();
     ClusterInfo clusterInfo = new ClusterInfo();
 
-    org.apache.kafka.clients.admin.AdminClient kafkaAdminClient = createKafkaAdminClient();
     DescribeClusterOptions describeClusterOptions =
         new DescribeClusterOptions().timeoutMs((int) kafkaAdminClientGetTimeoutMs);
 
@@ -395,8 +470,8 @@ public class KafkaAdminService {
   }
 
   public List<BrokerInfo> listBrokers() {
-    CuratorFramework zkClient = zookeeperUtils.createZkClient();
-    KafkaZkClient kafkaZkClient = zookeeperUtils.createKafkaZkClient();
+    CuratorFramework zkClient = zookeeperUtils.getCuratorClient();
+    KafkaZkClient kafkaZkClient = zookeeperUtils.getKafkaZkClient();
     List<Broker> brokerList =
         CollectionConvertor.seqConvertJavaList(kafkaZkClient.getAllBrokersInCluster());
 
@@ -463,7 +538,6 @@ public class KafkaAdminService {
   public Map<Integer, Map<String, LogDirInfo>> describeLogDirsByBrokerAndTopic(
       List<Integer> brokerList, List<String> logDirList,
       Map<String, List<Integer>> topicPartitionMap) {
-    org.apache.kafka.clients.admin.AdminClient kafkaAdminClient = createKafkaAdminClient();
 
     List<Integer> brokerIdsInCluster =
         listBrokers().stream().map(brokerInfo -> brokerInfo.getId()).collect(Collectors.toList());
@@ -529,9 +603,11 @@ public class KafkaAdminService {
       }
     }
 
-    log.info("After describe log dir filtered by topicPartitionMap, result is:" + logDirInfosByBroker);
-    logDirInfosByBroker.entrySet().forEach(e->e.getValue().entrySet().removeIf(m->m.getValue().replicaInfos.isEmpty()));
-    logDirInfosByBroker.entrySet().removeIf(e->e.getValue().isEmpty());
+    log.info(
+        "After describe log dir filtered by topicPartitionMap, result is:" + logDirInfosByBroker);
+    logDirInfosByBroker.entrySet()
+        .forEach(e -> e.getValue().entrySet().removeIf(m -> m.getValue().replicaInfos.isEmpty()));
+    logDirInfosByBroker.entrySet().removeIf(e -> e.getValue().isEmpty());
 
     return logDirInfosByBroker;
   }
@@ -545,7 +621,6 @@ public class KafkaAdminService {
 
   public Map<TopicPartitionReplica, ReplicaLogDirInfo> describeReplicaLogDirs(
       List<TopicPartitionReplica> replicas) {
-    org.apache.kafka.clients.admin.AdminClient kafkaAdminClient = createKafkaAdminClient();
     Map<TopicPartitionReplica, ReplicaLogDirInfo> replicaLogDirInfoMap;
 
     DescribeReplicaLogDirsOptions describeReplicaLogDirsOptions =
@@ -576,7 +651,7 @@ public class KafkaAdminService {
   }
 
   public Properties getConfigInZk(ConfigResource.Type type, String name) {
-    KafkaZkClient kafkaZkClient = zookeeperUtils.createKafkaZkClient();
+    KafkaZkClient kafkaZkClient = zookeeperUtils.getKafkaZkClient();
     AdminZkClient adminZkClient = new AdminZkClient(kafkaZkClient);
     Properties properties = new Properties();
 
@@ -620,7 +695,7 @@ public class KafkaAdminService {
 
   public Properties updateBrokerDynConf(int brokerId, Properties propsToBeUpdated) {
     Properties props = getConfigInZk(Type.BROKER, String.valueOf(brokerId));
-    KafkaZkClient kafkaZkClient = zookeeperUtils.createKafkaZkClient();
+    KafkaZkClient kafkaZkClient = zookeeperUtils.getKafkaZkClient();
     AdminZkClient adminZkClient = new AdminZkClient(kafkaZkClient);
 
     for (String key : propsToBeUpdated.stringPropertyNames()) {
@@ -641,7 +716,7 @@ public class KafkaAdminService {
   }
 
   public void removeConfigInZk(Type type, String name, List<String> configKeysToBeRemoved) {
-    KafkaZkClient kafkaZkClient = zookeeperUtils.createKafkaZkClient();
+    KafkaZkClient kafkaZkClient = zookeeperUtils.getKafkaZkClient();
     AdminZkClient adminZkClient = new AdminZkClient(kafkaZkClient);
 
     Properties props = getConfigInZk(type, name);
@@ -664,7 +739,6 @@ public class KafkaAdminService {
 
   public TopicDescription getTopicDescription(@TopicExistConstraint String topicName) {
     TopicDescription topicDescription = null;
-    org.apache.kafka.clients.admin.AdminClient kafkaAdminClient = createKafkaAdminClient();
 
     DescribeTopicsResult describeTopicsResult =
         kafkaAdminClient.describeTopics(Collections.singletonList(topicName));
@@ -717,7 +791,6 @@ public class KafkaAdminService {
   }
 
   public Map<String, GeneralResponse> deleteTopicList(List<String> topicList) {
-    org.apache.kafka.clients.admin.AdminClient kafkaAdminClient = createKafkaAdminClient();
     HashMap<String, GeneralResponse> deleteResults = new HashMap<>();
 
     List<String> topicListToBeDeleted = new ArrayList<>(topicList);
@@ -774,7 +847,6 @@ public class KafkaAdminService {
 
   public Collection<ConfigEntry> describeConfig(ConfigResource.Type type, String name) {
     Map<ConfigResource, Config> configs;
-    org.apache.kafka.clients.admin.AdminClient kafkaAdminClient = createKafkaAdminClient();
     ConfigResource configResource = new ConfigResource(type, name);
 
     DescribeConfigsResult ret =
@@ -791,7 +863,6 @@ public class KafkaAdminService {
 
   public boolean alterConfig(
       ConfigResource.Type type, String name, Collection<ConfigEntry> configEntries) {
-    org.apache.kafka.clients.admin.AdminClient kafkaAdminClient = createKafkaAdminClient();
     Config config = new Config(configEntries);
     AlterConfigsResult alterConfigsResult =
         kafkaAdminClient.alterConfigs(
@@ -890,7 +961,7 @@ public class KafkaAdminService {
 
   private Set<String> listAllOldConsumerGroups() {
     log.info("Finish getting old consumers");
-    KafkaZkClient kafkaZkClient = zookeeperUtils.createKafkaZkClient();
+    KafkaZkClient kafkaZkClient = zookeeperUtils.getKafkaZkClient();
 
     Set<String> oldConsumerGroups =
         CollectionConvertor.seqConvertJavaList(kafkaZkClient.getChildren(ZkUtils.ConsumersPath()))
@@ -942,7 +1013,7 @@ public class KafkaAdminService {
   }
 
   private Set<String> listOldConsumerGroupsByTopic(@TopicExistConstraint String topic) {
-    KafkaZkClient kafkaZkClient = zookeeperUtils.createKafkaZkClient();
+    KafkaZkClient kafkaZkClient = zookeeperUtils.getKafkaZkClient();
 
     List<String> consumersFromZk =
         CollectionConvertor.seqConvertJavaList(kafkaZkClient.getChildren(ZkUtils.ConsumersPath()));
@@ -960,7 +1031,7 @@ public class KafkaAdminService {
   }
 
   public Set<String> listTopicsByConsumerGroup(String consumerGroup, ConsumerType type) {
-    KafkaZkClient kafkaZkClient = zookeeperUtils.createKafkaZkClient();
+    KafkaZkClient kafkaZkClient = zookeeperUtils.getKafkaZkClient();
     Set<String> topicList = new HashSet<>();
 
     if (type == null) {
@@ -1472,7 +1543,6 @@ public class KafkaAdminService {
 
   public Map<String, GeneralResponse> addPartitions(List<AddPartition> addPartitions) {
     Map<String, GeneralResponse> addPartitionsResult = new HashMap<>();
-    org.apache.kafka.clients.admin.AdminClient kafkaAdminClient = createKafkaAdminClient();
 
     Map<String, NewPartitions> newPartitionsMap = new HashMap<>();
     addPartitions.forEach(
@@ -1535,7 +1605,7 @@ public class KafkaAdminService {
 
   // Return <Current partition replica assignment, Proposed partition reassignment>
   public List<ReassignModel> generateReassignPartition(ReassignWrapper reassignWrapper) {
-    KafkaZkClient kafkaZkClient = zookeeperUtils.createKafkaZkClient();
+    KafkaZkClient kafkaZkClient = zookeeperUtils.getKafkaZkClient();
     List<ReassignModel> result = new ArrayList<>();
 
     Seq brokerSeq =
@@ -1584,8 +1654,7 @@ public class KafkaAdminService {
         (replicaAlterLogDirsThrottle == null) ? Long.valueOf(-1) : replicaAlterLogDirsThrottle;
     timeoutMs = (timeoutMs == null) ? Long.valueOf(10000) : timeoutMs;
 
-    org.apache.kafka.clients.admin.AdminClient kafkaAdminClient = createKafkaAdminClient();
-    KafkaZkClient kafkaZkClient = zookeeperUtils.createKafkaZkClient();
+    KafkaZkClient kafkaZkClient = zookeeperUtils.getKafkaZkClient();
     AdminZkClient adminZkClient = new AdminZkClient(kafkaZkClient);
 
     TwoTuple<
@@ -1685,7 +1754,7 @@ public class KafkaAdminService {
       }
     }
 
-    KafkaZkClient kafkaZkClient = zookeeperUtils.createKafkaZkClient();
+    KafkaZkClient kafkaZkClient = zookeeperUtils.getKafkaZkClient();
 
     List<Broker> brokerList =
         CollectionConvertor.seqConvertJavaList(kafkaZkClient.getAllBrokersInCluster());
@@ -1732,7 +1801,7 @@ public class KafkaAdminService {
   private Map<TopicPartition, Integer> checkIfPartitionReassignmentSucceeded(
       scala.collection.Map<TopicPartition, Seq<Object>> partitionsToBeReassigned) {
     Map<TopicPartition, Integer> reassignedPartitionsStatus = new HashMap<>();
-    KafkaZkClient kafkaZkClient = zookeeperUtils.createKafkaZkClient();
+    KafkaZkClient kafkaZkClient = zookeeperUtils.getKafkaZkClient();
 
     scala.collection.immutable.Map<TopicPartition, Seq<Object>> partitionsBeingReassigned =
         kafkaZkClient.getPartitionReassignment();
@@ -1814,7 +1883,7 @@ public class KafkaAdminService {
   genReassignPlan(String reassignJsonStr) {
     Tuple2 resultTuple2;
 
-    KafkaZkClient kafkaZkClient = zookeeperUtils.createKafkaZkClient();
+    KafkaZkClient kafkaZkClient = zookeeperUtils.getKafkaZkClient();
 
     try {
       // Parse and validate reassignment json string, return (partitionsToBeReassigned,
@@ -1842,7 +1911,7 @@ public class KafkaAdminService {
   public GeneralResponse stopReassignPartitions() {
     GeneralResponse response = GeneralResponse.builder().build();
 
-    KafkaZkClient kafkaZkClient = zookeeperUtils.createKafkaZkClient();
+    KafkaZkClient kafkaZkClient = zookeeperUtils.getKafkaZkClient();
     log.info("Deleting zk path /admin/reassign_partitions");
     try {
       kafkaZkClient.deletePartitionReassignment();
@@ -1854,7 +1923,6 @@ public class KafkaAdminService {
       log.info("Delete zk path /admin/reassign_partitions failed.");
     }
 
-    kafkaZkClient.close();
     return response;
   }
 
@@ -1938,8 +2006,8 @@ public class KafkaAdminService {
               + valueDecoder
               + " not found. ByteArrayDeserializer, ByteBufferDeserializer, BytesDeserializer, "
               + "DoubleDeserializer, FloatDeserializer, "
-              + "IntegerDeserializer, LongDeserializer, ShortDeserializer, StringDeserializer, AvroDeserializer "
-              + "are supported.");
+              + "IntegerDeserializer, LongDeserializer, ShortDeserializer, StringDeserializer, "
+              + "AvroDeserializer, KafkaAvroDeserializer are supported.");
     }
 
     if (valueDecoder == null || valueDecoder.isEmpty()) {
@@ -1955,9 +2023,16 @@ public class KafkaAdminService {
       if (avroSchema == null || avroSchema.isEmpty()) {
         throw new ApiException("Bad request. Schema is needed when choosing AvroDeserializer.");
       } else {
-        return getAvroRecordsByOffset(topic, partition, offset, keyDecoder, avroSchema, maxRecords,
+        return getAvroRecordsByOffset(topic, partition, offset, keyDecoder, valueDecoder,
+            avroSchema, maxRecords,
             timeoutMs);
       }
+    }
+
+    if (valueDecoder != null && valueDecoder.equals("KafkaAvroDeserializer")) {
+      return getAvroRecordsByOffset(topic, partition, offset, keyDecoder, valueDecoder, avroSchema,
+          maxRecords,
+          timeoutMs);
     }
 
     KafkaConsumer consumer;
@@ -2026,6 +2101,33 @@ public class KafkaAdminService {
     return recordList;
   }
 
+  public long getOffsetByTimestamp(String topic, int partition, String timestamp) {
+    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+    TopicPartition tp = new TopicPartition(topic, partition);
+    Map<TopicPartition, Long> timestampsToSearch = new HashMap<>();
+    KafkaConsumer consumer = kafkaUtils
+        .createNewConsumer(String.valueOf(System.currentTimeMillis()));
+    long offset = -1;
+    try {
+
+      timestampsToSearch.put(tp, sdf.parse(timestamp).getTime());
+      Map<TopicPartition, OffsetAndTimestamp> results =
+          consumer.offsetsForTimes(timestampsToSearch);
+      OffsetAndTimestamp offsetAndTimestamp = results.get(tp);
+      if (offsetAndTimestamp != null) {
+        offset = offsetAndTimestamp.offset();
+      }
+    } catch (Exception exception) {
+      throw new ApiException(
+          "Get offset for topic:" + topic + ", partition:" + partition + " by timestamp:"
+              + timestamp + " exception:" + exception.getMessage());
+    } finally {
+      consumer.close();
+    }
+
+    return offset;
+  }
+
   private boolean isTopicPartitionValid(String topic, int partition) {
     TopicMeta topicMeta = describeTopic(topic);
 
@@ -2062,11 +2164,10 @@ public class KafkaAdminService {
   }
 
   public List<Record> getAvroRecordsByOffset(String topic, int partition, long offset,
-      String keyDecoder,
+      String keyDecoder, String valueDecoder,
       String avroSchema, int maxRecords, long timeoutMs) throws ApiException {
     TopicPartition tp = new TopicPartition(topic, partition);
     KafkaConsumer consumer = null;
-    final String valueDecoder = "AvroDeserializer";
     try {
       consumer = kafkaUtils.createNewConsumer(
           String.valueOf(System.currentTimeMillis()), keyDecoder,
@@ -2100,7 +2201,16 @@ public class KafkaAdminService {
           record.setOffset(initCr.offset());
           record.setTimestamp(initCr.timestamp());
           record.setKey(initCr.key());
-          record.setValue(avroDeserialize(initCr.value(), avroSchema));
+          if (valueDecoder.equals("KafkaAvroDeserializer") && (avroSchema == null || avroSchema
+              .isEmpty())) {
+            record.setValue(confluentSchemaService.deserializeBytesToObject(topic, initCr.value()));
+          } else if (valueDecoder.equals("KafkaAvroDeserializer") && avroSchema != null
+              && !avroSchema.isEmpty()) {
+            //If avro schema is provided
+            record.setValue(avroDeserialize(initCr.value(), avroSchema, true));
+          } else {
+            record.setValue(avroDeserialize(initCr.value(), avroSchema, false));
+          }
           log.info(
               "Value: "
                   + initCr.value()
@@ -2120,9 +2230,9 @@ public class KafkaAdminService {
               + " offset:"
               + offset
               + " using keyDecoder:" + keyDecoder + ", valueDecoder:"
-              + "ByteArrayDeserializer"
-              + " exception. "
-              + exception.getLocalizedMessage());
+              + valueDecoder
+              + " exception : "
+              + exception);
     } finally {
       consumer.close();
     }
@@ -2130,15 +2240,22 @@ public class KafkaAdminService {
     return recordList;
   }
 
-  private Object avroDeserialize(byte[] bytes, String avroSchema) {
+  private Object avroDeserialize(byte[] bytes, String avroSchema, boolean isInSchemaRegistry) {
     Schema schema = new Schema.Parser().parse(avroSchema);
     DatumReader reader = new GenericDatumReader<GenericRecord>(schema);
     ByteBuffer buffer = ByteBuffer.wrap(bytes);
     Object object = null;
+    int startOffset = 0;
+
+    if (isInSchemaRegistry) {
+      //In schema registry, one MAGIC byte and for bytes for shemaId is add before real data.
+      startOffset = 5;
+    }
     try {
       object =
           reader.read(
-              null, DecoderFactory.get().binaryDecoder(buffer.array(), 0, bytes.length, null));
+              null,
+              DecoderFactory.get().binaryDecoder(buffer.array(), startOffset, bytes.length, null));
     } catch (IOException exception) {
       throw new ApiException("Avro Deserialize exception. " + exception);
     }
@@ -2224,24 +2341,14 @@ public class KafkaAdminService {
                   + consumer.position(tp));
         } else if (isDateTime(offset)) {
           // Reset offset by time
-          SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
-          Map<TopicPartition, Long> timestampsToSearch = new HashMap<>();
           try {
-            timestampsToSearch.put(tp, sdf.parse(offset).getTime());
-            Map<TopicPartition, OffsetAndTimestamp> results =
-                consumer.offsetsForTimes(timestampsToSearch);
-            OffsetAndTimestamp offsetAndTimestamp = results.get(tp);
-            if (offsetAndTimestamp != null) {
-              offsetToBeReset = offsetAndTimestamp.offset();
+            offsetToBeReset = getOffsetByTimestamp(topic, partition, offset);
+            if (offsetToBeReset != -1) {
               log.info(
                   "Reset consumer group:"
                       + consumerGroup
                       + " offset by time. Reset to offset:"
-                      + offsetAndTimestamp.offset()
-                      + ", timestamp:"
-                      + offsetAndTimestamp.timestamp()
-                      + ", timestampToDate:"
-                      + sdf.format(new Date(offsetAndTimestamp.timestamp())));
+                      + offsetToBeReset);
               consumer.seek(tp, offsetToBeReset);
             } else {
               return GeneralResponse.builder()
@@ -2251,7 +2358,7 @@ public class KafkaAdminService {
                           + offset)
                   .build();
             }
-          } catch (ParseException parseException) {
+          } catch (Exception exception) {
             return GeneralResponse.builder()
                 .state(GeneralResponseState.failure)
                 .msg("Invalid offset format. Date format should be yyyy-MM-dd HH:mm:ss.SSS .")
@@ -2336,7 +2443,7 @@ public class KafkaAdminService {
         .build();
   }
 
-  private boolean isDateTime(String offset) {
+  public boolean isDateTime(String offset) {
     String patternStr = "\\d\\d\\d\\d-[0-1]\\d-[0-3]\\d\\s+[0-2]\\d:[0-5]\\d:[0-5]\\d\\.\\d\\d\\d";
     Pattern timePattern = Pattern.compile(patternStr);
     return timePattern.matcher(offset).find();
@@ -2349,7 +2456,7 @@ public class KafkaAdminService {
     Map<String, Map<Integer, Long>> result = new ConcurrentHashMap<>();
 
     if (type != null && type == ConsumerType.OLD) {
-      CuratorFramework zkClient = zookeeperUtils.createZkClient();
+      CuratorFramework zkClient = zookeeperUtils.getCuratorClient();
       // Get Old Consumer commit time
       try {
         Map<Integer, Long> oldConsumerOffsetMap = new ConcurrentHashMap<>();

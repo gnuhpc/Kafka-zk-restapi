@@ -24,6 +24,7 @@ import org.gnuhpc.bigdata.config.KafkaConfig;
 import org.gnuhpc.bigdata.config.ZookeeperConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 
 /**
  * Created by gnuhpc on 2017/7/12.
@@ -31,6 +32,7 @@ import org.springframework.context.annotation.Configuration;
 @Log4j
 @Getter
 @Setter
+@Lazy
 @Configuration
 public class KafkaUtils {
 
@@ -56,6 +58,7 @@ public class KafkaUtils {
       put("ByteBufferDeserializer", ByteBuffer.class);
       put("BytesDeserializer", Bytes.class);
       put("AvroDeserializer", byte[].class);
+      put("KafkaAvroDeserializer", byte[].class);
     }
   };
 
@@ -71,6 +74,7 @@ public class KafkaUtils {
       put("ByteBufferSerializer", ByteBuffer.class);
       put("BytesSerializer", Bytes.class);
       put("AvroSerializer", byte[].class);
+      put("KafkaAvroSerializer", byte[].class);
     }
   };
 

@@ -33,7 +33,9 @@ import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.ExponentialBackoffRetry;
+import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.DescribeReplicaLogDirsResult.ReplicaLogDirInfo;
+import org.apache.kafka.clients.admin.KafkaAdminClient;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -108,6 +110,7 @@ public class KafkaAdminServiceTest {
       "localhost:19092,localhost:19094,localhost:19096";
   private static final List<Integer> TEST_KAFKA_BOOTSTRAP_SERVERS_ID = Arrays.asList(10, 11, 12);
   private static final int KAFKA_NODES_COUNT = TEST_KAFKA_BOOTSTRAP_SERVERS_ID.size();
+  private static final String TEST_KAFKA_SCHEMAREGISTRY = "http://localhost:8081";
   private static final String TEST_ZK = "127.0.0.1:2181";
   private static final int TEST_CONTROLLER_ID = 11;
 //  private static final List<String> TEST_KAFKA_LOG_DIRS =
@@ -181,11 +184,15 @@ public class KafkaAdminServiceTest {
     when(mockKafkaConfig.getBrokers()).thenReturn(TEST_KAFKA_BOOTSTRAP_SERVERS);
     when(mockKafkaConfig.getHealthCheckTopic()).thenReturn(HEALTH_CHECK_TOPIC_TO_TEST);
     when(mockZookeeperConfig.getUris()).thenReturn(TEST_ZK);
+    when(mockKafkaConfig.getSchemaregistry()).thenReturn(TEST_KAFKA_SCHEMAREGISTRY);
 
     mockKafkaUtils.setKafkaConfig(mockKafkaConfig);
     mockZookeeperUtils.setZookeeperConfig(mockZookeeperConfig);
     mockZookeeperUtils.setKafkaZkClient(kafkaZkClient);
     mockZookeeperUtils.setCuratorClient(curatorClient);
+    Properties adminClientProp = new Properties();
+    adminClientProp.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, TEST_KAFKA_BOOTSTRAP_SERVERS);
+    kafkaAdminServiceUnderTest.setKafkaAdminClient(KafkaAdminClient.create(adminClientProp));
 
     clean();
     allTopicsInClusterBeforeTest = kafkaAdminServiceUnderTest.getAllTopics();

@@ -187,15 +187,29 @@ public class KafkaController {
   public List<Record> getMessage(
       @PathVariable String topic,
       @PathVariable int partition,
-      @PathVariable long offset,
+      @PathVariable
+      @ApiParam(
+          value =
+              "[long/yyyy-MM-dd HH:mm:ss.SSS] can be supported. ")
+          String offset,
       @RequestParam(required = false, defaultValue = "10") int maxRecords,
       @RequestParam(required = false, defaultValue = "StringDeserializer") String keyDecoder,
       @RequestParam(required = false, defaultValue = "StringDeserializer") String valueDecoder,
       @RequestParam(required = false) String avroSchema,
       @RequestParam(required = false, defaultValue = "30000") long fetchTimeoutMs)
       throws ApiException {
-    return kafkaAdminService.getRecordsByOffset(topic, partition, offset, maxRecords, keyDecoder,
-        valueDecoder, avroSchema, fetchTimeoutMs);
+    long offsetL;
+    if (kafkaAdminService.isDateTime(offset)) {
+      offsetL = kafkaAdminService.getOffsetByTimestamp(topic, partition, offset);
+    } else {
+      offsetL = Long.parseLong(offset);
+    }
+    if (offsetL >= 0) {
+      return kafkaAdminService.getRecordsByOffset(topic, partition, offsetL, maxRecords, keyDecoder,
+          valueDecoder, avroSchema, fetchTimeoutMs);
+    } else {
+      return new ArrayList<>();
+    }
   }
 
   @GetMapping(value = "/topics/{topic}")

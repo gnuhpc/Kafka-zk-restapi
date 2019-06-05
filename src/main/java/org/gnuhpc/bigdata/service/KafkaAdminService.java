@@ -1923,7 +1923,6 @@ public class KafkaAdminService {
       log.info("Delete zk path /admin/reassign_partitions failed.");
     }
 
-    kafkaZkClient.close();
     return response;
   }
 
@@ -2102,6 +2101,33 @@ public class KafkaAdminService {
     return recordList;
   }
 
+  public long getOffsetByTimestamp(String topic, int partition, String timestamp) {
+    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+    TopicPartition tp = new TopicPartition(topic, partition);
+    Map<TopicPartition, Long> timestampsToSearch = new HashMap<>();
+    KafkaConsumer consumer = kafkaUtils
+        .createNewConsumer(String.valueOf(System.currentTimeMillis()));
+    long offset = -1;
+    try {
+
+      timestampsToSearch.put(tp, sdf.parse(timestamp).getTime());
+      Map<TopicPartition, OffsetAndTimestamp> results =
+          consumer.offsetsForTimes(timestampsToSearch);
+      OffsetAndTimestamp offsetAndTimestamp = results.get(tp);
+      if (offsetAndTimestamp != null) {
+        offset = offsetAndTimestamp.offset();
+      }
+    } catch (Exception exception) {
+      throw new ApiException(
+          "Get offset for topic:" + topic + ", partition:" + partition + " by timestamp:"
+              + timestamp + " exception:" + exception.getMessage());
+    } finally {
+      consumer.close();
+    }
+
+    return offset;
+  }
+
   private boolean isTopicPartitionValid(String topic, int partition) {
     TopicMeta topicMeta = describeTopic(topic);
 
@@ -2178,7 +2204,8 @@ public class KafkaAdminService {
           if (valueDecoder.equals("KafkaAvroDeserializer") && (avroSchema == null || avroSchema
               .isEmpty())) {
             record.setValue(confluentSchemaService.deserializeBytesToObject(topic, initCr.value()));
-          } else if (valueDecoder.equals("KafkaAvroDeserializer") && avroSchema != null && !avroSchema.isEmpty()){
+          } else if (valueDecoder.equals("KafkaAvroDeserializer") && avroSchema != null
+              && !avroSchema.isEmpty()) {
             //If avro schema is provided
             record.setValue(avroDeserialize(initCr.value(), avroSchema, true));
           } else {
@@ -2227,7 +2254,8 @@ public class KafkaAdminService {
     try {
       object =
           reader.read(
-              null, DecoderFactory.get().binaryDecoder(buffer.array(), startOffset, bytes.length, null));
+              null,
+              DecoderFactory.get().binaryDecoder(buffer.array(), startOffset, bytes.length, null));
     } catch (IOException exception) {
       throw new ApiException("Avro Deserialize exception. " + exception);
     }
@@ -2313,24 +2341,14 @@ public class KafkaAdminService {
                   + consumer.position(tp));
         } else if (isDateTime(offset)) {
           // Reset offset by time
-          SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
-          Map<TopicPartition, Long> timestampsToSearch = new HashMap<>();
           try {
-            timestampsToSearch.put(tp, sdf.parse(offset).getTime());
-            Map<TopicPartition, OffsetAndTimestamp> results =
-                consumer.offsetsForTimes(timestampsToSearch);
-            OffsetAndTimestamp offsetAndTimestamp = results.get(tp);
-            if (offsetAndTimestamp != null) {
-              offsetToBeReset = offsetAndTimestamp.offset();
+            offsetToBeReset = getOffsetByTimestamp(topic, partition, offset);
+            if (offsetToBeReset != -1) {
               log.info(
                   "Reset consumer group:"
                       + consumerGroup
                       + " offset by time. Reset to offset:"
-                      + offsetAndTimestamp.offset()
-                      + ", timestamp:"
-                      + offsetAndTimestamp.timestamp()
-                      + ", timestampToDate:"
-                      + sdf.format(new Date(offsetAndTimestamp.timestamp())));
+                      + offsetToBeReset);
               consumer.seek(tp, offsetToBeReset);
             } else {
               return GeneralResponse.builder()
@@ -2340,7 +2358,7 @@ public class KafkaAdminService {
                           + offset)
                   .build();
             }
-          } catch (ParseException parseException) {
+          } catch (Exception exception) {
             return GeneralResponse.builder()
                 .state(GeneralResponseState.failure)
                 .msg("Invalid offset format. Date format should be yyyy-MM-dd HH:mm:ss.SSS .")
@@ -2425,7 +2443,7 @@ public class KafkaAdminService {
         .build();
   }
 
-  private boolean isDateTime(String offset) {
+  public boolean isDateTime(String offset) {
     String patternStr = "\\d\\d\\d\\d-[0-1]\\d-[0-3]\\d\\s+[0-2]\\d:[0-5]\\d:[0-5]\\d\\.\\d\\d\\d";
     Pattern timePattern = Pattern.compile(patternStr);
     return timePattern.matcher(offset).find();

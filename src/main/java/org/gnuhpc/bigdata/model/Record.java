@@ -58,7 +58,7 @@ public class Record {
       }
 
       if (byte[].class.isAssignableFrom(type)) {
-        if (decoder.equals("AvroDeserializer")) {
+        if (decoder.contains("AvroDeserializer")) {
           return value.toString();
         } else {
           byte[] byteArray = (byte[]) value;

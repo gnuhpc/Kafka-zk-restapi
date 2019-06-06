@@ -38,6 +38,7 @@ import org.gnuhpc.bigdata.model.TopicMeta;
 import org.gnuhpc.bigdata.service.KafkaAdminService;
 import org.gnuhpc.bigdata.validator.ConsumerGroupExistConstraint;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -58,6 +59,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class KafkaController {
 
+  @Lazy
   @Autowired
   private KafkaAdminService kafkaAdminService;
 
@@ -154,6 +156,13 @@ public class KafkaController {
     return kafkaAdminService.createTopic(topicList);
   }
 
+  @PostMapping(value = "/topics/create/check", consumes = "application/json")
+  @ApiOperation(value = "Create topics check")
+  public Map createTopicCheck(
+      @RequestBody List<TopicDetail> topicList) {
+    return kafkaAdminService.createTopicCheck(topicList);
+  }
+
   @ApiOperation(value = "Tell if a topic exists")
   @GetMapping(value = "/topics/{topic}/exist")
   public boolean existTopic(@PathVariable String topic) {
@@ -178,15 +187,29 @@ public class KafkaController {
   public List<Record> getMessage(
       @PathVariable String topic,
       @PathVariable int partition,
-      @PathVariable long offset,
-      @RequestParam(required = false) int maxRecords,
+      @PathVariable
+      @ApiParam(
+          value =
+              "[long/yyyy-MM-dd HH:mm:ss.SSS] can be supported. ")
+          String offset,
+      @RequestParam(required = false, defaultValue = "10") int maxRecords,
       @RequestParam(required = false, defaultValue = "StringDeserializer") String keyDecoder,
       @RequestParam(required = false, defaultValue = "StringDeserializer") String valueDecoder,
       @RequestParam(required = false) String avroSchema,
       @RequestParam(required = false, defaultValue = "30000") long fetchTimeoutMs)
       throws ApiException {
-    return kafkaAdminService.getRecordsByOffset(topic, partition, offset, maxRecords, keyDecoder,
-        valueDecoder, avroSchema, fetchTimeoutMs);
+    long offsetL;
+    if (kafkaAdminService.isDateTime(offset)) {
+      offsetL = kafkaAdminService.getOffsetByTimestamp(topic, partition, offset);
+    } else {
+      offsetL = Long.parseLong(offset);
+    }
+    if (offsetL >= 0) {
+      return kafkaAdminService.getRecordsByOffset(topic, partition, offsetL, maxRecords, keyDecoder,
+          valueDecoder, avroSchema, fetchTimeoutMs);
+    } else {
+      return new ArrayList<>();
+    }
   }
 
   @GetMapping(value = "/topics/{topic}")

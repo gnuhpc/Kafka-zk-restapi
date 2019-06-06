@@ -11,6 +11,7 @@ import org.gnuhpc.bigdata.utils.ZookeeperUtils;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 /** Created by gnuhpc on 2017/7/16. */
@@ -18,6 +19,7 @@ import org.springframework.stereotype.Component;
 @Setter
 @Getter
 @ConfigurationProperties(prefix = "zookeeper")
+@Lazy
 @Component
 @Configuration
 public class ZookeeperConfig {

@@ -40,6 +40,7 @@ import org.gnuhpc.bigdata.model.ZkServerEnvironment;
 import org.gnuhpc.bigdata.model.ZkServerStat;
 import org.gnuhpc.bigdata.validator.ZkNodePathExistConstraint;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.validation.annotation.Validated;
 
 /** Created by huangpengcheng on 2016/7/21 0021. */
@@ -58,6 +59,7 @@ public class ZookeeperUtils {
       Pattern.compile("/(\\d+\\.\\d+\\.\\d+\\.\\d+):(\\d+)\\[(\\d+)\\]\\((.*)");
   private final Pattern latenciesPattern = Pattern.compile(".*: (-?\\d+)/(-?\\d+)/(-?\\d+)");
 
+  @Lazy
   @Autowired private ZookeeperConfig zookeeperConfig;
 
   /** 初始sleep时间(毫秒). */
@@ -73,7 +75,40 @@ public class ZookeeperUtils {
   private CuratorFramework curatorClient = null;
   private KafkaZkClient kafkaZkClient = null;
 
-  public void init() {}
+  public void init() {
+    //1.设置重试策略,重试时间计算策略sleepMs = baseSleepTimeMs * Math.max(1, random.nextInt(1 << (retryCount + 1)));
+    RetryPolicy retryPolicy = new ExponentialBackoffRetry(BASE_SLEEP_TIME, MAX_RETRIES_COUNT, MAX_SLEEP_TIME);
+
+    //2.初始化客户端
+    curatorClient = CuratorFrameworkFactory.builder()
+        .connectString(zookeeperConfig.getUris())
+        .sessionTimeoutMs(SESSION_TIMEOUT)
+        .connectionTimeoutMs(CONNECTION_TIMEOUT)
+        .retryPolicy(retryPolicy)
+//                .namespace("kafka-rest")        //命名空间隔离
+        .build();
+    curatorClient.start();
+    try {
+      curatorClient.blockUntilConnected();
+      log.info("Zookeeper:" + zookeeperConfig.getUris() + " Connected.Continue...");
+      kafkaZkClient =
+          KafkaZkClient.apply(
+              zookeeperConfig.getUris(),
+              false,
+              SESSION_TIMEOUT,
+              CONNECTION_TIMEOUT,
+              Integer.MAX_VALUE,
+              Time.SYSTEM,
+              "kafka.zk.rest",
+              "rest");
+      ZkClient zkClient = new ZkClient(zookeeperConfig.getUris(), SESSION_TIMEOUT, CONNECTION_TIMEOUT, ZKStringSerializer$.MODULE$);
+      zkUtils = new ZkUtils(zkClient, new ZkConnection(zookeeperConfig.getUris()), false);
+      log.info("Zkutils" + zkUtils.toString());
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+      log.error("Exception:", e);
+    }
+  }
 
   public void destroy() {
     log.info("zookeeper closed.");
@@ -227,7 +262,6 @@ public class ZookeeperUtils {
 
   public List<String> lsPath(@ZkNodePathExistConstraint String path) {
     List<String> stringList = null;
-    CuratorFramework curatorClient = createZkClient();
 
     try {
       stringList = curatorClient.getChildren().forPath(path);
@@ -240,7 +274,6 @@ public class ZookeeperUtils {
 
   public Map<String, String> getNodeData(@ZkNodePathExistConstraint String path) {
     Map<String, String> map = new HashMap<>();
-    CuratorFramework curatorClient = createZkClient();
 
     try {
       List<String> childrens = curatorClient.getChildren().forPath(path);
@@ -265,7 +298,6 @@ public class ZookeeperUtils {
   }
 
   public Stat getNodePathStat(String path) {
-    CuratorFramework curatorClient = createZkClient();
     Stat stat = null;
 
     try {
@@ -277,74 +309,11 @@ public class ZookeeperUtils {
     return stat;
   }
 
-  public CuratorFramework createZkClient() {
-    if (this.curatorClient == null) {
-      log.info("///////Curator Client is null");
-      // 1.设置重试策略,重试时间计算策略sleepMs = baseSleepTimeMs * Math.max(1, random.nextInt(1 << (retryCount +
-      // 1)));
-      RetryPolicy retryPolicy =
-          new ExponentialBackoffRetry(BASE_SLEEP_TIME, MAX_RETRIES_COUNT, MAX_SLEEP_TIME);
-
-      // 2.初始化客户端
-      curatorClient =
-          CuratorFrameworkFactory.builder()
-              .connectString(zookeeperConfig.getUris())
-              .sessionTimeoutMs(SESSION_TIMEOUT)
-              .connectionTimeoutMs(CONNECTION_TIMEOUT)
-              .retryPolicy(retryPolicy)
-              //                .namespace("kafka-rest")        //命名空间隔离
-              .build();
-      curatorClient.start();
-      try {
-        curatorClient.blockUntilConnected(CONNECTION_TIMEOUT, TimeUnit.MILLISECONDS);
-      } catch (InterruptedException interruptedException) {
-        log.warn("Curator Client connect is interrupted." + interruptedException);
-      }
-    }
-    if (!isConnected(curatorClient)) {
-      throw new ApiException("Zookeeper is not connected.");
-    }
-
-    return this.curatorClient;
-  }
-
   public String getState() {
-    CuratorFramework curatorClient = createZkClient();
 
     String stateStr = curatorClient.getState().toString();
 
     return stateStr;
-  }
-
-  public KafkaZkClient createKafkaZkClient() {
-    if (kafkaZkClient == null) {
-      log.info("KafkaZkClient is null. Prepare to create.");
-      try {
-        kafkaZkClient =
-            KafkaZkClient.apply(
-                zookeeperConfig.getUris(),
-                false,
-                SESSION_TIMEOUT,
-                CONNECTION_TIMEOUT,
-                Integer.MAX_VALUE,
-                Time.SYSTEM,
-                "kafka.zk.rest",
-                "rest");
-      } catch (Exception exception) {
-        throw new ApiException("Failed to create kafkaZkClient." + exception.getLocalizedMessage());
-      }
-    }
-    return kafkaZkClient;
-  }
-
-  public ZkUtils getZkUtils() {
-    if (zkUtils == null) {
-      log.info("ZkUtils is null. Prepare to create.");
-      ZkClient zkClient = new ZkClient(zookeeperConfig.getUris(), SESSION_TIMEOUT, CONNECTION_TIMEOUT, ZKStringSerializer$.MODULE$);
-      zkUtils = new ZkUtils(zkClient, new ZkConnection(zookeeperConfig.getUris()), false);
-    }
-
-    return zkUtils;
   }
 
   public boolean isConnected(CuratorFramework curatorClient) {

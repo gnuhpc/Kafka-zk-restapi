@@ -100,6 +100,7 @@ import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.config.ConfigResource.Type;
 import org.apache.kafka.common.errors.ApiException;
 import org.apache.kafka.common.errors.InvalidTopicException;
+import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.common.internals.Topic;
 import org.apache.kafka.common.protocol.Errors;
 import org.apache.kafka.common.requests.DescribeLogDirsResponse.LogDirInfo;
@@ -2245,19 +2246,22 @@ public class KafkaAdminService {
     DatumReader reader = new GenericDatumReader<GenericRecord>(schema);
     ByteBuffer buffer = ByteBuffer.wrap(bytes);
     Object object = null;
-    int startOffset = 0;
 
     if (isInSchemaRegistry) {
-      //In schema registry, one MAGIC byte and for bytes for shemaId is add before real data.
-      startOffset = 5;
-    }
-    try {
-      object =
-          reader.read(
-              null,
-              DecoderFactory.get().binaryDecoder(buffer.array(), startOffset, bytes.length, null));
-    } catch (IOException exception) {
-      throw new ApiException("Avro Deserialize exception. " + exception);
+      try {
+        object = confluentSchemaService.deserializeBytesToObject("", bytes, schema);
+      } catch (SerializationException serializationException) {
+        throw new ApiException("Avro Deserialize exception. " + serializationException);
+      }
+    } else {
+      try {
+        object =
+            reader.read(
+                null,
+                DecoderFactory.get().binaryDecoder(buffer.array(), 0, bytes.length, null));
+      } catch (IOException exception) {
+        throw new ApiException("Avro Deserialize exception. " + exception);
+      }
     }
 
     return object;

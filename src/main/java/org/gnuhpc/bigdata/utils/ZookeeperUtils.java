@@ -2,7 +2,6 @@ package org.gnuhpc.bigdata.utils;
 
 import com.google.common.base.Charsets;
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.HashMap;
@@ -10,11 +9,11 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import kafka.utils.ZKStringSerializer$;
 import kafka.utils.ZkUtils;
+import kafka.zk.AdminZkClient;
 import kafka.zk.KafkaZkClient;
 import lombok.Getter;
 import lombok.Setter;
@@ -29,7 +28,6 @@ import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.api.GetDataBuilder;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.curator.utils.ZKPaths;
-import org.apache.kafka.common.errors.ApiException;
 import org.apache.kafka.common.utils.Time;
 import org.apache.zookeeper.data.Stat;
 import org.gnuhpc.bigdata.config.ZookeeperConfig;
@@ -74,6 +72,7 @@ public class ZookeeperUtils {
   private ZkUtils zkUtils;
   private CuratorFramework curatorClient = null;
   private KafkaZkClient kafkaZkClient = null;
+  private AdminZkClient adminZkClient = null;
 
   public void init() {
     //1.设置重试策略,重试时间计算策略sleepMs = baseSleepTimeMs * Math.max(1, random.nextInt(1 << (retryCount + 1)));
@@ -101,6 +100,7 @@ public class ZookeeperUtils {
               Time.SYSTEM,
               "kafka.zk.rest",
               "rest");
+      adminZkClient = new AdminZkClient(kafkaZkClient);
       ZkClient zkClient = new ZkClient(zookeeperConfig.getUris(), SESSION_TIMEOUT, CONNECTION_TIMEOUT, ZKStringSerializer$.MODULE$);
       zkUtils = new ZkUtils(zkClient, new ZkConnection(zookeeperConfig.getUris()), false);
       log.info("Zkutils" + zkUtils.toString());

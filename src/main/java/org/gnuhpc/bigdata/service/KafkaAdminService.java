@@ -12,14 +12,12 @@ import com.fasterxml.jackson.module.scala.DefaultScalaModule;
 import com.google.common.collect.ImmutableMap;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -653,7 +651,7 @@ public class KafkaAdminService {
 
   public Properties getConfigInZk(ConfigResource.Type type, String name) {
     KafkaZkClient kafkaZkClient = zookeeperUtils.getKafkaZkClient();
-    AdminZkClient adminZkClient = new AdminZkClient(kafkaZkClient);
+    AdminZkClient adminZkClient = zookeeperUtils.getAdminZkClient();
     Properties properties = new Properties();
 
     if (type.equals(Type.BROKER)) {
@@ -697,7 +695,7 @@ public class KafkaAdminService {
   public Properties updateBrokerDynConf(int brokerId, Properties propsToBeUpdated) {
     Properties props = getConfigInZk(Type.BROKER, String.valueOf(brokerId));
     KafkaZkClient kafkaZkClient = zookeeperUtils.getKafkaZkClient();
-    AdminZkClient adminZkClient = new AdminZkClient(kafkaZkClient);
+    AdminZkClient adminZkClient = zookeeperUtils.getAdminZkClient();
 
     for (String key : propsToBeUpdated.stringPropertyNames()) {
       if (props.containsKey(key)) {
@@ -718,7 +716,7 @@ public class KafkaAdminService {
 
   public void removeConfigInZk(Type type, String name, List<String> configKeysToBeRemoved) {
     KafkaZkClient kafkaZkClient = zookeeperUtils.getKafkaZkClient();
-    AdminZkClient adminZkClient = new AdminZkClient(kafkaZkClient);
+    AdminZkClient adminZkClient = zookeeperUtils.getAdminZkClient();
 
     Properties props = getConfigInZk(type, name);
 
@@ -1656,7 +1654,7 @@ public class KafkaAdminService {
     timeoutMs = (timeoutMs == null) ? Long.valueOf(10000) : timeoutMs;
 
     KafkaZkClient kafkaZkClient = zookeeperUtils.getKafkaZkClient();
-    AdminZkClient adminZkClient = new AdminZkClient(kafkaZkClient);
+    AdminZkClient adminZkClient = zookeeperUtils.getAdminZkClient();
 
     TwoTuple<
         scala.collection.mutable.HashMap<TopicPartition, Seq<Object>>,

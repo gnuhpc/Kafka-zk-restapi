@@ -272,29 +272,18 @@ public class ZookeeperUtils {
     return stringList;
   }
 
-  public Map<String, String> getNodeData(@ZkNodePathExistConstraint String path) {
-    Map<String, String> map = new HashMap<>();
+  public String getNodeData(@ZkNodePathExistConstraint String path) {
+    String nodeData = null;
 
     try {
-      List<String> childrens = curatorClient.getChildren().forPath(path);
       GetDataBuilder dataBuilder = curatorClient.getData();
-      if (childrens != null && childrens.size() > 0) {
-        for (int i = 0; i < childrens.size(); i++) {
-          String child = childrens.get(i);
-          String childPath = ZKPaths.makePath(path, child);
-          byte[] bytes = dataBuilder.forPath(childPath);
-          map.put(childPath, (bytes != null) ? (new String(bytes, Charsets.UTF_8)) : (null));
-        }
-      } else {
-        byte[] bytes = dataBuilder.forPath(path);
-        map.put(path, (bytes != null) ? (new String(bytes, Charsets.UTF_8)) : (null));
-      }
-
+      byte[] bytes = dataBuilder.forPath(path);
+      nodeData = (bytes != null) ? (new String(bytes, Charsets.UTF_8)) : (null);
     } catch (Exception e) {
       log.error("get node data fail! path: " + path + ", error: {}" + e);
     }
 
-    return map;
+    return nodeData;
   }
 
   public Stat getNodePathStat(String path) {

@@ -12,14 +12,12 @@ import com.fasterxml.jackson.module.scala.DefaultScalaModule;
 import com.google.common.collect.ImmutableMap;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -100,6 +98,7 @@ import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.config.ConfigResource.Type;
 import org.apache.kafka.common.errors.ApiException;
 import org.apache.kafka.common.errors.InvalidTopicException;
+import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.common.internals.Topic;
 import org.apache.kafka.common.protocol.Errors;
 import org.apache.kafka.common.requests.DescribeLogDirsResponse.LogDirInfo;
@@ -652,7 +651,7 @@ public class KafkaAdminService {
 
   public Properties getConfigInZk(ConfigResource.Type type, String name) {
     KafkaZkClient kafkaZkClient = zookeeperUtils.getKafkaZkClient();
-    AdminZkClient adminZkClient = new AdminZkClient(kafkaZkClient);
+    AdminZkClient adminZkClient = zookeeperUtils.getAdminZkClient();
     Properties properties = new Properties();
 
     if (type.equals(Type.BROKER)) {
@@ -696,7 +695,7 @@ public class KafkaAdminService {
   public Properties updateBrokerDynConf(int brokerId, Properties propsToBeUpdated) {
     Properties props = getConfigInZk(Type.BROKER, String.valueOf(brokerId));
     KafkaZkClient kafkaZkClient = zookeeperUtils.getKafkaZkClient();
-    AdminZkClient adminZkClient = new AdminZkClient(kafkaZkClient);
+    AdminZkClient adminZkClient = zookeeperUtils.getAdminZkClient();
 
     for (String key : propsToBeUpdated.stringPropertyNames()) {
       if (props.containsKey(key)) {
@@ -717,7 +716,7 @@ public class KafkaAdminService {
 
   public void removeConfigInZk(Type type, String name, List<String> configKeysToBeRemoved) {
     KafkaZkClient kafkaZkClient = zookeeperUtils.getKafkaZkClient();
-    AdminZkClient adminZkClient = new AdminZkClient(kafkaZkClient);
+    AdminZkClient adminZkClient = zookeeperUtils.getAdminZkClient();
 
     Properties props = getConfigInZk(type, name);
 
@@ -1655,7 +1654,7 @@ public class KafkaAdminService {
     timeoutMs = (timeoutMs == null) ? Long.valueOf(10000) : timeoutMs;
 
     KafkaZkClient kafkaZkClient = zookeeperUtils.getKafkaZkClient();
-    AdminZkClient adminZkClient = new AdminZkClient(kafkaZkClient);
+    AdminZkClient adminZkClient = zookeeperUtils.getAdminZkClient();
 
     TwoTuple<
         scala.collection.mutable.HashMap<TopicPartition, Seq<Object>>,
@@ -2245,19 +2244,22 @@ public class KafkaAdminService {
     DatumReader reader = new GenericDatumReader<GenericRecord>(schema);
     ByteBuffer buffer = ByteBuffer.wrap(bytes);
     Object object = null;
-    int startOffset = 0;
 
     if (isInSchemaRegistry) {
-      //In schema registry, one MAGIC byte and for bytes for shemaId is add before real data.
-      startOffset = 5;
-    }
-    try {
-      object =
-          reader.read(
-              null,
-              DecoderFactory.get().binaryDecoder(buffer.array(), startOffset, bytes.length, null));
-    } catch (IOException exception) {
-      throw new ApiException("Avro Deserialize exception. " + exception);
+      try {
+        object = confluentSchemaService.deserializeBytesToObject("", bytes, schema);
+      } catch (SerializationException serializationException) {
+        throw new ApiException("Avro Deserialize exception. " + serializationException);
+      }
+    } else {
+      try {
+        object =
+            reader.read(
+                null,
+                DecoderFactory.get().binaryDecoder(buffer.array(), 0, bytes.length, null));
+      } catch (IOException exception) {
+        throw new ApiException("Avro Deserialize exception. " + exception);
+      }
     }
 
     return object;

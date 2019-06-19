@@ -71,6 +71,10 @@ public class ConfluentSchemaService {
     return avroDeserializer.deserialize(topic, avroBytearray);
   }
 
+  public Object deserializeBytesToObject(String topic, byte[] avroBytearray, Schema schema) {
+    return avroDeserializer.deserialize(topic, avroBytearray, schema);
+  }
+
   public Object deserializeBytesToObjectForKey(String topic, byte[] avroBytearray) {
     return avroDeserializerForKey.deserialize(topic, avroBytearray);
   }

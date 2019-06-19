@@ -35,7 +35,7 @@ public class ZookeeperController {
 
   @GetMapping("/get/path")
   @ApiOperation(value = "Get data of a zookeeper path")
-  public Map<String, String> get(@RequestParam String path) {
+  public String get(@RequestParam String path) {
     return zookeeperUtils.getNodeData(path);
   }
 

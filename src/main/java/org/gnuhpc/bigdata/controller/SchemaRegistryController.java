@@ -44,7 +44,7 @@ public class SchemaRegistryController {
   }
 
   @PostMapping("/subjects/{subject}/versions")
-  @ApiOperation(value = "Get latest schema by subject")
+  @ApiOperation(value = "Register schema by subject")
   public int registerSchema(@PathVariable String subject, @RequestParam String schemaStr) {
     return confluentSchemaService.registerSchema(subject, schemaStr);
   }

@@ -59,6 +59,7 @@ import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.io.DatumReader;
 import org.apache.avro.io.DecoderFactory;
 import org.apache.curator.framework.CuratorFramework;
+import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.AlterConfigsResult;
 import org.apache.kafka.clients.admin.Config;
@@ -96,6 +97,7 @@ import org.apache.kafka.common.TopicPartitionInfo;
 import org.apache.kafka.common.TopicPartitionReplica;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.config.ConfigResource.Type;
+import org.apache.kafka.common.config.SaslConfigs;
 import org.apache.kafka.common.errors.ApiException;
 import org.apache.kafka.common.errors.InvalidTopicException;
 import org.apache.kafka.common.errors.SerializationException;
@@ -200,6 +202,10 @@ public class KafkaAdminService {
   private void init() {
     Properties adminClientProp = new Properties();
     adminClientProp.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaConfig.getBrokers());
+    if (kafkaConfig.isKafkaSaslEnabled()) {
+      adminClientProp.put(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, kafkaConfig.getSaslSecurityProtocol());
+      adminClientProp.put(SaslConfigs.SASL_MECHANISM, kafkaConfig.getSaslMechianism());
+    }
     this.kafkaAdminClient = KafkaAdminClient.create(adminClientProp);
   }
 

@@ -77,6 +77,10 @@
       <name>Spring-milestone</name>
       <url>http://repo.spring.io/milestone/</url>
     </repository>
+    <repository>
+      <id>confluent</id>
+      <url>http://packages.confluent.io/maven/</url>
+    </repository>
   </repositories>
 
   <dependencies>

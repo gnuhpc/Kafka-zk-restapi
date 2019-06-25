@@ -7,6 +7,11 @@ kafka:
     reset: true
   healthcheck:
     topic: "health"
+  sasl:
+    enable: true
+    security.protocol: "SASL_PLAINTEXT"
+    mechanism: "SCRAM-SHA-512"
+
 
 zookeeper:
   uris: 127.0.0.1:2181

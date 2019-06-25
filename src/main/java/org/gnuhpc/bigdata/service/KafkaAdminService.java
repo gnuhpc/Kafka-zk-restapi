@@ -27,6 +27,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
@@ -35,6 +36,7 @@ import kafka.admin.AdminClient.ConsumerGroupSummary;
 import kafka.admin.AdminClient.ConsumerSummary;
 import kafka.admin.AdminUtils;
 import kafka.admin.ConsumerGroupCommand;
+import kafka.admin.PreferredReplicaLeaderElectionCommand;
 import kafka.admin.ReassignPartitionsCommand;
 import kafka.admin.ReassignPartitionsCommand.Throttle;
 import kafka.api.PartitionOffsetRequestInfo;
@@ -59,6 +61,7 @@ import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.io.DatumReader;
 import org.apache.avro.io.DecoderFactory;
 import org.apache.curator.framework.CuratorFramework;
+import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.AlterConfigsResult;
 import org.apache.kafka.clients.admin.Config;
@@ -96,6 +99,7 @@ import org.apache.kafka.common.TopicPartitionInfo;
 import org.apache.kafka.common.TopicPartitionReplica;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.config.ConfigResource.Type;
+import org.apache.kafka.common.config.SaslConfigs;
 import org.apache.kafka.common.errors.ApiException;
 import org.apache.kafka.common.errors.InvalidTopicException;
 import org.apache.kafka.common.errors.SerializationException;
@@ -200,6 +204,11 @@ public class KafkaAdminService {
   private void init() {
     Properties adminClientProp = new Properties();
     adminClientProp.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaConfig.getBrokers());
+    if (kafkaConfig.isKafkaSaslEnabled()) {
+      adminClientProp
+          .put(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, kafkaConfig.getSaslSecurityProtocol());
+      adminClientProp.put(SaslConfigs.SASL_MECHANISM, kafkaConfig.getSaslMechianism());
+    }
     this.kafkaAdminClient = KafkaAdminClient.create(adminClientProp);
   }
 
@@ -1925,6 +1934,67 @@ public class KafkaAdminService {
     return response;
   }
 
+  public Map<org.gnuhpc.bigdata.model.TopicPartition, Integer> moveLeaderToPreferredReplica(
+      List<org.gnuhpc.bigdata.model.TopicPartition> partitionsForPreferredReplicaElection) {
+    KafkaZkClient kafkaZkClient = zookeeperUtils.getKafkaZkClient();
+    Map<org.gnuhpc.bigdata.model.TopicPartition, Integer> moveLeaderToPreferredReplica = new HashMap<>();
+
+    Map<String, Set<org.gnuhpc.bigdata.model.TopicPartition>> partitionsGrouped = partitionsForPreferredReplicaElection
+        .stream().collect(Collectors.groupingBy(
+            tp -> {
+              String key;
+              if (isTopicPartitionValid(tp.getTopic(), tp.getPartition())) {
+                key = "valid";
+              } else {
+                key = "invalid";
+              }
+              return key;
+            }, Collectors.toSet()));
+
+    Set<org.gnuhpc.bigdata.model.TopicPartition> validPartitions = new HashSet<>();
+    Set<org.gnuhpc.bigdata.model.TopicPartition> invalidPartitions = new HashSet<>();
+    Set<org.gnuhpc.bigdata.model.TopicPartition> allPartitions = new HashSet<>();
+
+    if (partitionsGrouped.containsKey("valid")) {
+      validPartitions = partitionsGrouped.get("valid");
+      allPartitions.addAll(validPartitions);
+    }
+
+    if (partitionsGrouped.containsKey("invalid")) {
+      invalidPartitions = partitionsGrouped.get("invalid");
+      allPartitions.addAll(invalidPartitions);
+    }
+
+    if (kafkaZkClient.pathExists("/admin/preferred_replica_election")) {
+      // -1 means preferred replica leader election currently in progress"
+      return allPartitions.stream().collect(Collectors.toMap(Function.identity(), tp -> -1));
+    }
+
+    if (invalidPartitions.size() > 0) {
+      // -2 means the partition doesn't exist
+      Map<org.gnuhpc.bigdata.model.TopicPartition, Integer> invalidPartitionsMap = invalidPartitions
+          .stream().collect(Collectors.toMap(Function.identity(), tp -> -2));
+      moveLeaderToPreferredReplica = invalidPartitionsMap;
+    }
+    try {
+      Set<TopicPartition> partitionsUndergoingPreferredReplicaElection = new HashSet<>();
+      for (org.gnuhpc.bigdata.model.TopicPartition tp:validPartitions) {
+        partitionsUndergoingPreferredReplicaElection.add(new TopicPartition(tp.getTopic(), tp.getPartition()));
+      }
+      PreferredReplicaLeaderElectionCommand
+          .writePreferredReplicaElectionData(kafkaZkClient,
+              JavaConverters.asScalaSetConverter(partitionsUndergoingPreferredReplicaElection).asScala());
+      //0 means successfully started preferred replica election
+      Map<org.gnuhpc.bigdata.model.TopicPartition, Integer> validPartitionsMap = validPartitions
+          .stream().collect(Collectors.toMap(Function.identity(), tp -> 0));
+      moveLeaderToPreferredReplica.putAll(validPartitionsMap);
+    } catch (Exception exception) {
+      throw new ApiException("Try to move leader to preferred replica failed:" + exception);
+    }
+
+    return moveLeaderToPreferredReplica;
+  }
+
   public String getMessage(
       @TopicExistConstraint String topic,
       int partition,
@@ -2128,6 +2198,10 @@ public class KafkaAdminService {
   }
 
   private boolean isTopicPartitionValid(String topic, int partition) {
+    if (!existTopic(topic)) {
+      return false;
+    }
+
     TopicMeta topicMeta = describeTopic(topic);
 
     for (CustomTopicPartitionInfo topicPartitionInfo : topicMeta.getTopicPartitionInfos()) {

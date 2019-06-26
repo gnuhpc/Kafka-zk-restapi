@@ -54,6 +54,15 @@ public class KafkaConfig {
   @Value("${kafka.healthcheck.topic}")
   private String healthCheckTopic;
 
+  @Value("${kafka.sasl.enable}")
+  private boolean kafkaSaslEnabled;
+
+  @Value("${kafka.sasl.security.protocol}")
+  private String saslSecurityProtocol;
+
+  @Value("${kafka.sasl.mechanism}")
+  private String saslMechianism;
+
   @Lazy
   @Bean(initMethod = "init", destroyMethod = "destroy")
   public KafkaUtils kafkaUtils() {

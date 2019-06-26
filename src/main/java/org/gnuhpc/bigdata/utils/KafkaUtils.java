@@ -10,12 +10,14 @@ import kafka.admin.AdminClient;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.log4j.Log4j;
+import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.Node;
 import org.apache.kafka.common.PartitionInfo;
+import org.apache.kafka.common.config.SaslConfigs;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
@@ -41,9 +43,7 @@ public class KafkaUtils {
   @Autowired
   private ZookeeperConfig zookeeperConfig;
 
-
   private KafkaProducer producer;
-  private Properties prop;
 
   public static final String DEFAULTCP = "kafka-rest-consumergroup";
   public static final Map<String, Class<Object>> DESERIALIZER_TYPE_MAP = new HashMap() {
@@ -90,8 +90,7 @@ public class KafkaUtils {
   }
 
   public KafkaConsumer createNewConsumer(String consumerGroup) {
-    Properties properties = new Properties();
-    properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaConfig.getBrokers());
+    Properties properties = initProps();
     properties.put(ConsumerConfig.GROUP_ID_CONFIG, consumerGroup);
     properties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
     properties.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, "30000");
@@ -107,8 +106,7 @@ public class KafkaUtils {
   }
 
   public KafkaConsumer createNewConsumerByClientId(String consumerGroup, String clientId) {
-    Properties properties = new Properties();
-    properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaConfig.getBrokers());
+    Properties properties = initProps();
     properties.put(ConsumerConfig.GROUP_ID_CONFIG, consumerGroup);
     properties.put(ConsumerConfig.CLIENT_ID_CONFIG, clientId);
     properties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
@@ -127,7 +125,7 @@ public class KafkaUtils {
   public KafkaConsumer createNewConsumer(String consumerGroup, String keyDecoder,
       String valueDecoder, int maxRecords)
       throws ClassNotFoundException {
-    Properties properties = new Properties();
+    Properties properties = initProps();
     if (keyDecoder == null || keyDecoder.isEmpty()) {
       properties.put(
           ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
@@ -152,7 +150,6 @@ public class KafkaUtils {
           Class.forName(valDese).getCanonicalName());
     }
 
-    properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, getKafkaConfig().getBrokers());
     properties.put(ConsumerConfig.GROUP_ID_CONFIG, consumerGroup);
     properties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
     properties.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, "30000");
@@ -164,23 +161,8 @@ public class KafkaUtils {
     return kafkaConsumer;
   }
 
-  public KafkaConsumer createNewConsumerByTopic(String topic) {
-    Properties properties = new Properties();
-    properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, getKafkaConfig().getBrokers());
-    properties.put(ConsumerConfig.GROUP_ID_CONFIG, DEFAULTCP);
-    properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
-        StringDeserializer.class.getCanonicalName());
-    properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
-        StringDeserializer.class.getCanonicalName());
-    KafkaConsumer kafkaConsumer = new KafkaConsumer(properties);
-    kafkaConsumer.subscribe(Collections.singletonList(topic));
-
-    return kafkaConsumer;
-  }
-
   public KafkaProducer createProducer() {
-    Properties prop = new Properties();
-    prop.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaConfig.getBrokers());
+    Properties prop = initProps();
     prop.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG,
         "org.apache.kafka.common.serialization.StringSerializer");
     prop.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
@@ -193,8 +175,7 @@ public class KafkaUtils {
   }
 
   public KafkaProducer createProducer(String keyEncoder, String valueEncoder) throws ClassNotFoundException {
-    Properties prop = new Properties();
-    prop.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaConfig.getBrokers());
+    Properties prop = initProps();
     if (keyEncoder == null || keyEncoder.isEmpty()) {
       prop.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getCanonicalName());
     } else {
@@ -233,6 +214,20 @@ public class KafkaUtils {
   }
 
   public AdminClient createAdminClient() {
-    return AdminClient.createSimplePlaintext(getKafkaConfig().getBrokers());
+    Properties props = initProps();
+    return AdminClient.create(props);
+  }
+
+  private Properties initProps() {
+    Properties p = new Properties();
+
+    p.setProperty(CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG, kafkaConfig.getBrokers());
+
+    if (kafkaConfig.isKafkaSaslEnabled()) {
+      p.put(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, kafkaConfig.getSaslSecurityProtocol());
+      p.put(SaslConfigs.SASL_MECHANISM, kafkaConfig.getSaslMechianism() );
+    }
+
+    return p;
   }
 }

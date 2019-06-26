@@ -15,6 +15,7 @@ import joptsimple.internal.Strings;
 import lombok.extern.log4j.Log4j;
 import org.apache.kafka.clients.admin.DescribeReplicaLogDirsResult.ReplicaLogDirInfo;
 import org.apache.kafka.common.Node;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.TopicPartitionReplica;
 import org.apache.kafka.common.config.ConfigResource.Type;
 import org.apache.kafka.common.errors.ApiException;
@@ -295,6 +296,19 @@ public class KafkaController {
       })
   public ReassignStatus checkReassignPartitions(@RequestBody ReassignModel reassign) {
     return kafkaAdminService.checkReassignStatus(reassign);
+  }
+
+  @PutMapping(value = "/partitions/preferredreplica/elect")
+  @ApiOperation(value = "Move partition leader to preferred replica.")
+  @ApiResponses(
+      value = {
+          @ApiResponse(code = -2, message = "Partition doesn't exist"),
+          @ApiResponse(code = -1, message = "Other preferred replica elect is in progress"),
+          @ApiResponse(code = 0, message = "Successfully started preferred replica election"),
+      })
+  public Map<org.gnuhpc.bigdata.model.TopicPartition, Integer> preferredReplicaElection(
+      @RequestBody List<org.gnuhpc.bigdata.model.TopicPartition> partitionList) {
+    return kafkaAdminService.moveLeaderToPreferredReplica(partitionList);
   }
 
   @PutMapping(value = "/partitions/reassign/stop")

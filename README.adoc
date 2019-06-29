@@ -26,6 +26,22 @@ Kafka/ZK REST API is to provide the production-ready endpoints to perform some a
 
 image::https://raw.githubusercontent.com/gnuhpc/Kafka-zk-restapi/master/pics/ShowApi.png[API]
 
+
+We have also opensourced a simple but useful UI for these APIs. Please check https://github.com/gnuhpc/Kafka-zk-restapi-UI for more details.
+
+Here are some snapshots of this UI:
+
+![KafkaDashboard](https://github.com/gnuhpc/Kafka-zk-restapi-UI/blob/master/screenshots/KafkaDashboard.png)
+![TopicManage](https://github.com/gnuhpc/Kafka-zk-restapi-UI/blob/master/screenshots/TopicManage.png)
+![TopicPartitionView](https://github.com/gnuhpc/Kafka-zk-restapi-UI/blob/master/screenshots/TopicPartitionView.png)
+![ConsumersGetByTopic](https://github.com/gnuhpc/Kafka-zk-restapi-UI/blob/master/screenshots/ConsumersGetByTopic.png)
+![ManualReassignPartitions](https://github.com/gnuhpc/Kafka-zk-restapi-UI/blob/master/screenshots/ManualReassignPartitions.png)
+![MessageView](https://github.com/gnuhpc/Kafka-zk-restapi-UI/blob/master/screenshots/MessageView.png)
+![SchemaView](https://github.com/gnuhpc/Kafka-zk-restapi-UI/blob/master/screenshots/SchemaView.png)
+![ConsumerGroup](https://github.com/gnuhpc/Kafka-zk-restapi-UI/blob/master/screenshots/ConsumerGroup.png)
+![TopicsGetByGroup](https://github.com/gnuhpc/Kafka-zk-restapi-UI/blob/master/screenshots/TopicsGetByGroup.png)
+![ConsumersGetByGroupAndTopic](https://github.com/gnuhpc/Kafka-zk-restapi-UI/blob/master/screenshots/ConsumersGetByGroupAndTopic.png)
+
 === Installation and run
 First of all, Java 8 jre/jdk needed.
 

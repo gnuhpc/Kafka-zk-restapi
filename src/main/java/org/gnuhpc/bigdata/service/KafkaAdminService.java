@@ -54,7 +54,7 @@ import kafka.zk.AdminZkClient;
 import kafka.zk.KafkaZkClient;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.extern.log4j.Log4j;
+import lombok.extern.log4j.Log4j2;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericDatumReader;
 import org.apache.avro.generic.GenericRecord;
@@ -106,7 +106,7 @@ import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.common.internals.Topic;
 import org.apache.kafka.common.protocol.Errors;
 import org.apache.kafka.common.requests.DescribeLogDirsResponse.LogDirInfo;
-import org.gnuhpc.bigdata.CollectionConvertor;
+import org.gnuhpc.bigdata.utils.CollectionConvertor;
 import org.gnuhpc.bigdata.componet.OffsetStorage;
 import org.gnuhpc.bigdata.config.KafkaConfig;
 import org.gnuhpc.bigdata.constant.ConsumerGroupState;
@@ -154,7 +154,7 @@ import scala.runtime.BoxedUnit;
 @Getter
 @Setter
 @Service
-@Log4j
+@Log4j2
 @Validated
 @Lazy
 public class KafkaAdminService {

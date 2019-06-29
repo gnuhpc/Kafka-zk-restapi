@@ -2,7 +2,7 @@ package org.gnuhpc.bigdata.componet;
 
 import java.util.Arrays;
 import javax.servlet.http.HttpServletRequest;
-import lombok.extern.log4j.Log4j;
+import lombok.extern.log4j.Log4j2;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.AfterReturning;
 import org.aspectj.lang.annotation.Aspect;
@@ -14,7 +14,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 
 @Aspect
 @Component
-@Log4j
+@Log4j2
 public class RestLogAspect {
 
   ThreadLocal<Long> startTime = new ThreadLocal<>();

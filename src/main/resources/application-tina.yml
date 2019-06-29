@@ -1,5 +1,5 @@
 kafka:
-  brokers: localhost:19092,localhost:19094,localhost:19096
+  brokers: 192.168.50.200:9092
   schemaregistry: http://localhost:8081
   offset:
     topic: "__consumer_offsets"
@@ -8,13 +8,13 @@ kafka:
   healthcheck:
     topic: "health"
   sasl:
-    enable: true
+    enable: false
     security.protocol: "SASL_PLAINTEXT"
     mechanism: "SCRAM-SHA-512"
 
 
 zookeeper:
-  uris: 127.0.0.1:2181
+  uris: 192.168.50.200:2181
 
 jmx:
   kafka:

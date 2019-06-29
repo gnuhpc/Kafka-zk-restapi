@@ -5,10 +5,8 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.List;
 import java.util.Map;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+
+import lombok.*;
 import org.gnuhpc.bigdata.serializer.JsonJodaDateTimeSerializer;
 import org.gnuhpc.bigdata.utils.TimestampDeserializer;
 import org.joda.time.DateTime;
@@ -17,6 +15,7 @@ import org.joda.time.DateTime;
 @Setter
 @AllArgsConstructor
 @ToString
+@NoArgsConstructor
 public class BrokerInfo {
   private Map listener_security_protocol_map;
 

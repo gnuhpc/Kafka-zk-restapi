@@ -468,6 +468,38 @@ __optional__|integer(int64)
 |===
 
 
+[[_schemametadata]]
+=== SchemaMetadata
+
+[options="header", cols=".^3,.^4"]
+|===
+|Name|Schema
+|**id** +
+__optional__|integer(int32)
+|**schema** +
+__optional__|string
+|**version** +
+__optional__|integer(int32)
+|===
+
+
+[[_schemaregistrymetadata]]
+=== SchemaRegistryMetadata
+
+[options="header", cols=".^3,.^4"]
+|===
+|Name|Schema
+|**id** +
+__optional__|integer(int32)
+|**schema** +
+__optional__|string
+|**subject** +
+__optional__|string
+|**version** +
+__optional__|integer(int32)
+|===
+
+
 [[_topicbrief]]
 === TopicBrief
 

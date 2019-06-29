@@ -1,6 +1,8 @@
 package org.gnuhpc.bigdata.security;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -8,16 +10,19 @@ import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import lombok.extern.log4j.Log4j;
+import lombok.extern.log4j.Log4j2;
 import org.gnuhpc.bigdata.config.WebSecurityConfig;
 import org.gnuhpc.bigdata.model.User;
 import org.gnuhpc.bigdata.utils.CommonUtils;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
 import org.springframework.security.core.userdetails.User.UserBuilder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.util.ResourceUtils;
 
-@Log4j
+@Log4j2
 public class UserDetailsServiceImp implements UserDetailsService {
 
   private ScheduledExecutorService securityFileChecker;
@@ -65,8 +70,12 @@ public class UserDetailsServiceImp implements UserDetailsService {
 
   private ArrayList<User> fetchUserListFromSecurtiyFile() {
     String securityFilePath = WebSecurityConfig.SECURITY_FILE_PATH;
+
     try {
-      HashMap<Object, Object> accounts = CommonUtils.yamlParse(securityFilePath);
+      Resource resource = new ClassPathResource(securityFilePath);
+      File file = resource.getFile();
+
+      HashMap<Object, Object> accounts = CommonUtils.yamlParse(file);
       userList.clear();
       accounts.forEach(
           (key, value) -> {

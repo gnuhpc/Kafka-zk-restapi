@@ -17,7 +17,7 @@ import javax.management.MBeanAttributeInfo;
 import javax.management.MBeanInfo;
 import javax.management.MBeanServerConnection;
 import javax.management.ObjectName;
-import lombok.extern.log4j.Log4j;
+import lombok.extern.log4j.Log4j2;
 import org.gnuhpc.bigdata.config.JMXConfig;
 import org.gnuhpc.bigdata.exception.CollectorException;
 import org.gnuhpc.bigdata.model.JMXAttribute;
@@ -35,7 +35,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
 @Service
-@Log4j
+@Log4j2
 @Validated
 public class CollectorService {
 

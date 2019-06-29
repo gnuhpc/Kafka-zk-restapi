@@ -9,14 +9,14 @@ import java.util.Map;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import lombok.extern.log4j.Log4j;
+import lombok.extern.log4j.Log4j2;
 import org.apache.kafka.common.errors.ApiException;
 
 /** Created by gnuhpc on 2017/7/25. */
 @Getter
 @Setter
 @ToString
-@Log4j
+@Log4j2
 public class ReassignWrapper {
 
   private List<String> topics;

@@ -9,7 +9,7 @@ import java.util.HashMap;
 import java.util.Map;
 import lombok.Data;
 import lombok.Getter;
-import lombok.extern.log4j.Log4j;
+import lombok.extern.log4j.Log4j2;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.ByteBufferDeserializer;
 import org.gnuhpc.bigdata.componet.OffsetStorage;
@@ -26,9 +26,10 @@ import org.springframework.kafka.config.KafkaListenerContainerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.listener.AbstractMessageListenerContainer;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
+import org.springframework.kafka.listener.ContainerProperties;
 
 /** Created by gnuhpc on 2017/7/12. */
-@Log4j
+@Log4j2
 @Data
 @EnableKafka
 @Lazy
@@ -85,7 +86,7 @@ public class KafkaConfig {
     ConcurrentKafkaListenerContainerFactory<ByteBuffer, ByteBuffer> factory =
         new ConcurrentKafkaListenerContainerFactory<>();
     factory.setConsumerFactory(consumerFactory());
-    factory.getContainerProperties().setAckMode(AbstractMessageListenerContainer.AckMode.MANUAL);
+    factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.MANUAL);
     return factory;
   }
 

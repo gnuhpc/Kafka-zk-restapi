@@ -6,12 +6,12 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
-import lombok.extern.log4j.Log4j;
+import lombok.extern.log4j.Log4j2;
 import org.I0Itec.zkclient.ZkClient;
 import org.apache.zookeeper.server.ZooKeeperServerMain;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
 
-@Log4j
+@Log4j2
 public class ZkStarter {
 
 //  private static final Logger LOGGER = LoggerFactory.getLogger(ZkStarter.class);

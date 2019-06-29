@@ -4,11 +4,11 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.ToString;
-import lombok.extern.log4j.Log4j;
+import lombok.extern.log4j.Log4j2;
 import org.gnuhpc.bigdata.constant.GeneralResponseState;
 
 @Data
-@Log4j
+@Log4j2
 @AllArgsConstructor
 @Builder
 @ToString

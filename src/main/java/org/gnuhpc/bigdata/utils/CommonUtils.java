@@ -7,10 +7,10 @@ import java.io.IOException;
 import java.util.HashMap;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.extern.log4j.Log4j;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
-@Log4j
+@Log4j2
 @Getter
 @Setter
 public class CommonUtils {

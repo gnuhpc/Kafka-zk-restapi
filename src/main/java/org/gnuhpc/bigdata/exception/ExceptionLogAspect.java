@@ -1,6 +1,6 @@
 package org.gnuhpc.bigdata.exception;
 
-import lombok.extern.log4j.Log4j;
+import lombok.extern.log4j.Log4j2;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 
 @Aspect
 @Component
-@Log4j
+@Log4j2
 public class ExceptionLogAspect {
 
   @Pointcut("execution(public * org.gnuhpc.bigdata.exception..*.*(..))")

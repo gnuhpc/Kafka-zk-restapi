@@ -6,7 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.extern.log4j.Log4j;
+import lombok.extern.log4j.Log4j2;
 import org.gnuhpc.bigdata.config.WebSecurityConfig;
 import org.gnuhpc.bigdata.constant.GeneralResponseState;
 import org.gnuhpc.bigdata.model.GeneralResponse;
@@ -16,7 +16,7 @@ import org.springframework.stereotype.Service;
 
 @Getter
 @Setter
-@Log4j
+@Log4j2
 @Service
 public class UserService {
 

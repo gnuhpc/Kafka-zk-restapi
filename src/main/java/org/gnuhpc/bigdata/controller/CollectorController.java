@@ -6,7 +6,7 @@ import io.swagger.annotations.ApiParam;
 import java.util.HashMap;
 import java.util.List;
 import javax.validation.constraints.Pattern;
-import lombok.extern.log4j.Log4j;
+import lombok.extern.log4j.Log4j2;
 import org.gnuhpc.bigdata.model.JMXMetricData;
 import org.gnuhpc.bigdata.model.JMXMetricDataV1;
 import org.gnuhpc.bigdata.model.JMXQuery;
@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-@Log4j
+@Log4j2
 @RestController
 @Validated
 @Api(value = "/jmx", description = "Rest API for Collecting JMX Metric Data")

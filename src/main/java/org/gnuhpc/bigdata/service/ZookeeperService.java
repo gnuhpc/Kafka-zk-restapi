@@ -4,7 +4,7 @@ import com.google.common.net.HostAndPort;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import lombok.extern.log4j.Log4j;
+import lombok.extern.log4j.Log4j2;
 import org.gnuhpc.bigdata.constant.ZkServerCommand;
 import org.gnuhpc.bigdata.exception.ServiceNotAvailableException;
 import org.gnuhpc.bigdata.model.ZkServerEnvironment;
@@ -15,7 +15,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 @Service
-@Log4j
+@Log4j2
 public class ZookeeperService {
   @Lazy
   @Autowired private ZookeeperUtils zookeeperUtils;

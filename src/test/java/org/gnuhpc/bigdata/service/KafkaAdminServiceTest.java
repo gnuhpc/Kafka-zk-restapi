@@ -22,7 +22,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import kafka.zk.KafkaZkClient;
-import lombok.extern.log4j.Log4j;
+import lombok.extern.log4j.Log4j2;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericDatumWriter;
 import org.apache.avro.generic.GenericRecord;
@@ -91,7 +91,7 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 
 @FixMethodOrder(MethodSorters.JVM)
-@Log4j
+@Log4j2
 public class KafkaAdminServiceTest {
 
   @Mock

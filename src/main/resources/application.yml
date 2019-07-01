@@ -1,6 +1,9 @@
 spring:
   profiles:
-    active: tina
+    active: prod
+
+  main:
+    allow-bean-definition-overriding: true
 
 server:
   error:

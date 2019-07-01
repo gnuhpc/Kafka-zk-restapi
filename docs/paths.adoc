@@ -490,7 +490,7 @@ GET /kafka/consumer/{topic}/{partition}/{offset}
 |===
 |Type|Name|Description|Schema|Default
 |**Path**|**offset** +
-__required__|offset|integer(int64)|
+__optional__|[long/yyyy-MM-dd HH:mm:ss.SSS] can be supported.|string|
 |**Path**|**partition** +
 __required__|partition|integer(int32)|
 |**Path**|**topic** +
@@ -502,7 +502,7 @@ __optional__|fetchTimeoutMs|integer(int64)|`"30000"`
 |**Query**|**keyDecoder** +
 __optional__|keyDecoder|string|`"StringDeserializer"`
 |**Query**|**maxRecords** +
-__optional__|maxRecords|integer(int32)|
+__optional__|maxRecords|integer(int32)|`"10"`
 |**Query**|**valueDecoder** +
 __optional__|valueDecoder|string|`"StringDeserializer"`
 |===
@@ -994,6 +994,49 @@ __required__|addPartitions|< <<_addpartition,AddPartition>> > array
 * `*/*`
 
 
+[[_preferredreplicaelectionusingput]]
+==== Move partition leader to preferred replica.
+....
+PUT /kafka/partitions/preferredreplica/elect
+....
+
+
+===== Parameters
+
+[options="header", cols=".^2,.^3,.^9,.^4"]
+|===
+|Type|Name|Description|Schema
+|**Body**|**partitionList** +
+__required__|partitionList|< <<_topicpartition,TopicPartition>> > array
+|===
+
+
+===== Responses
+
+[options="header", cols=".^2,.^14,.^4"]
+|===
+|HTTP Code|Description|Schema
+|**-1**|Other preferred replica elect is in progress|No Content
+|**-2**|Partition doesn't exist|No Content
+|**0**|Successfully started preferred replica election|No Content
+|**200**|OK|< string, integer(int32) > map
+|**201**|Created|No Content
+|**401**|Unauthorized|No Content
+|**403**|Forbidden|No Content
+|**404**|Not Found|No Content
+|===
+
+
+===== Consumes
+
+* `application/json`
+
+
+===== Produces
+
+* `*/*`
+
+
 [[_checkreassignpartitionsusingput]]
 ==== Check the partition reassignment process
 ....
@@ -1244,6 +1287,46 @@ __required__|topicList|< <<_topicdetail,TopicDetail>> > array
 |===
 |HTTP Code|Description|Schema
 |**201**|Created|< string, <<_generalresponse,GeneralResponse>> > map
+|**401**|Unauthorized|No Content
+|**403**|Forbidden|No Content
+|**404**|Not Found|No Content
+|===
+
+
+===== Consumes
+
+* `application/json`
+
+
+===== Produces
+
+* `*/*`
+
+
+[[_createtopiccheckusingpost]]
+==== Create topics check
+....
+POST /kafka/topics/create/check
+....
+
+
+===== Parameters
+
+[options="header", cols=".^2,.^3,.^9,.^4"]
+|===
+|Type|Name|Description|Schema
+|**Body**|**topicList** +
+__required__|topicList|< <<_topicdetail,TopicDetail>> > array
+|===
+
+
+===== Responses
+
+[options="header", cols=".^2,.^14,.^4"]
+|===
+|HTTP Code|Description|Schema
+|**200**|OK|object
+|**201**|Created|No Content
 |**401**|Unauthorized|No Content
 |**403**|Forbidden|No Content
 |**404**|Not Found|No Content
@@ -1572,6 +1655,321 @@ GET /kafka/topicsbrief
 * `*/*`
 
 
+[[_schema-registry-controller_resource]]
+=== Schema-registry-controller
+Schema Registry Controller
+
+
+[[_getschemabyidusingget]]
+==== Get schema by id
+....
+GET /schemaregistry/schemas/ids/{schemaId}
+....
+
+
+===== Parameters
+
+[options="header", cols=".^2,.^3,.^9,.^4"]
+|===
+|Type|Name|Description|Schema
+|**Path**|**schemaId** +
+__required__|schemaId|integer(int32)
+|===
+
+
+===== Responses
+
+[options="header", cols=".^2,.^14,.^4"]
+|===
+|HTTP Code|Description|Schema
+|**200**|OK|<<_schemaregistrymetadata,SchemaRegistryMetadata>>
+|**401**|Unauthorized|No Content
+|**403**|Forbidden|No Content
+|**404**|Not Found|No Content
+|===
+
+
+===== Consumes
+
+* `application/json`
+
+
+===== Produces
+
+* `*/*`
+
+
+[[_lsallsubjectsusingget]]
+==== List all subjects
+....
+GET /schemaregistry/subjects
+....
+
+
+===== Responses
+
+[options="header", cols=".^2,.^14,.^4"]
+|===
+|HTTP Code|Description|Schema
+|**200**|OK|< <<_schemaregistrymetadata,SchemaRegistryMetadata>> > array
+|**401**|Unauthorized|No Content
+|**403**|Forbidden|No Content
+|**404**|Not Found|No Content
+|===
+
+
+===== Consumes
+
+* `application/json`
+
+
+===== Produces
+
+* `*/*`
+
+
+[[_checkschemaexistusingpost]]
+==== Check if a schema has already been registered under the specified subject
+....
+POST /schemaregistry/subjects/{subject}
+....
+
+
+===== Parameters
+
+[options="header", cols=".^2,.^3,.^9,.^4"]
+|===
+|Type|Name|Description|Schema
+|**Path**|**subject** +
+__required__|subject|string
+|**Query**|**schemaStr** +
+__required__|schemaStr|string
+|===
+
+
+===== Responses
+
+[options="header", cols=".^2,.^14,.^4"]
+|===
+|HTTP Code|Description|Schema
+|**200**|OK|<<_schemaregistrymetadata,SchemaRegistryMetadata>>
+|**201**|Created|No Content
+|**401**|Unauthorized|No Content
+|**403**|Forbidden|No Content
+|**404**|Not Found|No Content
+|===
+
+
+===== Consumes
+
+* `application/json`
+
+
+===== Produces
+
+* `*/*`
+
+
+[[_getschemabysubjectusingget]]
+==== Get latest schema by subject
+....
+GET /schemaregistry/subjects/{subject}
+....
+
+
+===== Parameters
+
+[options="header", cols=".^2,.^3,.^9,.^4"]
+|===
+|Type|Name|Description|Schema
+|**Path**|**subject** +
+__required__|subject|string
+|===
+
+
+===== Responses
+
+[options="header", cols=".^2,.^14,.^4"]
+|===
+|HTTP Code|Description|Schema
+|**200**|OK|<<_schemametadata,SchemaMetadata>>
+|**401**|Unauthorized|No Content
+|**403**|Forbidden|No Content
+|**404**|Not Found|No Content
+|===
+
+
+===== Consumes
+
+* `application/json`
+
+
+===== Produces
+
+* `*/*`
+
+
+[[_deletesubjectusingdelete]]
+==== Delete the specified subject and its associated compatibility level if registered.
+....
+DELETE /schemaregistry/subjects/{subject}
+....
+
+
+===== Parameters
+
+[options="header", cols=".^2,.^3,.^9,.^4"]
+|===
+|Type|Name|Description|Schema
+|**Path**|**subject** +
+__required__|subject|string
+|===
+
+
+===== Responses
+
+[options="header", cols=".^2,.^14,.^4"]
+|===
+|HTTP Code|Description|Schema
+|**200**|OK|< integer(int32) > array
+|**204**|No Content|No Content
+|**401**|Unauthorized|No Content
+|**403**|Forbidden|No Content
+|===
+
+
+===== Consumes
+
+* `application/json`
+
+
+===== Produces
+
+* `*/*`
+
+
+[[_registerschemausingpost]]
+==== Register schema by subject
+....
+POST /schemaregistry/subjects/{subject}/versions
+....
+
+
+===== Parameters
+
+[options="header", cols=".^2,.^3,.^9,.^4"]
+|===
+|Type|Name|Description|Schema
+|**Path**|**subject** +
+__required__|subject|string
+|**Query**|**schemaStr** +
+__required__|schemaStr|string
+|===
+
+
+===== Responses
+
+[options="header", cols=".^2,.^14,.^4"]
+|===
+|HTTP Code|Description|Schema
+|**200**|OK|integer(int32)
+|**201**|Created|No Content
+|**401**|Unauthorized|No Content
+|**403**|Forbidden|No Content
+|**404**|Not Found|No Content
+|===
+
+
+===== Consumes
+
+* `application/json`
+
+
+===== Produces
+
+* `*/*`
+
+
+[[_getallversionsbysubjectusingget]]
+==== Get all versions for the specified subject
+....
+GET /schemaregistry/subjects/{subject}/versions
+....
+
+
+===== Parameters
+
+[options="header", cols=".^2,.^3,.^9,.^4"]
+|===
+|Type|Name|Description|Schema
+|**Path**|**subject** +
+__required__|subject|string
+|===
+
+
+===== Responses
+
+[options="header", cols=".^2,.^14,.^4"]
+|===
+|HTTP Code|Description|Schema
+|**200**|OK|< integer(int32) > array
+|**401**|Unauthorized|No Content
+|**403**|Forbidden|No Content
+|**404**|Not Found|No Content
+|===
+
+
+===== Consumes
+
+* `application/json`
+
+
+===== Produces
+
+* `*/*`
+
+
+[[_getschemabysubjectandversionusingget]]
+==== Get schema by subject and version
+....
+GET /schemaregistry/subjects/{subject}/versions/{versionId}
+....
+
+
+===== Parameters
+
+[options="header", cols=".^2,.^3,.^9,.^4"]
+|===
+|Type|Name|Description|Schema
+|**Path**|**subject** +
+__required__|subject|string
+|**Path**|**versionId** +
+__required__|versionId|integer(int32)
+|===
+
+
+===== Responses
+
+[options="header", cols=".^2,.^14,.^4"]
+|===
+|HTTP Code|Description|Schema
+|**200**|OK|<<_schemametadata,SchemaMetadata>>
+|**401**|Unauthorized|No Content
+|**403**|Forbidden|No Content
+|**404**|Not Found|No Content
+|===
+
+
+===== Consumes
+
+* `application/json`
+
+
+===== Produces
+
+* `*/*`
+
+
 [[_user-controller_resource]]
 === User-controller
 Security User Management Controller.
@@ -1810,7 +2208,7 @@ __required__|path|string
 [options="header", cols=".^2,.^14,.^4"]
 |===
 |HTTP Code|Description|Schema
-|**200**|OK|< string, string > map
+|**200**|OK|string
 |**401**|Unauthorized|No Content
 |**403**|Forbidden|No Content
 |**404**|Not Found|No Content

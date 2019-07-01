@@ -26,22 +26,46 @@ Kafka/ZK REST API is to provide the production-ready endpoints to perform some a
 
 image::https://raw.githubusercontent.com/gnuhpc/Kafka-zk-restapi/master/pics/ShowApi.png[API]
 
+
+We have also opensourced a simple but useful UI for these APIs. Please check https://github.com/gnuhpc/Kafka-zk-restapi-UI for more details.
+
+Here are some snapshots of this UI:
+
+image::https://github.com/gnuhpc/Kafka-zk-restapi-UI/blob/master/screenshots/KafkaDashboard.png[KafkaDashboard]
+image::https://github.com/gnuhpc/Kafka-zk-restapi-UI/blob/master/screenshots/TopicManage.png[TopicManage]
+image::https://github.com/gnuhpc/Kafka-zk-restapi-UI/blob/master/screenshots/TopicPartitionView.png[TopicPartitionView]
+image::https://github.com/gnuhpc/Kafka-zk-restapi-UI/blob/master/screenshots/ConsumersGetByTopic.png[ConsumersGetByTopic]
+image::https://github.com/gnuhpc/Kafka-zk-restapi-UI/blob/master/screenshots/ManualReassignPartitions.png[ManualReassignPartitions]
+image::https://github.com/gnuhpc/Kafka-zk-restapi-UI/blob/master/screenshots/MessageView.png[MessageView]
+image::https://github.com/gnuhpc/Kafka-zk-restapi-UI/blob/master/screenshots/SchemaView.png[SchemaView]
+image::https://github.com/gnuhpc/Kafka-zk-restapi-UI/blob/master/screenshots/ConsumerGroup.png[ConsumerGroup]
+image::https://github.com/gnuhpc/Kafka-zk-restapi-UI/blob/master/screenshots/TopicsGetByGroup.png[TopicsGetByGroup]
+image::https://github.com/gnuhpc/Kafka-zk-restapi-UI/blob/master/screenshots/ConsumersGetByGroupAndTopic.png[ConsumersGetByGroupAndTopic]
+
+
 === Installation and run
+First of all, Java 8 jre/jdk needed.
+
 You can download the release package at
 https://github.com/gnuhpc/Kafka-zk-restapi/releases
 
-You can get it running by unzip/untaring the distribution package and run bin/start.sh
+You can get it running by unzip/untaring the distribution package, perform some configurations needed and run bin/start.sh
 
-Java 8 jre/jdk needed.
-
-=== How to build and run
+=== How to build 
 
 You can build this restapi server using maven.
 
-#git clone https://github.com/gnuhpc/Kafka-zk-restapi.git +
-#cd Kafka-zk-restapi/ +
+# git clone https://github.com/gnuhpc/Kafka-zk-restapi.git +
+# cd Kafka-zk-restapi/ +
+# mvn clean package -Dmaven.test.skip=true+
 
-Change the following settings of application-home.yml in src/main/resources to valid value:
+After maven building, you will find zip/tar under directory: Kafka-zk-restapi/target
+
+
+=== How to config
+You can get it running by unzip/untaring the distribution package and change the corresponding configuration in config directory:
+
+Change the following settings of application-ACTIVEENV.yml:
 kafka.brokers
 zookeeper.uris
 
@@ -55,11 +79,8 @@ server.security.checkSecurityInterval
 If you want to use JMX Query Filter function, you can add your own custom filter files to JMXFilterTemplate directory in project root folder.
 More details refer to https://github.com/gnuhpc/Kafka-zk-restapi/blob/master/docs/JMXCollector.adoc[JMXCollector API Specification]
 
-#mvn clean package -Dmaven.test.skip=true+
-
-You will find zip/tar under directory: Kafka-zk-restapi/target
-
-You can get it running by unzip/untaring the distribution package and run bin/start.sh
+=== How to run
+# bin/start.sh
 
 [[_security]]
 === Security

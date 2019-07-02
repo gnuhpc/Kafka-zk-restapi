@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import kafka.zk.AdminZkClient;
 import kafka.zk.KafkaZkClient;
 import lombok.extern.log4j.Log4j2;
 import org.apache.avro.Schema;
@@ -107,23 +108,23 @@ public class KafkaAdminServiceTest {
   private KafkaAdminService kafkaAdminServiceUnderTest;
 
   private static final String TEST_KAFKA_BOOTSTRAP_SERVERS =
-      "localhost:19092,localhost:19094,localhost:19096";
-  private static final List<Integer> TEST_KAFKA_BOOTSTRAP_SERVERS_ID = Arrays.asList(10, 11, 12);
+      "localhost:19092,localhost:19093,localhost:19095";
+  private static final List<Integer> TEST_KAFKA_BOOTSTRAP_SERVERS_ID = Arrays.asList(111, 113, 115);
   private static final int KAFKA_NODES_COUNT = TEST_KAFKA_BOOTSTRAP_SERVERS_ID.size();
   private static final String TEST_KAFKA_SCHEMAREGISTRY = "http://localhost:8081";
-  private static final String TEST_ZK = "127.0.0.1:2181";
-  private static final int TEST_CONTROLLER_ID = 11;
-//  private static final List<String> TEST_KAFKA_LOG_DIRS =
-//      Arrays.asList(
-//          "/home/xiangli/bigdata/kafka_2.11-1.1.1/kafka-logs,/home/xiangli/bigdata/kafka_2.11-1.1.1/kafka111_2-logs,/home/xiangli/bigdata/kafka_2.11-1.1.1/kafka111_3-logs",
-//          "/home/xiangli/bigdata/kafka_2.11-1.1.1/kafka113-logs,/home/xiangli/bigdata/kafka_2.11-1.1.1/kafka113_2-logs,/home/xiangli/bigdata/kafka_2.11-1.1.1/kafka113_3-logs",
-//          "/home/xiangli/bigdata/kafka_2.11-1.1.1/kafka115-logs,/home/xiangli/bigdata/kafka_2.11-1.1.1/kafka115_2-logs,/home/xiangli/bigdata/kafka_2.11-1.1.1/kafka115_3-logs");
-
+  private static final String TEST_ZK = "127.0.0.1:2183";
+  private static final int TEST_CONTROLLER_ID = 115;
   private static final List<String> TEST_KAFKA_LOG_DIRS =
       Arrays.asList(
-          "/Users/wenqiao/work/bigdata/kafka_2.11-1.1.1/data",
-          "/Users/wenqiao/work/bigdata/kafka_2.11-1.1.1_2/data",
-          "/Users/wenqiao/work/bigdata/kafka_2.11-1.1.1_3/data");
+          "/home/xiangli/bigdata/kafka_2.11-1.1.1/kafka-logs,/home/xiangli/bigdata/kafka_2.11-1.1.1/kafka111_2-logs,/home/xiangli/bigdata/kafka_2.11-1.1.1/kafka111_3-logs",
+          "/home/xiangli/bigdata/kafka_2.11-1.1.1/kafka113-logs,/home/xiangli/bigdata/kafka_2.11-1.1.1/kafka113_2-logs,/home/xiangli/bigdata/kafka_2.11-1.1.1/kafka113_3-logs",
+          "/home/xiangli/bigdata/kafka_2.11-1.1.1/kafka115-logs,/home/xiangli/bigdata/kafka_2.11-1.1.1/kafka115_2-logs,/home/xiangli/bigdata/kafka_2.11-1.1.1/kafka115_3-logs");
+
+//  private static final List<String> TEST_KAFKA_LOG_DIRS =
+//      Arrays.asList(
+//          "/Users/wenqiao/work/bigdata/kafka_2.11-1.1.1/data",
+//          "/Users/wenqiao/work/bigdata/kafka_2.11-1.1.1_2/data",
+//          "/Users/wenqiao/work/bigdata/kafka_2.11-1.1.1_3/data");
 
 
   private static final String FIRST_TOPIC_TO_TEST = "first";
@@ -150,6 +151,7 @@ public class KafkaAdminServiceTest {
           Time.SYSTEM,
           "kafka.zk.rest",
           "rest");
+  private static final AdminZkClient adminZkClient = new AdminZkClient(kafkaZkClient);
 
   private static final RetryPolicy retryPolicy =
       new ExponentialBackoffRetry(1000, 5, 60000);
@@ -189,6 +191,7 @@ public class KafkaAdminServiceTest {
     mockKafkaUtils.setKafkaConfig(mockKafkaConfig);
     mockZookeeperUtils.setZookeeperConfig(mockZookeeperConfig);
     mockZookeeperUtils.setKafkaZkClient(kafkaZkClient);
+    mockZookeeperUtils.setAdminZkClient(adminZkClient);
     mockZookeeperUtils.setCuratorClient(curatorClient);
     Properties adminClientProp = new Properties();
     adminClientProp.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, TEST_KAFKA_BOOTSTRAP_SERVERS);
@@ -200,9 +203,8 @@ public class KafkaAdminServiceTest {
 
   private void clean() throws InterruptedException {
     // Delete test topics
-    kafkaAdminServiceUnderTest.deleteTopicList(
+    Map<String, GeneralResponse> deleteTopicListResponse = kafkaAdminServiceUnderTest.deleteTopicList(
         Arrays.asList(FIRST_TOPIC_TO_TEST, SECOND_TOPIC_TO_TEST, HEALTH_CHECK_TOPIC_TO_TEST));
-
     // Delete test consumers
     GeneralResponse deleteConsumer1Response =
         kafkaAdminServiceUnderTest.deleteConsumerGroup(
@@ -382,7 +384,7 @@ public class KafkaAdminServiceTest {
 
     // Run the test
     final Map<String, GeneralResponse> result = kafkaAdminServiceUnderTest.createTopic(topicList);
-
+    System.out.println("result:" + result);
     // Verify the first topic result
     TopicMeta firstTopicMeta = (TopicMeta) result.get(FIRST_TOPIC_TO_TEST).getData();
     assertEquals(GeneralResponseState.success, result.get(FIRST_TOPIC_TO_TEST).getState());
@@ -1380,8 +1382,7 @@ public class KafkaAdminServiceTest {
             .build();
     topicPartitionReplicaAssignment.add(tpr);
     topicPartitionReplicaAssignment.add(tpr2);
-    ReassignModel reassignModel =
-        ReassignModel.builder().partitions(topicPartitionReplicaAssignment).build();
+    ReassignModel reassignModel = new ReassignModel(1, topicPartitionReplicaAssignment);
 
     // Run the test
     final ReassignStatus reassignResult =
@@ -1512,8 +1513,7 @@ public class KafkaAdminServiceTest {
             .build();
 
     topicPartitionReplicaAssignment.add(tpr);
-    ReassignModel reassignModel =
-        ReassignModel.builder().partitions(topicPartitionReplicaAssignment).build();
+    ReassignModel reassignModel = new ReassignModel(1, topicPartitionReplicaAssignment);
 
     // Run the test
     final ReassignStatus reassignResult =
@@ -1585,8 +1585,7 @@ public class KafkaAdminServiceTest {
             .build();
 
     topicPartitionReplicaAssignment.add(tpr);
-    ReassignModel reassignModel =
-        ReassignModel.builder().partitions(topicPartitionReplicaAssignment).build();
+    ReassignModel reassignModel = new ReassignModel(1, topicPartitionReplicaAssignment);
 
     // Run the test
     final ReassignStatus reassignResult =
@@ -2180,23 +2179,19 @@ public class KafkaAdminServiceTest {
         kafkaAdminServiceUnderTest
             .describeLogDirsByBrokerAndTopic(brokerList, null, topicPartitionMap);
 
-    //     Verify the results
+    // Verify the results
     assertTrue(result.containsKey(brokerId));
 
-    Map<String, LogDirInfo> logDirInfoMap = result.get(brokerId);
+    Map<String, LogDirInfo> logDirInfoMapResult = result.get(brokerId);
+    Set<String> logDirs = logDirInfoMapResult.keySet();
+    assertEquals(1, logDirs.size());
+    String logDir = logDirs.iterator().next();
     String[] logDirsOnBroker = TEST_KAFKA_LOG_DIRS.get(0).split(",");
+    assertTrue(Arrays.asList(logDirsOnBroker).contains(logDir));
+
     TopicPartition topicPartition = new TopicPartition(topic, 0);
-    boolean logDirExist = false;
-    for (int i = 0; i < logDirsOnBroker.length; i++) {
-      String logDir = logDirsOnBroker[i];
-      assertTrue(logDirInfoMap.containsKey(logDir));
-      LogDirInfo logDirInfo = logDirInfoMap.get(logDir);
-      logDirExist = logDirInfo.replicaInfos.containsKey(topicPartition);
-      if (logDirExist) {
-        break;
-      }
-    }
-    assertTrue(logDirExist);
+    LogDirInfo logDirInfo = logDirInfoMapResult.get(logDir);
+    assertTrue(logDirInfo.replicaInfos.containsKey(topicPartition));
   }
 
   @Test
@@ -2231,6 +2226,7 @@ public class KafkaAdminServiceTest {
     Map<String, LogDirInfo> logDirInfoMap = result.get(brokerId);
     assertEquals(1, logDirInfoMap.size());
     assertTrue(logDirInfoMap.containsKey(logDir));
+
     LogDirInfo logDirInfo = logDirInfoMap.get(logDir);
     TopicPartition topicPartition = new TopicPartition(topic, 0);
     assertTrue(logDirInfo.replicaInfos.containsKey(topicPartition));

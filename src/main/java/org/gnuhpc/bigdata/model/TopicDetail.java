@@ -19,8 +19,10 @@ package org.gnuhpc.bigdata.model;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
@@ -28,6 +30,8 @@ import lombok.ToString;
 @Getter
 @ToString
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class TopicDetail {
 
   public static final int DEFAULT_PARTITION_NUMBER = 2;

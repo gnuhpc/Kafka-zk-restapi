@@ -11,6 +11,8 @@ import lombok.extern.log4j.Log4j2;
 @Log4j2
 @ToString
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class AddPartition {
 
   String topic;

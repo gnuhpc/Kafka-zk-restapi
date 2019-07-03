@@ -21,12 +21,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 @EnableWebSecurity
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
-  public static final String SECURITY_FILE_PATH =
-      CommonUtils.PROJECT_ROOT_FOLDER
-          + File.separator
-          + "security"
-          + File.separator
-          + "security.yml";
+  public static final String SECURITY_FILE_PATH = "security.yml";
 
   @Autowired private BasicAuthenticationPoint basicAuthenticationPoint;
 
@@ -70,9 +65,5 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
   @Autowired
   public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
     auth.userDetailsService(userDetailsService()).passwordEncoder(passwordEncoder());
-  }
-
-  public static void main(String[] args) {
-    // System.out.println(new BCryptPasswordEncoder().encode("admin1234"));
   }
 }

@@ -18,13 +18,13 @@ import javax.management.remote.JMXConnectorFactory;
 import javax.management.remote.JMXServiceURL;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.extern.log4j.Log4j;
+import lombok.extern.log4j.Log4j2;
 import org.gnuhpc.bigdata.config.JMXConfig;
 import org.gnuhpc.bigdata.exception.CollectorException;
 
 @Getter
 @Setter
-@Log4j
+@Log4j2
 public class JMXClient {
 
   private String ip;

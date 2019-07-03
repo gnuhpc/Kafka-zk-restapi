@@ -1,9 +1,15 @@
 package org.gnuhpc.bigdata.model;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonCreator.Mode;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import java.beans.ConstructorProperties;
 import java.util.List;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /*
@@ -36,8 +42,9 @@ import lombok.Setter;
 @Getter
 @Setter
 @Data
-@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class ReassignModel {
-  public final int version = 1;
+  public int version = 1;
   public List<TopicPartitionReplicaAssignment> partitions;
 }

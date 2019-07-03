@@ -5,6 +5,7 @@ import kafka.admin.AdminClient;
 import kafka.common.OffsetAndMetadata;
 import kafka.coordinator.group.GroupTopicPartition;
 import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
 import org.gnuhpc.bigdata.constant.ConsumerGroupState;
@@ -12,6 +13,7 @@ import org.gnuhpc.bigdata.constant.ConsumerType;
 import org.gnuhpc.bigdata.utils.KafkaUtils;
 
 @AllArgsConstructor
+@NoArgsConstructor
 public class ConsumerGroupDescFactory {
 
   private KafkaUtils kafkaUtils;

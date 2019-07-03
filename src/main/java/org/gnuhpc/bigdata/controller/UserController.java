@@ -4,7 +4,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import java.util.List;
 import javax.validation.Valid;
-import lombok.extern.log4j.Log4j;
+import lombok.extern.log4j.Log4j2;
 import org.gnuhpc.bigdata.constant.GeneralResponseState;
 import org.gnuhpc.bigdata.model.GeneralResponse;
 import org.gnuhpc.bigdata.model.User;
@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-@Log4j
+@Log4j2
 @RestController
 @Api(value = "/users", description = "Security User Management Controller.")
 public class UserController {

@@ -6,7 +6,7 @@
 
   <groupId>org.gnuhpc.bigdata</groupId>
   <artifactId>kafka-rest-springboot</artifactId>
-  <version>0.10.x-release</version>
+  <version>1.1.x-release</version>
   <packaging>jar</packaging>
 
   <name>kafka-zk-rest-springboot</name>
@@ -16,7 +16,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>1.5.4.RELEASE</version>
+    <version>2.1.0.RELEASE</version>
     <relativePath/> <!-- lookup parent from repository -->
   </parent>
 
@@ -107,8 +107,7 @@
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-log4j</artifactId>
-      <version>1.3.8.RELEASE</version>
+      <artifactId>spring-boot-starter-log4j2</artifactId>
     </dependency>
 
     <dependency>
@@ -139,8 +138,10 @@
     <dependency>
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>
+      <version>1.18.8</version>
       <optional>true</optional>
     </dependency>
+
 
 
     <!-- https://mvnrepository.com/artifact/com.101tec/zkclient -->
@@ -154,6 +155,12 @@
       <groupId>org.apache.curator</groupId>
       <artifactId>curator-client</artifactId>
       <version>2.11.0</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.yaml</groupId>
+      <artifactId>snakeyaml</artifactId>
+      <version>1.23</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/io.springfox/springfox-swagger2 -->
@@ -183,7 +190,7 @@
     <dependency>
       <groupId>org.springframework.kafka</groupId>
       <artifactId>spring-kafka</artifactId>
-      <version>1.2.2.RELEASE</version>
+      <version>2.2.1.RELEASE</version>
     </dependency>
 
     <dependency>
@@ -235,6 +242,11 @@
       <groupId>com.fasterxml.jackson.module</groupId>
       <artifactId>jackson-module-scala_2.11</artifactId>
       <version>${jackson.module.scala.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.module</groupId>
+      <artifactId>jackson-module-parameter-names</artifactId>
+      <version>${jackson.version}</version>
     </dependency>
 
     <dependency>
@@ -295,6 +307,56 @@
   </dependencies>
 
   <build>
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+        <includes>
+          <include>db/*.sql</include>
+          <include>mapper/**/*.xml</include>
+          <include>static/**</include>
+          <include>templates/**</include>
+          <!-- 如果各个环境的jks都是一样，则可以直接打入到启动jar包中 -->
+          <!--<include>test.jks</include>-->
+        </includes>
+      </resource>
+
+      <!-- 过滤配置文件到config目录 -->
+      <resource>
+        <directory>src/main/resources</directory>
+        <targetPath>config</targetPath>
+        <filtering>true</filtering>
+        <includes>
+          <include>application.yml</include>
+          <include>application-*.yml</include>
+          <include>log4j2.properties</include>
+          <!-- 如果各个环境的jks不一样，则配置到外部config目录中
+              java代码中通过ClassPathFileUtil.getFile()获取 -->
+          <include>test.jks</include>
+          <include>test.txt</include>
+        </includes>
+      </resource>
+
+      <resource>
+        <directory>src/main/resources</directory>
+        <targetPath>${project.build.directory}/classes</targetPath>
+        <includes>
+          <include>security.yml</include>
+          <include>jmxtemplates/*</include>
+        </includes>
+      </resource>
+
+      <!-- 过滤脚本文件到bin目录 -->
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>true</filtering>
+        <targetPath>bin</targetPath>
+        <includes>
+          <include>*.bat</include>
+          <include>*.sh</include>
+        </includes>
+      </resource>
+    </resources>
+
     <plugins>
       <plugin>
         <groupId>net.alchim31.maven</groupId>
@@ -321,6 +383,19 @@
       <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
+        <configuration>
+          <fork>true</fork>
+          <mainClass>org.gnuhpc.bigdata.KafkaRestSpringbootApplication</mainClass>
+          <classifier>executable</classifier>
+          <layout>JAR</layout>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>repackage</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
 
       <plugin>
@@ -482,12 +557,33 @@
         </executions>
       </plugin>
 
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>3.1.0</version>
+        <configuration>
+          <!-- 项目启动jar包排除目录 -->
+          <excludes>
+            <exclude>bin/**</exclude>
+            <exclude>config/**</exclude>
+            <exclude>logs/**</exclude>
+            <exclude>*.yml</exclude>
+          </excludes>
+          <archive>
+            <manifestEntries>
+              <Class-Path>../config/</Class-Path>
+            </manifestEntries>
+          </archive>
+        </configuration>
+      </plugin>
+
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-assembly-plugin</artifactId>
         <version>2.4.1</version>
         <configuration>
-          <descriptor>src/main/resources/distribution/kafka-zk-springboot-distribution.xml
+          <descriptor>src/main/resources/kafka-zk-springboot-distribution.xml
           </descriptor>
           <finalName>kafka-zk-api-${project.version}-dist</finalName>
           <appendAssemblyId>false</appendAssemblyId>

@@ -25,11 +25,11 @@ import javax.management.openmbean.InvalidKeyException;
 import javax.management.openmbean.TabularData;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.extern.log4j.Log4j;
+import lombok.extern.log4j.Log4j2;
 
 @Getter
 @Setter
-@Log4j
+@Log4j2
 public class JMXTabularAttribute extends JMXAttribute {
 
   private HashMap<String, HashMap<String, HashMap<String, Object>>> subAttributeList;

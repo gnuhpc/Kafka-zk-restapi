@@ -1,12 +1,7 @@
 package org.gnuhpc.bigdata.model;
 
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
-import lombok.extern.log4j.Log4j;
+import lombok.*;
+import lombok.extern.log4j.Log4j2;
 import org.apache.kafka.common.Node;
 import org.gnuhpc.bigdata.constant.ConsumerGroupState;
 import org.gnuhpc.bigdata.constant.ConsumerType;
@@ -14,7 +9,7 @@ import org.gnuhpc.bigdata.constant.ConsumerType;
 /** Created by gnuhpc on 2017/7/27. */
 @Setter
 @Getter
-@Log4j
+@Log4j2
 @ToString
 @EqualsAndHashCode
 @Builder(builderClassName = "ConsumerGroupDescBuilder")

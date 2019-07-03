@@ -8,20 +8,19 @@ kafka:
   healthcheck:
     topic: "health"
   sasl:
-    enable: true
+    enable: false
     security.protocol: "SASL_PLAINTEXT"
     mechanism: "SCRAM-SHA-512"
 
 
 zookeeper:
-  uris: 127.0.0.1:2181
+  uris: localhost:2183
 
 jmx:
   kafka:
     jmxurl: localhost:19999,localhost:29999,localhost:39999
   zookeeper:
     jmxurl: localhost:49999
-  filterTemplate: JMXFilterTemplate
 
 server:
   port: 8121

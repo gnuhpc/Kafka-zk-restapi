@@ -2,6 +2,7 @@ package org.gnuhpc.bigdata.model;
 
 import java.util.List;
 import lombok.Builder;
+import lombok.NoArgsConstructor;
 import org.gnuhpc.bigdata.constant.ZkServerMode;
 
 @Builder

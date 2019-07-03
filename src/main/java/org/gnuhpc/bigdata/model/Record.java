@@ -5,7 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.extern.log4j.Log4j;
+import lombok.extern.log4j.Log4j2;
 import org.apache.kafka.common.errors.ApiException;
 import org.apache.kafka.common.utils.Bytes;
 import org.gnuhpc.bigdata.utils.KafkaUtils;
@@ -14,12 +14,12 @@ import org.gnuhpc.bigdata.utils.KafkaUtils;
 @Getter
 @Setter
 @Builder
-@Log4j
+@Log4j2
 public class Record {
   public String topic;
   public long offset;
-  public Object key = new Object();
-  public Object value = new Object();
+  public Object key;
+  public Object value;
   public long timestamp;
   String keyDecoder;
   String valueDecoder;

@@ -8,7 +8,7 @@ import kafka.common.OffsetAndMetadata;
 import kafka.coordinator.group.GroupMetadataManager;
 import kafka.coordinator.group.GroupTopicPartition;
 import kafka.coordinator.group.OffsetKey;
-import lombok.extern.log4j.Log4j;
+import lombok.extern.log4j.Log4j2;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.TopicPartition;
 import org.gnuhpc.bigdata.componet.OffsetStorage;
@@ -18,7 +18,7 @@ import org.springframework.kafka.listener.ConsumerSeekAware;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.handler.annotation.Header;
 
-@Log4j
+@Log4j2
 public class KafkaConsumerService implements ConsumerSeekAware {
 
   @Autowired private OffsetStorage offsetStorage;

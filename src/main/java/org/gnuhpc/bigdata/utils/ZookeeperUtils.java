@@ -4,6 +4,7 @@ import com.google.common.base.Charsets;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -17,7 +18,7 @@ import kafka.zk.AdminZkClient;
 import kafka.zk.KafkaZkClient;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.extern.log4j.Log4j;
+import lombok.extern.log4j.Log4j2;
 import org.I0Itec.zkclient.ZkClient;
 import org.I0Itec.zkclient.ZkConnection;
 import org.apache.commons.io.IOUtils;
@@ -42,7 +43,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.validation.annotation.Validated;
 
 /** Created by huangpengcheng on 2016/7/21 0021. */
-@Log4j
+@Log4j2
 @Setter
 @Getter
 @Validated
@@ -128,7 +129,7 @@ public class ZookeeperUtils {
     }
 
     try {
-      IOUtils.write(command + "\n", socket.getOutputStream());
+      IOUtils.write(command + "\n", socket.getOutputStream(),Charset.defaultCharset());
     } catch (IOException e) {
       throw new ServiceNotAvailableException(
           "zookeeper",
@@ -137,7 +138,7 @@ public class ZookeeperUtils {
     }
 
     try {
-      return IOUtils.readLines(socket.getInputStream());
+      return IOUtils.readLines(socket.getInputStream(), Charset.defaultCharset());
     } catch (IOException e) {
       throw new ServiceNotAvailableException(
           "zookeeper",

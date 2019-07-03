@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import joptsimple.internal.Strings;
-import lombok.extern.log4j.Log4j;
+import lombok.extern.log4j.Log4j2;
 import org.apache.kafka.clients.admin.DescribeReplicaLogDirsResult.ReplicaLogDirInfo;
 import org.apache.kafka.common.Node;
 import org.apache.kafka.common.TopicPartition;
@@ -55,7 +55,7 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * Created by gnuhpc on 2017/7/16.
  */
-@Log4j
+@Log4j2
 @RequestMapping("/kafka")
 @RestController
 public class KafkaController {
@@ -279,9 +279,9 @@ public class KafkaController {
   @ApiOperation(value = "Execute the partition reassignment")
   public ReassignStatus executeReassignPartitions(
       @RequestBody ReassignModel reassign,
-      long interBrokerThrottle,
-      long replicaAlterLogDirsThrottle,
-      long timeoutMs) {
+      @RequestParam(required = false, defaultValue = "-1") long interBrokerThrottle,
+      @RequestParam(required = false, defaultValue = "-1") long replicaAlterLogDirsThrottle,
+      @RequestParam(required = false, defaultValue = "10000") long timeoutMs) {
     return kafkaAdminService.executeReassignPartition(
         reassign, interBrokerThrottle, replicaAlterLogDirsThrottle, timeoutMs);
   }

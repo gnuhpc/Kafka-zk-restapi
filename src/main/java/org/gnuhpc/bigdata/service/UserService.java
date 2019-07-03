@@ -1,5 +1,6 @@
 package org.gnuhpc.bigdata.service;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -12,6 +13,8 @@ import org.gnuhpc.bigdata.constant.GeneralResponseState;
 import org.gnuhpc.bigdata.model.GeneralResponse;
 import org.gnuhpc.bigdata.model.User;
 import org.gnuhpc.bigdata.utils.CommonUtils;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
 @Getter
@@ -25,7 +28,9 @@ public class UserService {
   public List<String> listUser() {
     List<String> userList = new ArrayList<>();
     try {
-      accounts = CommonUtils.yamlParse(WebSecurityConfig.SECURITY_FILE_PATH);
+      Resource resource = new ClassPathResource(WebSecurityConfig.SECURITY_FILE_PATH);
+      File file = resource.getFile();
+      accounts = CommonUtils.yamlParse(file);
       accounts.forEach(
           (username, value) -> {
             userList.add((String) username);
@@ -119,7 +124,9 @@ public class UserService {
   }
 
   public boolean checkUserExist(String username) throws IOException {
-    accounts = CommonUtils.yamlParse(WebSecurityConfig.SECURITY_FILE_PATH);
+    Resource resource = new ClassPathResource(WebSecurityConfig.SECURITY_FILE_PATH);
+    File file = resource.getFile();
+    accounts = CommonUtils.yamlParse(file);
     if (accounts.containsKey(username)) {
       return true;
     }
@@ -134,7 +141,9 @@ public class UserService {
     userInfo.put("password", encodedPassword);
     userInfo.put("role", user.getRole());
     accounts.put(username, userInfo);
-    CommonUtils.yamlWrite(WebSecurityConfig.SECURITY_FILE_PATH, accounts);
+    Resource resource = new ClassPathResource(WebSecurityConfig.SECURITY_FILE_PATH);
+    File file = resource.getFile();
+    CommonUtils.yamlWrite(file, accounts);
     return GeneralResponse.builder()
         .state(GeneralResponseState.success)
         .msg("Save user " + username + " info successfully.")

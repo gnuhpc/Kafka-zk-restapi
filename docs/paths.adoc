@@ -1089,17 +1089,17 @@ PUT /kafka/partitions/reassign/execute
 
 ===== Parameters
 
-[options="header", cols=".^2,.^3,.^9,.^4"]
+[options="header", cols=".^2,.^3,.^9,.^4,.^2"]
 |===
-|Type|Name|Description|Schema
+|Type|Name|Description|Schema|Default
 |**Query**|**interBrokerThrottle** +
-__optional__|interBrokerThrottle|integer(int64)
+__optional__|interBrokerThrottle|integer(int64)|`"-1"`
 |**Query**|**replicaAlterLogDirsThrottle** +
-__optional__|replicaAlterLogDirsThrottle|integer(int64)
+__optional__|replicaAlterLogDirsThrottle|integer(int64)|`"-1"`
 |**Query**|**timeoutMs** +
-__optional__|timeoutMs|integer(int64)
+__optional__|timeoutMs|integer(int64)|`"10000"`
 |**Body**|**reassign** +
-__required__|reassign|<<_reassignmodel,ReassignModel>>
+__required__|reassign|<<_reassignmodel,ReassignModel>>|
 |===
 
 

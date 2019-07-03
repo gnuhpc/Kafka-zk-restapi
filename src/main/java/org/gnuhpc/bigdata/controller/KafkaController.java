@@ -279,9 +279,9 @@ public class KafkaController {
   @ApiOperation(value = "Execute the partition reassignment")
   public ReassignStatus executeReassignPartitions(
       @RequestBody ReassignModel reassign,
-      long interBrokerThrottle,
-      long replicaAlterLogDirsThrottle,
-      long timeoutMs) {
+      @RequestParam(required = false, defaultValue = "-1") long interBrokerThrottle,
+      @RequestParam(required = false, defaultValue = "-1") long replicaAlterLogDirsThrottle,
+      @RequestParam(required = false, defaultValue = "10000") long timeoutMs) {
     return kafkaAdminService.executeReassignPartition(
         reassign, interBrokerThrottle, replicaAlterLogDirsThrottle, timeoutMs);
   }

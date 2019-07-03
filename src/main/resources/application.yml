@@ -1,6 +1,6 @@
 spring:
   profiles:
-    active: prod
+    active: tina
 
   main:
     allow-bean-definition-overriding: true

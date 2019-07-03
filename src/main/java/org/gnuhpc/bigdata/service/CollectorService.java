@@ -31,6 +31,8 @@ import org.gnuhpc.bigdata.model.JMXSimpleAttribute;
 import org.gnuhpc.bigdata.model.JMXTabularAttribute;
 import org.gnuhpc.bigdata.utils.CommonUtils;
 import org.json.JSONObject;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
@@ -272,9 +274,10 @@ public class CollectorService {
   public HashMap<String, Object> listJMXFilterTemplate(String filterKey) {
     HashMap<String, Object> filterTemplateMap = new HashMap<>();
     HashMap<Object, Object> yamlHash;
-    String projectRootPath = "";
+
     try {
-      File jmxFilterDir = new File(JMXConfig.JMX_FILTER_DIR);
+      Resource resource = new ClassPathResource(JMXConfig.JMX_TEMPLATES_DIR);
+      File jmxFilterDir = resource.getFile();
       if (!jmxFilterDir.exists() || !jmxFilterDir.isDirectory()) {
         throw new IOException();
       }
@@ -282,7 +285,7 @@ public class CollectorService {
       if (files != null) {
         for (File yamlFile : files) {
           String fileFullName = yamlFile.getName();
-          log.info("Found JMXFilterTemplate filename=" + fileFullName);
+          log.info("Found jmx template filename=" + fileFullName);
           if (matchIgnoreCase(filterKey, fileFullName)) {
             String[] fileNames = fileFullName.split("\\.");
             yamlHash = CommonUtils.yamlParse(yamlFile);
@@ -294,9 +297,9 @@ public class CollectorService {
       CollectorException ce =
           new CollectorException(
               String.format(
-                  "%s occurred. Reason:%s. Advice:Create a directory named JMXFilterTemplate to "
-                      + "include filter templates in the project root path:%s.",
-                  e.getClass().getCanonicalName(), e.getLocalizedMessage(), projectRootPath),
+                  "%s occurred. Reason:%s. Advice:Create a directory named jmxtemplates in config "
+                      + "directory to include filter templates.",
+                  e.getClass().getCanonicalName(), e.getLocalizedMessage()),
               e);
       log.error("JMXFilterTemplate path does not exist.");
       filterTemplateMap.put("error", ce.getLocalizedMessage());

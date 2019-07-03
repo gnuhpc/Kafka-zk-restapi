@@ -15,10 +15,12 @@ Kafka/ZK REST API is to provide the production-ready endpoints to perform some a
 * Topic create/delete/describe/list
 * Topic config create/update/list
 * Topic partition add and reassign, replicas movement between log directories is supported
+* Topic Partition leadership transfer back to preferred replica
 * Consumer group list/describe/delete
 * Consumer Group Lag check
 * Offset reset by earliest/latest/timestamp
 * Contents view of message by different decoder, avro is also supported
+* Schema management on Schema Registry is supported
 * Collect JMX metrics from brokers that expose JMX metrics +
   More details refer to https://github.com/gnuhpc/Kafka-zk-restapi/blob/master/docs/JMXCollector.adoc[JMXCollector API Specification]
 * Secure the REST API with Spring Security
@@ -55,9 +57,9 @@ You can get it running by unzip/untaring the distribution package, perform some 
 
 You can build this restapi server using maven.
 
-# git clone https://github.com/gnuhpc/Kafka-zk-restapi.git +
-# cd Kafka-zk-restapi/ +
-# mvn clean package -Dmaven.test.skip=true+
+. git clone https://github.com/gnuhpc/Kafka-zk-restapi.git +
+. cd Kafka-zk-restapi/ +
+. mvn clean package -Dmaven.test.skip=true+
 
 After maven building, you will find zip/tar under directory: Kafka-zk-restapi/target
 
@@ -66,21 +68,21 @@ After maven building, you will find zip/tar under directory: Kafka-zk-restapi/ta
 You can get it running by unzip/untaring the distribution package and change the corresponding configuration in config directory:
 
 Change the following settings of application-ACTIVEENV.yml:
-kafka.brokers
-zookeeper.uris
 
-Change security related parameters in application config file:
+* kafka.brokers: kafka broker addresses.
+* kafka.schemaregistry: Schema Registry address. If not exist, just provide a random URL.
+* kafka.healthcheck.topic: Topic name for health check.
+* kafka.sasl.enable/kafka.sasl.protocol/kafka.sasl.mechanism: Set kafka.sasl.enable to true if connect to a kafka cluster that adds SASL authentication.
+Remember to assign JAAS config file location to JVM property java.security.auth.login.config before starting this application.
+* zookeeper.uris: zookeeper addresses.
+* jmx.kafka.jmxurl/jmx.zookeeper.jmxurl: kafka/zookeeper jmx urls. If you want to use JMX Query Filter function, you can add your own custom filter files to JMXFilterTemplate directory in project root folder.
+More details refer to https://github.com/gnuhpc/Kafka-zk-restapi/blob/master/docs/JMXCollector.adoc[JMXCollector API Specification]
+* server.security.check/server.security.checkInitDelay/server.security.checkSecurityInterval: Security related parameters.
 See below: <<_security,'How to config security'>>
 
-server.security.check
-server.security.checkInitDelay
-server.security.checkSecurityInterval
-
-If you want to use JMX Query Filter function, you can add your own custom filter files to JMXFilterTemplate directory in project root folder.
-More details refer to https://github.com/gnuhpc/Kafka-zk-restapi/blob/master/docs/JMXCollector.adoc[JMXCollector API Specification]
-
 === How to run
-# bin/start.sh
+ bin/start.sh
+ Note: If connect to a kafka cluster that adds SASL authentication, add -Djava.security.auth.login.config=jaas.conf to JVM property.
 
 [[_security]]
 === Security

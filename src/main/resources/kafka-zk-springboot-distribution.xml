@@ -25,6 +25,7 @@
         <include>env/qa/*</include>
         <include>env/uat/*</include>
         <include>env/prod/*</include>
+        <include>jmxtemplates/*</include>
       </includes>
     </fileSet>
     <fileSet>

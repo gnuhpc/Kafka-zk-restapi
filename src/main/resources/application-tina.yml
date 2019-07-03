@@ -21,7 +21,6 @@ jmx:
     jmxurl: localhost:19999,localhost:29999,localhost:39999
   zookeeper:
     jmxurl: localhost:49999
-  filterTemplate: JMXFilterTemplate
 
 server:
   port: 8121

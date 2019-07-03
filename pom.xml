@@ -341,6 +341,7 @@
         <targetPath>${project.build.directory}/classes</targetPath>
         <includes>
           <include>security.yml</include>
+          <include>jmxtemplates/*</include>
         </includes>
       </resource>
 

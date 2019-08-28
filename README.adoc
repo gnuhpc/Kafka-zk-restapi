@@ -81,7 +81,12 @@ More details refer to https://github.com/gnuhpc/Kafka-zk-restapi/blob/master/doc
 See below: <<_security,'How to config security'>>
 
 === How to run
- bin/start.sh
+. tar -xvf kafka-zk-api-1.1.x-release-dist.tar
+  or
+  unzip kafka-zk-api-1.1.x-release-dist.zip
+. cd kafka-zk-api-1.1.x-release-dist
+. bin/start.sh
+
  Note: If connect to a kafka cluster that adds SASL authentication, add -Djava.security.auth.login.config=jaas.conf to JVM property.
 
 [[_security]]

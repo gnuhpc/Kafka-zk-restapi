@@ -14,7 +14,7 @@ kafka:
 
 
 zookeeper:
-  uris: localhost:2183q
+  uris: localhost:2183
 
 jmx:
   kafka:

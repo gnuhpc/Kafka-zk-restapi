@@ -69,7 +69,6 @@ A docker image named kafka-rest-springboot:latest is created after building. If 
 to build your own image, modify application property files in src/main/resources first.
 Details refer to <<_How to config,'How to config'>>
 
-
 === How to config
 You can get it running by unzip/untaring the distribution package and change the corresponding configuration in config directory:
 
@@ -87,11 +86,12 @@ More details refer to https://github.com/gnuhpc/Kafka-zk-restapi/blob/master/doc
 See below: <<_security,'How to config security'>>
 
 === How to run
- 1.tar -xvf kafka-zk-api-1.1.x-release-dist.tar or unzip kafka-zk-api-1.1.x-release-dist.zip
+. tar -xvf kafka-zk-api-1.1.x-release-dist.tar
+  or
+  unzip kafka-zk-api-1.1.x-release-dist.zip
+. cd kafka-zk-api-1.1.x-release-dist
+. bin/start.sh
 
- 2.cd kafka-zk-api-1.1.x-release-dist
-
- 3.bin/start.sh
  Note: If connect to a kafka cluster that adds SASL authentication, add -Djava.security.auth.login.config=jaas.conf to JVM property.
 
 [[_security]]

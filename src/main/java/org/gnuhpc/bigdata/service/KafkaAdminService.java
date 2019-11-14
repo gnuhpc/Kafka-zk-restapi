@@ -103,10 +103,10 @@ import org.apache.kafka.common.config.SaslConfigs;
 import org.apache.kafka.common.errors.ApiException;
 import org.apache.kafka.common.errors.InvalidTopicException;
 import org.apache.kafka.common.errors.SerializationException;
+import org.apache.kafka.common.errors.TopicExistsException;
 import org.apache.kafka.common.internals.Topic;
 import org.apache.kafka.common.protocol.Errors;
 import org.apache.kafka.common.requests.DescribeLogDirsResponse.LogDirInfo;
-import org.gnuhpc.bigdata.utils.CollectionConvertor;
 import org.gnuhpc.bigdata.componet.OffsetStorage;
 import org.gnuhpc.bigdata.config.KafkaConfig;
 import org.gnuhpc.bigdata.constant.ConsumerGroupState;
@@ -132,6 +132,7 @@ import org.gnuhpc.bigdata.model.TopicBrief;
 import org.gnuhpc.bigdata.model.TopicDetail;
 import org.gnuhpc.bigdata.model.TopicMeta;
 import org.gnuhpc.bigdata.model.TwoTuple;
+import org.gnuhpc.bigdata.utils.CollectionConvertor;
 import org.gnuhpc.bigdata.utils.KafkaUtils;
 import org.gnuhpc.bigdata.utils.ZookeeperUtils;
 import org.gnuhpc.bigdata.validator.ConsumerGroupExistConstraint;
@@ -215,16 +216,31 @@ public class KafkaAdminService {
   public HashMap<String, GeneralResponse> createTopic(List<TopicDetail> topicList) {
     List<NewTopic> newTopicList = new ArrayList<>();
     HashMap<String, GeneralResponse> createResults = new HashMap<>();
+    Set<String> allTopics = getAllTopics();
+    Map<String, String> topicMsgMap = new HashMap<>();
 
     for (TopicDetail topic : topicList) {
       NewTopic newTopic;
       Map<Integer, List<Integer>> replicasAssignments = topic.getReplicasAssignments();
 
       try {
-        Topic.validate(topic.getName());
-
+        String topicName = topic.getName();
+        Topic.validate(topicName);
+        if (allTopics.contains(topicName)) {
+          throw new TopicExistsException("Topic " + topicName + " already exists.");
+        }
         if (Topic.hasCollisionChars(topic.getName())) {
-          throw new InvalidTopicException("Invalid topic name, it contains '.' or '_'.");
+          Set<String> collidingTopics = allTopics.stream()
+              .filter(t -> Topic.hasCollision(topicName, t)).collect(toSet());
+          if (!collidingTopics.isEmpty()) {
+            throw new InvalidTopicException(
+                "Topic " + topicName + " collides with existing topics: " + collidingTopics);
+          } else {
+            topicMsgMap.put(topicName,
+                "WARNING: Due to limitations in metric names, topics with a period ('.') or "
+                    + "underscore ('_') could collide. To avoid issues it is best to use either, "
+                    + "but not both.");
+          }
         }
       } catch (Exception exception) {
         GeneralResponse generalResponse =
@@ -269,7 +285,7 @@ public class KafkaAdminService {
                   generalResponse =
                       GeneralResponse.builder()
                           .state(GeneralResponseState.success)
-                          .data(topicMeta)
+                          .data(topicMeta).msg(topicMsgMap.get(topicName))
                           .build();
                 } else {
                   generalResponse =
@@ -1978,12 +1994,14 @@ public class KafkaAdminService {
     }
     try {
       Set<TopicPartition> partitionsUndergoingPreferredReplicaElection = new HashSet<>();
-      for (org.gnuhpc.bigdata.model.TopicPartition tp:validPartitions) {
-        partitionsUndergoingPreferredReplicaElection.add(new TopicPartition(tp.getTopic(), tp.getPartition()));
+      for (org.gnuhpc.bigdata.model.TopicPartition tp : validPartitions) {
+        partitionsUndergoingPreferredReplicaElection
+            .add(new TopicPartition(tp.getTopic(), tp.getPartition()));
       }
       PreferredReplicaLeaderElectionCommand
           .writePreferredReplicaElectionData(kafkaZkClient,
-              JavaConverters.asScalaSetConverter(partitionsUndergoingPreferredReplicaElection).asScala());
+              JavaConverters.asScalaSetConverter(partitionsUndergoingPreferredReplicaElection)
+                  .asScala());
       //0 means successfully started preferred replica election
       Map<org.gnuhpc.bigdata.model.TopicPartition, Integer> validPartitionsMap = validPartitions
           .stream().collect(Collectors.toMap(Function.identity(), tp -> 0));

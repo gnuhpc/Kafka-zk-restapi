@@ -86,6 +86,17 @@ More details refer to https://github.com/gnuhpc/Kafka-zk-restapi/blob/master/doc
 See below: <<_security,'How to config security'>>
 
 === How to run
+==== Pulling from Docker hub
+Get a image from docker hub. Details refer to https://hub.docker.com/repository/docker/tinawenqiao/kafka-rest-springboot
+
+
+==== Run your own docker image
+
+$ docker run -p 8121:8121 --env JAVA_OPTS=-Xms1g -Xmx1g kafka-rest-springboot:latest
+
+See <<_How to build,'How to build'>>
+
+==== Use the built tar/zip package
 . tar -xvf kafka-zk-api-1.1.x-release-dist.tar
   or
   unzip kafka-zk-api-1.1.x-release-dist.zip

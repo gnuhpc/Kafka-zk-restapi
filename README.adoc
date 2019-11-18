@@ -61,8 +61,13 @@ You can build this restapi server using maven.
 . cd Kafka-zk-restapi/ +
 . mvn clean package -Dmaven.test.skip=true +
 
-After maven building, you will find zip/tar under directory: Kafka-zk-restapi/target
+After maven building, you will find zip/tar under directory: Kafka-zk-restapi/target.
 
+**New**:
+Now we support build docker image using spotify docker-maven-plugin.
+A docker image named kafka-rest-springboot:latest is created after building. If you want
+to build your own image, modify application property files in src/main/resources first.
+Details refer to <<_How to config,'How to config'>>
 
 === How to config
 You can get it running by unzip/untaring the distribution package and change the corresponding configuration in config directory:
@@ -81,6 +86,17 @@ More details refer to https://github.com/gnuhpc/Kafka-zk-restapi/blob/master/doc
 See below: <<_security,'How to config security'>>
 
 === How to run
+==== Pulling from Docker hub
+Get a image from docker hub. Details refer to https://hub.docker.com/repository/docker/tinawenqiao/kafka-rest-springboot
+
+
+==== Run your own docker image
+
+$ docker run -p 8121:8121 --env JAVA_OPTS=-Xms1g -Xmx1g kafka-rest-springboot:latest
+
+See <<_How to build,'How to build'>>
+
+==== Use the built tar/zip package
 . tar -xvf kafka-zk-api-1.1.x-release-dist.tar
   or
   unzip kafka-zk-api-1.1.x-release-dist.zip

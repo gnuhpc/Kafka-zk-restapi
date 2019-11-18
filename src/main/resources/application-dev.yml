@@ -1,19 +1,34 @@
 kafka:
   brokers: DPFTMP01:9092,DPFTMP03:9092,DPFTMP04:9092,DPFTMP05:9092,DPFTMP06:9092,DPFTMP07:9092,DPFTMP08:9092,DPFTMP09:9092,DPFTMP10:9092
+  schemaregistry: http://localhost:8081
   offset:
     topic: "__consumer_offsets"
     partitions: 50
     reset: true
   healthcheck:
     topic: "health"
+  sasl:
+    enable: false
+    security.protocol: "SASL_PLAINTEXT"
+    mechanism: "SCRAM-SHA-512"
 
 zookeeper:
   uris: DPFTMP06:2181,DPFTMP07:2181,DPFTMP08:2181,DPFTMP09:2181,DPFTMP10:2181
+
+jmx:
+  kafka:
+    jmxurl: localhost:19999,localhost:29999,localhost:39999
+  zookeeper:
+    jmxurl: localhost:49999
 
 server:
   port: 8121
   context-path: /
   debug: true
+  security:
+    check: true
+    checkInitDelay: 30
+    checkSecurityInterval: 5
 
 spring:
   kafka:

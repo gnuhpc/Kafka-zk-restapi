@@ -41,6 +41,7 @@
     <jackson.version>2.10.0</jackson.version>
     <jackson.module.scala.version>2.9.9</jackson.module.scala.version>
     <snakeyaml.version>1.19</snakeyaml.version>
+    <docker.image.prefix>tinawenqiao</docker.image.prefix>
   </properties>
   <pluginRepositories>
     <pluginRepository>
@@ -615,6 +616,44 @@
           </execution>
         </executions>
       </plugin>
+
+      <!-- Docker maven plugin -->
+      <plugin>
+        <groupId>com.spotify</groupId>
+        <artifactId>docker-maven-plugin</artifactId>
+        <version>1.0.0</version>
+        <executions>
+          <execution>
+            <id>build-image</id>
+            <phase>package</phase>
+            <goals>
+              <goal>build</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <imageName>${project.artifactId}</imageName>
+          <newName>${docker.image.prefix}/${project.artifactId}</newName>
+          <baseImage>openjdk:8-jdk-alpine</baseImage>
+          <!--Dockerfile path-->
+          <dockerDirectory>${project.basedir}/src/main/docker</dockerDirectory>
+          <resources>
+            <resource>
+              <targetPath>/</targetPath>
+              <directory>${project.build.directory}</directory>
+              <include>${project.build.finalName}.jar</include>
+              <include>${project.build.finalName}-executable.jar</include>
+              <include>classes/config/*</include>
+              <include>classes/jmxtemplates/*</include>
+              <include>classes/security.yml</include>
+            </resource>
+          </resources>
+          <!--Push to docker hub-->
+          <serverId>docker-hub</serverId>
+          <registryUrl>https://index.docker.io/v1/</registryUrl>
+        </configuration>
+      </plugin>
+      <!-- Docker maven plugin -->
     </plugins>
   </build>
 </project>

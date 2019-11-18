@@ -1,5 +1,5 @@
 kafka:
-  brokers: localhost:19092,localhost:19094,localhost:19096
+  brokers: 192.168.42.15:19092,192.168.42.15:19094,192.168.42.15:19096
   schemaregistry: http://localhost:8081
   offset:
     topic: "__consumer_offsets"
@@ -14,7 +14,7 @@ kafka:
 
 
 zookeeper:
-  uris: localhost:2183
+  uris: 192.168.42.15:2183
 
 jmx:
   kafka:

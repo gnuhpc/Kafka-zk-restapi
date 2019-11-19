@@ -57,9 +57,9 @@ You can get it running by unzip/untaring the distribution package, perform some 
 
 You can build this restapi server using maven.
 
-. `$ git clone https://github.com/gnuhpc/Kafka-zk-restapi.git`
-. `cd Kafka-zk-restapi/`
-. `mvn clean package -Dmaven.test.skip=true`
+. `$ git clone \https://github.com/gnuhpc/Kafka-zk-restapi.git`
+. `$ cd Kafka-zk-restapi/`
+. `$ mvn clean package -Dmaven.test.skip=true`
 
 After maven building, you will find zip/tar under directory: Kafka-zk-restapi/target.
 

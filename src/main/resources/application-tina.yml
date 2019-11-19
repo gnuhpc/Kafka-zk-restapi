@@ -27,7 +27,7 @@ server:
   context-path: /
   debug: true
   security:
-    check: true
+    check: false
     checkInitDelay: 30
     checkSecurityInterval: 5
 

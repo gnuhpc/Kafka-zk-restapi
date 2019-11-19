@@ -1,17 +1,35 @@
 kafka:
-  brokers: hadoop1:9092,hadoop2:9092,hadoop3:9092
+  brokers: 192.168.42.28:19092,192.168.42.28:19093,192.168.42.28:19095
+  schemaregistry: http://localhost:8081
   offset:
     topic: "__consumer_offsets"
     partitions: 50
     reset: true
+  healthcheck:
+    topic: "health"
+  sasl:
+    enable: false
+    security.protocol: "SASL_PLAINTEXT"
+    mechanism: "SCRAM-SHA-512"
+
 
 zookeeper:
-  uris: hadoop1:3181,hadoop2:3181,hadoop3:3181
+  uris: 192.168.42.28:2183
+
+jmx:
+  kafka:
+    jmxurl: localhost:19999,localhost:29999,localhost:39999
+  zookeeper:
+    jmxurl: localhost:49999
 
 server:
   port: 8121
   context-path: /
   debug: true
+  security:
+    check: false
+    checkInitDelay: 30
+    checkSecurityInterval: 5
 
 spring:
   kafka:
@@ -25,4 +43,9 @@ spring:
       enabled: detect
   aop:
     auto: true
+  main:
+    allow-bean-definition-overriding: true
+
+
+
 

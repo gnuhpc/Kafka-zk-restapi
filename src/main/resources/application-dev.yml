@@ -26,7 +26,7 @@ server:
   context-path: /
   debug: true
   security:
-    check: true
+    check: false
     checkInitDelay: 30
     checkSecurityInterval: 5
 
@@ -42,4 +42,6 @@ spring:
       enabled: detect
   aop:
     auto: true
+  main:
+    allow-bean-definition-overriding: true
 

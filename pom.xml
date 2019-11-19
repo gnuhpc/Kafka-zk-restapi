@@ -632,7 +632,7 @@
           </execution>
         </executions>
         <configuration>
-          <imageName>${project.artifactId}</imageName>
+          <imageName>${docker.image.prefix}/${project.artifactId}</imageName>
           <newName>${docker.image.prefix}/${project.artifactId}</newName>
           <baseImage>openjdk:8-jdk-alpine</baseImage>
           <!--Dockerfile path-->

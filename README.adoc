@@ -86,24 +86,32 @@ More details refer to https://github.com/gnuhpc/Kafka-zk-restapi/blob/master/doc
 See below: <<_security,'How to config security'>>
 
 === How to run
-==== Pulling from Docker hub
-Get a image from docker hub. Details refer to https://hub.docker.com/r/tinawenqiao/kafka-rest-springboot
+==== A. Pulling from Docker hub
+Step 1 : Prepare a directory that contains spring application property files as a volume to mount into the container.
+Custom your own parameters such as Kafka/zk addresses, schema registry url, security params, etc.
+
+Step 2 : Run the image. /XX/XX/config is the directory that noticed in Step 1.
+
+`$ docker run -p 8121:8121 -v /XX/XX/config:/app/config --env JAVA_OPTS='-Xms1g -Xmx1g' tinawenqiao/kafka-rest-springboot`
+
+Details refer to https://hub.docker.com/r/tinawenqiao/kafka-rest-springboot
 
 Note: Make sure advertised.listeners(kafka server property) is set correctly if you access kafka from docker image.
-==== Run your own docker image
 
-$ docker run -p 8121:8121 --env JAVA_OPTS='-Xms1g -Xmx1g' tinawenqiao/kafka-rest-springboot:latest
+==== B. Run your own docker image
+
+`$ docker run -p 8121:8121 --env JAVA_OPTS='-Xms1g -Xmx1g' tinawenqiao/kafka-rest-springboot:latest`
 
 Note: Make sure advertised.listeners(kafka server property) is set correctly if you access kafka from docker image.
 
 See <<_How to build,'How to build'>>
 
-==== Use the built tar/zip package
-. tar -xvf kafka-zk-api-1.1.x-release-dist.tar
+==== C. Use the built tar/zip package
+. `$ tar -xvf kafka-zk-api-1.1.x-release-dist.tar`
   or
-  unzip kafka-zk-api-1.1.x-release-dist.zip
-. cd kafka-zk-api-1.1.x-release-dist
-. bin/start.sh
+  `$ unzip kafka-zk-api-1.1.x-release-dist.zip`
+. `$ cd kafka-zk-api-1.1.x-release-dist`
+. `$ bin/start.sh`
 
  Note: If connect to a kafka cluster that adds SASL authentication, add -Djava.security.auth.login.config=jaas.conf to JVM property.
 

@@ -1,13 +1,12 @@
 package org.gnuhpc.bigdata.config;
 
-import java.io.File;
 import org.gnuhpc.bigdata.security.BasicAuthenticationPoint;
 import org.gnuhpc.bigdata.security.UserDetailsServiceImp;
-import org.gnuhpc.bigdata.utils.CommonUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -19,6 +18,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 @Configuration
 @EnableWebSecurity
+@Lazy
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
   public static final String SECURITY_FILE_PATH = "security.yml";

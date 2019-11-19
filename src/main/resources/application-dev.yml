@@ -42,4 +42,6 @@ spring:
       enabled: detect
   aop:
     auto: true
+  main:
+    allow-bean-definition-overriding: true
 

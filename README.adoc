@@ -31,20 +31,6 @@ image::https://raw.githubusercontent.com/gnuhpc/Kafka-zk-restapi/master/pics/Sho
 
 We have also opensourced a simple but useful UI for these APIs. Please check https://github.com/gnuhpc/Kafka-zk-restapi-UI for more details.
 
-Here are some snapshots of this UI:
-
-image::https://github.com/gnuhpc/Kafka-zk-restapi-UI/blob/master/screenshots/KafkaDashboard.png[KafkaDashboard]
-image::https://github.com/gnuhpc/Kafka-zk-restapi-UI/blob/master/screenshots/TopicManage.png[TopicManage]
-image::https://github.com/gnuhpc/Kafka-zk-restapi-UI/blob/master/screenshots/TopicPartitionView.png[TopicPartitionView]
-image::https://github.com/gnuhpc/Kafka-zk-restapi-UI/blob/master/screenshots/ConsumersGetByTopic.png[ConsumersGetByTopic]
-image::https://github.com/gnuhpc/Kafka-zk-restapi-UI/blob/master/screenshots/ManualReassignPartitions.png[ManualReassignPartitions]
-image::https://github.com/gnuhpc/Kafka-zk-restapi-UI/blob/master/screenshots/MessageView.png[MessageView]
-image::https://github.com/gnuhpc/Kafka-zk-restapi-UI/blob/master/screenshots/SchemaView.png[SchemaView]
-image::https://github.com/gnuhpc/Kafka-zk-restapi-UI/blob/master/screenshots/ConsumerGroup.png[ConsumerGroup]
-image::https://github.com/gnuhpc/Kafka-zk-restapi-UI/blob/master/screenshots/TopicsGetByGroup.png[TopicsGetByGroup]
-image::https://github.com/gnuhpc/Kafka-zk-restapi-UI/blob/master/screenshots/ConsumersGetByGroupAndTopic.png[ConsumersGetByGroupAndTopic]
-
-
 === Installation and run
 First of all, Java 8 jre/jdk needed.
 

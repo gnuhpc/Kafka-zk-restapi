@@ -26,13 +26,12 @@ import org.springframework.kafka.config.KafkaListenerContainerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.listener.AbstractMessageListenerContainer;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
-import org.springframework.kafka.listener.ContainerProperties;
 
 /** Created by gnuhpc on 2017/7/12. */
 @Log4j2
 @Data
 @EnableKafka
-@Lazy
+//@Lazy
 @Configuration
 @Getter
 public class KafkaConfig {
@@ -86,7 +85,7 @@ public class KafkaConfig {
     ConcurrentKafkaListenerContainerFactory<ByteBuffer, ByteBuffer> factory =
         new ConcurrentKafkaListenerContainerFactory<>();
     factory.setConsumerFactory(consumerFactory());
-    factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.MANUAL);
+    factory.getContainerProperties().setAckMode(ConcurrentMessageListenerContainer.AckMode.MANUAL);
     return factory;
   }
 

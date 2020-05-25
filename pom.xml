@@ -1,660 +1,665 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
 
-  <groupId>org.gnuhpc.bigdata</groupId>
-  <artifactId>kafka-rest-springboot</artifactId>
-  <version>1.1.x-release</version>
-  <packaging>jar</packaging>
+    <groupId>org.gnuhpc.bigdata</groupId>
+    <artifactId>kafka-rest-springboot</artifactId>
+    <version>1.1.x-release</version>
+    <packaging>jar</packaging>
 
-  <name>kafka-zk-rest-springboot</name>
-  <description>Kafka/Zookeeper Rest API services</description>
-
-
-  <parent>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-parent</artifactId>
-    <version>2.1.0.RELEASE</version>
-    <relativePath/> <!-- lookup parent from repository -->
-  </parent>
-
-  <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <java.version>1.8</java.version>
-
-    <swagger2markup.version>1.2.0</swagger2markup.version>
-    <asciidoctor.input.directory>${project.basedir}/src/docs/asciidoc</asciidoctor.input.directory>
-    <swagger.output.dir>${project.basedir}/src/docs/swagger</swagger.output.dir>
-    <swagger.snippetOutput.dir>${project.build.directory}/asciidoc/snippets
-    </swagger.snippetOutput.dir>
-    <generated.asciidoc.directory>${project.build.directory}/asciidoc/md
-    </generated.asciidoc.directory>
-    <asciidoctor.html.output.directory>${project.build.directory}/asciidoc/html
-    </asciidoctor.html.output.directory>
-    <asciidoctor.pdf.output.directory>${project.build.directory}/asciidoc/pdf
-    </asciidoctor.pdf.output.directory>
-
-    <swagger.input>${swagger.output.dir}/swagger.json</swagger.input>
-    <jackson.version>2.10.0</jackson.version>
-    <jackson.module.scala.version>2.9.9</jackson.module.scala.version>
-    <snakeyaml.version>1.19</snakeyaml.version>
-    <docker.image.prefix>tinawenqiao</docker.image.prefix>
-  </properties>
-  <pluginRepositories>
-    <pluginRepository>
-      <id>jcenter-snapshots</id>
-      <name>jcenter</name>
-      <url>http://oss.jfrog.org/artifactory/oss-snapshot-local/</url>
-    </pluginRepository>
-    <pluginRepository>
-      <id>jcenter-releases</id>
-      <name>jcenter</name>
-      <url>http://jcenter.bintray.com</url>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-    </pluginRepository>
-  </pluginRepositories>
-
-  <repositories>
-    <repository>
-      <id>jcentral</id>
-      <name>bintray</name>
-      <url>http://jcenter.bintray.com</url>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-    </repository>
-    <repository>
-      <id>jcenter-snapshots</id>
-      <name>jcenter</name>
-      <url>http://oss.jfrog.org/artifactory/oss-snapshot-local/</url>
-    </repository>
-    <repository>
-      <id>Spring</id>
-      <name>Spring-milestone</name>
-      <url>http://repo.spring.io/milestone/</url>
-    </repository>
-    <repository>
-      <id>confluent</id>
-      <url>http://packages.confluent.io/maven/</url>
-    </repository>
-  </repositories>
-
-  <dependencies>
-    <!--For validation-->
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-web</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-security</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter</artifactId>
-      <exclusions>
-        <exclusion>
-          <groupId>org.springframework.boot</groupId>
-          <artifactId>spring-boot-starter-logging</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-log4j2</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-devtools</artifactId>
-      <scope>runtime</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-configuration-processor</artifactId>
-      <optional>true</optional>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-aop</artifactId>
-    </dependency>
-
-    <!--<dependency>-->
-    <!--<groupId>org.springframework.boot</groupId>-->
-    <!--<artifactId>spring-boot-starter-actuator</artifactId>-->
-    <!--</dependency>-->
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-test</artifactId>
-      <!--<scope>test</scope>-->
-    </dependency>
-
-    <dependency>
-      <groupId>org.projectlombok</groupId>
-      <artifactId>lombok</artifactId>
-      <version>1.18.8</version>
-      <optional>true</optional>
-    </dependency>
+    <name>kafka-zk-rest-springboot</name>
+    <description>Kafka/Zookeeper Rest API services</description>
 
 
-
-    <!-- https://mvnrepository.com/artifact/com.101tec/zkclient -->
-    <dependency>
-      <groupId>com.101tec</groupId>
-      <artifactId>zkclient</artifactId>
-      <version>0.10</version>
-    </dependency>
-
-    <dependency>
-      <groupId>org.apache.curator</groupId>
-      <artifactId>curator-client</artifactId>
-      <version>2.11.0</version>
-    </dependency>
-
-    <dependency>
-      <groupId>org.yaml</groupId>
-      <artifactId>snakeyaml</artifactId>
-      <version>1.23</version>
-    </dependency>
-
-    <!-- https://mvnrepository.com/artifact/io.springfox/springfox-swagger2 -->
-    <dependency>
-      <groupId>io.springfox</groupId>
-      <artifactId>springfox-swagger2</artifactId>
-      <version>2.7.0</version>
-    </dependency>
-    <dependency>
-      <groupId>io.swagger</groupId>
-      <artifactId>swagger-annotations</artifactId>
-      <version>1.5.16</version>
-    </dependency>
-    <dependency>
-      <groupId>io.springfox</groupId>
-      <artifactId>springfox-swagger-ui</artifactId>
-      <version>2.7.0</version>
-    </dependency>
-
-    <dependency>
-      <groupId>org.apache.kafka</groupId>
-      <artifactId>kafka-clients</artifactId>
-      <version>1.1.1</version>
-    </dependency>
-
-    <!-- https://mvnrepository.com/artifact/org.springframework.kafka/spring-kafka -->
-    <dependency>
-      <groupId>org.springframework.kafka</groupId>
-      <artifactId>spring-kafka</artifactId>
-      <version>2.2.1.RELEASE</version>
-    </dependency>
-
-    <dependency>
-      <groupId>org.apache.kafka</groupId>
-      <artifactId>kafka_2.11</artifactId>
-      <version>1.1.1</version>
-      <exclusions>
-        <exclusion>
-          <groupId>com.101tec</groupId>
-          <artifactId>zkclient</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-
-    <!-- https://mvnrepository.com/artifact/joda-time/joda-time -->
-    <dependency>
-      <groupId>joda-time</groupId>
-      <artifactId>joda-time</artifactId>
-      <version>2.9.9</version>
-    </dependency>
-    <!--
-    <dependency>
-      <groupId>com.google.code.gson</groupId>
-      <artifactId>gson</artifactId>
-      <version>2.6.2</version>
-    </dependency>
-    -->
-    <dependency>
-      <groupId>com.fasterxml.jackson.datatype</groupId>
-      <artifactId>jackson-datatype-joda</artifactId>
-      <version>${jackson.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-databind</artifactId>
-      <version>${jackson.version}</version>
-    </dependency>
-    <!-- convert Java 8 date and time classes to JSON representation using the @JsonFormat annotation-->
-    <dependency>
-      <groupId>com.fasterxml.jackson.datatype</groupId>
-      <artifactId>jackson-datatype-jsr310</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.fasterxml.jackson.dataformat</groupId>
-      <artifactId>jackson-dataformat-yaml</artifactId>
-      <version>${jackson.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.fasterxml.jackson.module</groupId>
-      <artifactId>jackson-module-scala_2.11</artifactId>
-      <version>${jackson.module.scala.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.fasterxml.jackson.module</groupId>
-      <artifactId>jackson-module-parameter-names</artifactId>
-      <version>${jackson.version}</version>
-    </dependency>
-
-    <dependency>
-      <groupId>org.apache.commons</groupId>
-      <artifactId>commons-collections4</artifactId>
-      <version>4.0</version>
-    </dependency>
-
-
-    <dependency>
-      <groupId>org.springframework.restdocs</groupId>
-      <artifactId>spring-restdocs-mockmvc</artifactId>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>commons-io</groupId>
-      <artifactId>commons-io</artifactId>
-      <version>2.5</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.commons</groupId>
-      <artifactId>commons-lang3</artifactId>
-      <version>3.5</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.curator</groupId>
-      <artifactId>curator-framework</artifactId>
-      <version>2.11.0</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.avro</groupId>
-      <artifactId>avro</artifactId>
-      <version>1.8.2</version>
-    </dependency>
-
-    <!-- Confluent schema registry lib  -->
-    <dependency>
-      <groupId>io.confluent</groupId>
-      <artifactId>kafka-avro-serializer</artifactId>
-      <version>4.1.1</version>
-    </dependency>
-    <dependency>
-      <groupId>io.confluent</groupId>
-      <artifactId>kafka-schema-registry-client</artifactId>
-      <version>4.1.1</version>
-    </dependency>
-    <dependency>
-      <groupId>io.confluent</groupId>
-      <artifactId>common-utils</artifactId>
-      <version>4.1.1</version>
-    </dependency>
-    <dependency>
-      <groupId>io.confluent</groupId>
-      <artifactId>common-config</artifactId>
-      <version>4.1.1</version>
-    </dependency>
-  </dependencies>
-
-  <build>
-    <resources>
-      <resource>
-        <directory>src/main/resources</directory>
-        <includes>
-          <include>db/*.sql</include>
-          <include>mapper/**/*.xml</include>
-          <include>static/**</include>
-          <include>templates/**</include>
-          <!-- 如果各个环境的jks都是一样，则可以直接打入到启动jar包中 -->
-          <!--<include>test.jks</include>-->
-        </includes>
-      </resource>
-
-      <!-- 过滤配置文件到config目录 -->
-      <resource>
-        <directory>src/main/resources</directory>
-        <targetPath>config</targetPath>
-        <filtering>true</filtering>
-        <includes>
-          <include>application.yml</include>
-          <include>application-*.yml</include>
-          <include>log4j2.properties</include>
-          <!-- 如果各个环境的jks不一样，则配置到外部config目录中
-              java代码中通过ClassPathFileUtil.getFile()获取 -->
-          <include>test.jks</include>
-          <include>test.txt</include>
-        </includes>
-      </resource>
-
-      <resource>
-        <directory>src/main/resources</directory>
-        <targetPath>${project.build.directory}/classes</targetPath>
-        <includes>
-          <include>security.yml</include>
-          <include>jmxtemplates/*</include>
-        </includes>
-      </resource>
-
-      <!-- 过滤脚本文件到bin目录 -->
-      <resource>
-        <directory>src/main/resources</directory>
-        <filtering>true</filtering>
-        <targetPath>bin</targetPath>
-        <includes>
-          <include>*.bat</include>
-          <include>*.sh</include>
-        </includes>
-      </resource>
-    </resources>
-
-    <plugins>
-      <plugin>
-        <groupId>net.alchim31.maven</groupId>
-        <artifactId>scala-maven-plugin</artifactId>
-        <version>3.3.1</version>
-        <executions>
-          <execution>
-            <id>scala-compile</id>
-            <phase>process-resources</phase>
-            <goals>
-              <goal>add-source</goal>
-              <goal>compile</goal>
-            </goals>
-          </execution>
-          <execution>
-            <id>scala-test-compile</id>
-            <phase>process-test-resources</phase>
-            <goals>
-              <goal>testCompile</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
+    <parent>
         <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-maven-plugin</artifactId>
-        <configuration>
-          <fork>true</fork>
-          <mainClass>org.gnuhpc.bigdata.KafkaRestSpringbootApplication</mainClass>
-          <classifier>executable</classifier>
-          <layout>JAR</layout>
-        </configuration>
-        <executions>
-          <execution>
-            <goals>
-              <goal>repackage</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>2.0.4.RELEASE</version>
+        <relativePath/> <!-- lookup parent from repository -->
+    </parent>
 
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <configuration>
-          <systemPropertyVariables>
-            <io.springfox.staticdocs.outputDir>${swagger.output.dir}
-            </io.springfox.staticdocs.outputDir>
-            <io.springfox.staticdocs.snippetsOutputDir>${swagger.snippetOutput.dir}
-            </io.springfox.staticdocs.snippetsOutputDir>
-          </systemPropertyVariables>
-        </configuration>
-      </plugin>
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <java.version>1.8</java.version>
 
-      <!-- First, use the swagger2markup plugin to generate asciidoc -->
-      <plugin>
-        <groupId>io.github.swagger2markup</groupId>
-        <artifactId>swagger2markup-maven-plugin</artifactId>
-        <version>${swagger2markup.version}</version>
-        <dependencies>
-          <dependency>
-            <groupId>io.github.swagger2markup</groupId>
-            <artifactId>swagger2markup-import-files-ext</artifactId>
-            <version>${swagger2markup.version}</version>
-          </dependency>
-          <dependency>
-            <groupId>io.github.swagger2markup</groupId>
-            <artifactId>swagger2markup-spring-restdocs-ext</artifactId>
-            <version>${swagger2markup.version}</version>
-          </dependency>
-        </dependencies>
-        <configuration>
-          <swaggerInput>${swagger.input}</swaggerInput>
-          <outputDir>${generated.asciidoc.directory}</outputDir>
-          <config>
-            <swagger2markup.markupLanguage>ASCIIDOC</swagger2markup.markupLanguage>
-            <swagger2markup.pathsGroupedBy>TAGS</swagger2markup.pathsGroupedBy>
+        <swagger2markup.version>1.2.0</swagger2markup.version>
+        <asciidoctor.input.directory>${project.basedir}/src/docs/asciidoc</asciidoctor.input.directory>
+        <swagger.output.dir>${project.basedir}/src/docs/swagger</swagger.output.dir>
+        <swagger.snippetOutput.dir>${project.build.directory}/asciidoc/snippets
+        </swagger.snippetOutput.dir>
+        <generated.asciidoc.directory>${project.build.directory}/asciidoc/md
+        </generated.asciidoc.directory>
+        <asciidoctor.html.output.directory>${project.build.directory}/asciidoc/html
+        </asciidoctor.html.output.directory>
+        <asciidoctor.pdf.output.directory>${project.build.directory}/asciidoc/pdf
+        </asciidoctor.pdf.output.directory>
 
-            <swagger2markup.extensions.dynamicOverview.contentPath>
-              ${project.basedir}/src/docs/asciidoc/extensions/overview
-            </swagger2markup.extensions.dynamicOverview.contentPath>
-            <swagger2markup.extensions.dynamicDefinitions.contentPath>
-              ${project.basedir}/src/docs/asciidoc/extensions/definitions
-            </swagger2markup.extensions.dynamicDefinitions.contentPath>
-            <swagger2markup.extensions.dynamicPaths.contentPath>
-              ${project.basedir}/src/docs/asciidoc/extensions/paths
-            </swagger2markup.extensions.dynamicPaths.contentPath>
-            <swagger2markup.extensions.dynamicSecurity.contentPath>
-              ${project.basedir}src/docs/asciidoc/extensions/security/
-            </swagger2markup.extensions.dynamicSecurity.contentPath>
+        <swagger.input>${swagger.output.dir}/swagger.json</swagger.input>
+        <jackson.version>2.10.0</jackson.version>
+        <jackson.module.scala.version>2.9.9</jackson.module.scala.version>
+        <snakeyaml.version>1.19</snakeyaml.version>
+        <docker.image.prefix>tinawenqiao</docker.image.prefix>
+    </properties>
+    <pluginRepositories>
+        <pluginRepository>
+            <id>jcenter-snapshots</id>
+            <name>jcenter</name>
+            <url>http://oss.jfrog.org/artifactory/oss-snapshot-local/</url>
+        </pluginRepository>
+        <pluginRepository>
+            <id>jcenter-releases</id>
+            <name>jcenter</name>
+            <url>http://jcenter.bintray.com</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </pluginRepository>
+    </pluginRepositories>
 
-            <swagger2markup.extensions.springRestDocs.snippetBaseUri>${swagger.snippetOutput.dir}
-            </swagger2markup.extensions.springRestDocs.snippetBaseUri>
-            <swagger2markup.extensions.springRestDocs.defaultSnippets>true
-            </swagger2markup.extensions.springRestDocs.defaultSnippets>
-          </config>
-        </configuration>
-        <executions>
-          <execution>
-            <phase>test</phase>
-            <goals>
-              <goal>convertSwagger2markup</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
+    <repositories>
+        <repository>
+            <id>jcentral</id>
+            <name>bintray</name>
+            <url>http://jcenter.bintray.com</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+        <repository>
+            <id>jcenter-snapshots</id>
+            <name>jcenter</name>
+            <url>http://oss.jfrog.org/artifactory/oss-snapshot-local/</url>
+        </repository>
+        <repository>
+            <id>Spring</id>
+            <name>Spring-milestone</name>
+            <url>http://repo.spring.io/milestone/</url>
+        </repository>
+        <repository>
+            <id>confluent</id>
+            <url>http://packages.confluent.io/maven/</url>
+        </repository>
+    </repositories>
 
-      <!-- Run the generated asciidoc through Asciidoctor to generate
-           other documentation types, such as PDFs or HTML5 -->
-      <plugin>
-        <groupId>org.asciidoctor</groupId>
-        <artifactId>asciidoctor-maven-plugin</artifactId>
-        <version>1.5.3</version>
-        <!-- Include Asciidoctor PDF for pdf generation -->
-        <dependencies>
-          <dependency>
-            <groupId>org.asciidoctor</groupId>
-            <artifactId>asciidoctorj-pdf</artifactId>
-            <version>1.5.0-alpha.10.1</version>
-          </dependency>
-          <dependency>
-            <groupId>org.jruby</groupId>
-            <artifactId>jruby-complete</artifactId>
-            <version>1.7.21</version>
-          </dependency>
-        </dependencies>
-        <!-- Configure generic document generation settings -->
-        <configuration>
-          <sourceDirectory>${asciidoctor.input.directory}</sourceDirectory>
-          <sourceDocumentName>index.adoc</sourceDocumentName>
-          <attributes>
-            <doctype>book</doctype>
-            <toc>left</toc>
-            <toclevels>3</toclevels>
-            <numbered></numbered>
-            <hardbreaks></hardbreaks>
-            <sectlinks></sectlinks>
-            <sectanchors></sectanchors>
-            <generated>${generated.asciidoc.directory}</generated>
-          </attributes>
-        </configuration>
-        <!-- Since each execution can only handle one backend, run
-             separate executions for each desired output type -->
-        <executions>
-          <execution>
-            <id>output-html</id>
-            <phase>test</phase>
-            <goals>
-              <goal>process-asciidoc</goal>
-            </goals>
-            <configuration>
-              <backend>html5</backend>
-              <outputDirectory>${asciidoctor.html.output.directory}</outputDirectory>
-            </configuration>
-          </execution>
+    <dependencies>
+        <!--For validation-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
 
-          <execution>
-            <id>output-pdf</id>
-            <phase>test</phase>
-            <goals>
-              <goal>process-asciidoc</goal>
-            </goals>
-            <configuration>
-              <backend>pdf</backend>
-              <outputDirectory>${asciidoctor.pdf.output.directory}</outputDirectory>
-            </configuration>
-          </execution>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
 
-        </executions>
-      </plugin>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-logging</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-log4j2</artifactId>
+        </dependency>
 
-      <!-- copy the generated documents -->
-      <plugin>
-        <artifactId>maven-resources-plugin</artifactId>
-        <version>2.7</version>
-        <executions>
-          <execution>
-            <id>copy-resources</id>
-            <phase>prepare-package</phase>
-            <goals>
-              <goal>copy-resources</goal>
-            </goals>
-            <configuration>
-              <outputDirectory>${project.basedir}/docs</outputDirectory>
-              <resources>
-                <resource>
-                  <directory>${asciidoctor.html.output.directory}</directory>
-                </resource>
-                <resource>
-                  <directory>${asciidoctor.pdf.output.directory}</directory>
-                </resource>
-                <resource>
-                  <directory>${generated.asciidoc.directory}</directory>
-                </resource>
-              </resources>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-devtools</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-aop</artifactId>
+        </dependency>
+
+        <!--<dependency>-->
+        <!--<groupId>org.springframework.boot</groupId>-->
+        <!--<artifactId>spring-boot-starter-actuator</artifactId>-->
+        <!--</dependency>-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <!--<scope>test</scope>-->
+        </dependency>
+
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.18.8</version>
+            <optional>true</optional>
+        </dependency>
 
 
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-jar-plugin</artifactId>
-        <version>3.1.0</version>
-        <configuration>
-          <!-- 项目启动jar包排除目录 -->
-          <excludes>
-            <exclude>bin/**</exclude>
-            <exclude>config/**</exclude>
-            <exclude>logs/**</exclude>
-            <exclude>*.yml</exclude>
-          </excludes>
-          <archive>
-            <manifestEntries>
-              <Class-Path>../config/</Class-Path>
-            </manifestEntries>
-          </archive>
-        </configuration>
-      </plugin>
 
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-assembly-plugin</artifactId>
-        <version>2.4.1</version>
-        <configuration>
-          <descriptor>src/main/resources/kafka-zk-springboot-distribution.xml
-          </descriptor>
-          <finalName>kafka-zk-api-${project.version}-dist</finalName>
-          <appendAssemblyId>false</appendAssemblyId>
-        </configuration>
-        <executions>
-          <execution>
-            <phase>package</phase>
-            <goals>
-              <goal>single</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
+        <!-- https://mvnrepository.com/artifact/com.101tec/zkclient -->
+        <dependency>
+            <groupId>com.101tec</groupId>
+            <artifactId>zkclient</artifactId>
+            <version>0.10</version>
+        </dependency>
 
-      <plugin>
-        <groupId>org.apache.avro</groupId>
-        <artifactId>avro-maven-plugin</artifactId>
-        <version>1.8.2</version>
-        <executions>
-          <execution>
-            <phase>generate-sources</phase>
-            <goals>
-              <goal>schema</goal>
-            </goals>
-            <configuration>
-              <sourceDirectory>${project.basedir}/src/test/java/org/gnuhpc/bigdata/service/avro/</sourceDirectory>
-              <outputDirectory>${project.basedir}/src/test/java/</outputDirectory>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
+        <dependency>
+            <groupId>org.apache.curator</groupId>
+            <artifactId>curator-client</artifactId>
+            <version>2.11.0</version>
+        </dependency>
 
-      <!-- Docker maven plugin -->
-      <plugin>
-        <groupId>com.spotify</groupId>
-        <artifactId>docker-maven-plugin</artifactId>
-        <version>1.0.0</version>
-        <executions>
-          <execution>
-            <id>build-image</id>
-            <phase>package</phase>
-            <goals>
-              <goal>build</goal>
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <imageName>${docker.image.prefix}/${project.artifactId}</imageName>
-          <newName>${docker.image.prefix}/${project.artifactId}</newName>
-          <baseImage>openjdk:8-jdk-alpine</baseImage>
-          <!--Dockerfile path-->
-          <dockerDirectory>${project.basedir}/src/main/docker</dockerDirectory>
-          <resources>
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+            <version>1.23</version>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/io.springfox/springfox-swagger2 -->
+        <dependency>
+            <groupId>io.springfox</groupId>
+            <artifactId>springfox-swagger2</artifactId>
+            <version>2.7.0</version>
+        </dependency>
+        <dependency>
+            <groupId>io.swagger</groupId>
+            <artifactId>swagger-annotations</artifactId>
+            <version>1.5.16</version>
+        </dependency>
+        <dependency>
+            <groupId>io.springfox</groupId>
+            <artifactId>springfox-swagger-ui</artifactId>
+            <version>2.7.0</version>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/org.springframework.kafka/spring-kafka -->
+        <dependency>
+            <groupId>org.springframework.kafka</groupId>
+            <artifactId>spring-kafka</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.kafka</groupId>
+                    <artifactId>kafka-clients</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-clients</artifactId>
+            <version>1.1.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka_2.11</artifactId>
+            <version>1.1.1</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.101tec</groupId>
+                    <artifactId>zkclient</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/joda-time/joda-time -->
+        <dependency>
+            <groupId>joda-time</groupId>
+            <artifactId>joda-time</artifactId>
+            <version>2.9.9</version>
+        </dependency>
+        <!--
+        <dependency>
+          <groupId>com.google.code.gson</groupId>
+          <artifactId>gson</artifactId>
+          <version>2.6.2</version>
+        </dependency>
+        -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-joda</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+        <!-- convert Java 8 date and time classes to JSON representation using the @JsonFormat annotation-->
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-yaml</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.module</groupId>
+            <artifactId>jackson-module-scala_2.11</artifactId>
+            <version>${jackson.module.scala.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.module</groupId>
+            <artifactId>jackson-module-parameter-names</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-collections4</artifactId>
+            <version>4.0</version>
+        </dependency>
+
+
+        <dependency>
+            <groupId>org.springframework.restdocs</groupId>
+            <artifactId>spring-restdocs-mockmvc</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>2.5</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.5</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.curator</groupId>
+            <artifactId>curator-framework</artifactId>
+            <version>2.11.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.avro</groupId>
+            <artifactId>avro</artifactId>
+            <version>1.8.2</version>
+        </dependency>
+
+        <!-- Confluent schema registry lib  -->
+        <dependency>
+            <groupId>io.confluent</groupId>
+            <artifactId>kafka-avro-serializer</artifactId>
+            <version>4.1.1</version>
+        </dependency>
+        <dependency>
+            <groupId>io.confluent</groupId>
+            <artifactId>kafka-schema-registry-client</artifactId>
+            <version>4.1.1</version>
+        </dependency>
+        <dependency>
+            <groupId>io.confluent</groupId>
+            <artifactId>common-utils</artifactId>
+            <version>4.1.1</version>
+        </dependency>
+        <dependency>
+            <groupId>io.confluent</groupId>
+            <artifactId>common-config</artifactId>
+            <version>4.1.1</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <resources>
             <resource>
-              <targetPath>/</targetPath>
-              <directory>${project.build.directory}</directory>
-              <include>${project.build.finalName}.jar</include>
-              <include>${project.build.finalName}-executable.jar</include>
-              <include>classes/config/*</include>
-              <include>classes/jmxtemplates/*</include>
-              <include>classes/security.yml</include>
+                <directory>src/main/resources</directory>
+                <includes>
+                    <include>db/*.sql</include>
+                    <include>mapper/**/*.xml</include>
+                    <include>static/**</include>
+                    <include>templates/**</include>
+                    <!-- 如果各个环境的jks都是一样，则可以直接打入到启动jar包中 -->
+                    <!--<include>test.jks</include>-->
+                </includes>
             </resource>
-          </resources>
-          <!--Push to docker hub-->
-          <serverId>docker-hub</serverId>
-          <registryUrl>https://index.docker.io/v1/</registryUrl>
-        </configuration>
-      </plugin>
-      <!-- Docker maven plugin -->
-    </plugins>
-  </build>
+
+            <!-- 过滤配置文件到config目录 -->
+            <resource>
+                <directory>src/main/resources</directory>
+                <targetPath>config</targetPath>
+                <filtering>true</filtering>
+                <includes>
+                    <include>application.yml</include>
+                    <include>application-*.yml</include>
+                    <include>log4j2.properties</include>
+                    <!-- 如果各个环境的jks不一样，则配置到外部config目录中
+                        java代码中通过ClassPathFileUtil.getFile()获取 -->
+                    <include>test.jks</include>
+                    <include>test.txt</include>
+                </includes>
+            </resource>
+
+            <resource>
+                <directory>src/main/resources</directory>
+                <targetPath>${project.build.directory}/classes</targetPath>
+                <includes>
+                    <include>security.yml</include>
+                    <include>jmxtemplates/*</include>
+                </includes>
+            </resource>
+
+            <!-- 过滤脚本文件到bin目录 -->
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+                <targetPath>bin</targetPath>
+                <includes>
+                    <include>*.bat</include>
+                    <include>*.sh</include>
+                </includes>
+            </resource>
+        </resources>
+
+        <plugins>
+            <plugin>
+                <groupId>net.alchim31.maven</groupId>
+                <artifactId>scala-maven-plugin</artifactId>
+                <version>3.3.1</version>
+                <executions>
+                    <execution>
+                        <id>scala-compile</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>add-source</goal>
+                            <goal>compile</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>scala-test-compile</id>
+                        <phase>process-test-resources</phase>
+                        <goals>
+                            <goal>testCompile</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <fork>true</fork>
+                    <mainClass>org.gnuhpc.bigdata.KafkaRestSpringbootApplication</mainClass>
+                    <classifier>executable</classifier>
+                    <layout>JAR</layout>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <systemPropertyVariables>
+                        <io.springfox.staticdocs.outputDir>${swagger.output.dir}
+                        </io.springfox.staticdocs.outputDir>
+                        <io.springfox.staticdocs.snippetsOutputDir>${swagger.snippetOutput.dir}
+                        </io.springfox.staticdocs.snippetsOutputDir>
+                    </systemPropertyVariables>
+                </configuration>
+            </plugin>
+
+            <!-- First, use the swagger2markup plugin to generate asciidoc -->
+            <plugin>
+                <groupId>io.github.swagger2markup</groupId>
+                <artifactId>swagger2markup-maven-plugin</artifactId>
+                <version>${swagger2markup.version}</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>io.github.swagger2markup</groupId>
+                        <artifactId>swagger2markup-import-files-ext</artifactId>
+                        <version>${swagger2markup.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.github.swagger2markup</groupId>
+                        <artifactId>swagger2markup-spring-restdocs-ext</artifactId>
+                        <version>${swagger2markup.version}</version>
+                    </dependency>
+                </dependencies>
+                <configuration>
+                    <swaggerInput>${swagger.input}</swaggerInput>
+                    <outputDir>${generated.asciidoc.directory}</outputDir>
+                    <config>
+                        <swagger2markup.markupLanguage>ASCIIDOC</swagger2markup.markupLanguage>
+                        <swagger2markup.pathsGroupedBy>TAGS</swagger2markup.pathsGroupedBy>
+
+                        <swagger2markup.extensions.dynamicOverview.contentPath>
+                            ${project.basedir}/src/docs/asciidoc/extensions/overview
+                        </swagger2markup.extensions.dynamicOverview.contentPath>
+                        <swagger2markup.extensions.dynamicDefinitions.contentPath>
+                            ${project.basedir}/src/docs/asciidoc/extensions/definitions
+                        </swagger2markup.extensions.dynamicDefinitions.contentPath>
+                        <swagger2markup.extensions.dynamicPaths.contentPath>
+                            ${project.basedir}/src/docs/asciidoc/extensions/paths
+                        </swagger2markup.extensions.dynamicPaths.contentPath>
+                        <swagger2markup.extensions.dynamicSecurity.contentPath>
+                            ${project.basedir}src/docs/asciidoc/extensions/security/
+                        </swagger2markup.extensions.dynamicSecurity.contentPath>
+
+                        <swagger2markup.extensions.springRestDocs.snippetBaseUri>${swagger.snippetOutput.dir}
+                        </swagger2markup.extensions.springRestDocs.snippetBaseUri>
+                        <swagger2markup.extensions.springRestDocs.defaultSnippets>true
+                        </swagger2markup.extensions.springRestDocs.defaultSnippets>
+                    </config>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>convertSwagger2markup</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Run the generated asciidoc through Asciidoctor to generate
+                 other documentation types, such as PDFs or HTML5 -->
+            <plugin>
+                <groupId>org.asciidoctor</groupId>
+                <artifactId>asciidoctor-maven-plugin</artifactId>
+                <version>1.5.3</version>
+                <!-- Include Asciidoctor PDF for pdf generation -->
+                <dependencies>
+                    <dependency>
+                        <groupId>org.asciidoctor</groupId>
+                        <artifactId>asciidoctorj-pdf</artifactId>
+                        <version>1.5.0-alpha.10.1</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.jruby</groupId>
+                        <artifactId>jruby-complete</artifactId>
+                        <version>1.7.21</version>
+                    </dependency>
+                </dependencies>
+                <!-- Configure generic document generation settings -->
+                <configuration>
+                    <sourceDirectory>${asciidoctor.input.directory}</sourceDirectory>
+                    <sourceDocumentName>index.adoc</sourceDocumentName>
+                    <attributes>
+                        <doctype>book</doctype>
+                        <toc>left</toc>
+                        <toclevels>3</toclevels>
+                        <numbered></numbered>
+                        <hardbreaks></hardbreaks>
+                        <sectlinks></sectlinks>
+                        <sectanchors></sectanchors>
+                        <generated>${generated.asciidoc.directory}</generated>
+                    </attributes>
+                </configuration>
+                <!-- Since each execution can only handle one backend, run
+                     separate executions for each desired output type -->
+                <executions>
+                    <execution>
+                        <id>output-html</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>process-asciidoc</goal>
+                        </goals>
+                        <configuration>
+                            <backend>html5</backend>
+                            <outputDirectory>${asciidoctor.html.output.directory}</outputDirectory>
+                        </configuration>
+                    </execution>
+
+                    <execution>
+                        <id>output-pdf</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>process-asciidoc</goal>
+                        </goals>
+                        <configuration>
+                            <backend>pdf</backend>
+                            <outputDirectory>${asciidoctor.pdf.output.directory}</outputDirectory>
+                        </configuration>
+                    </execution>
+
+                </executions>
+            </plugin>
+
+            <!-- copy the generated documents -->
+            <plugin>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>2.7</version>
+                <executions>
+                    <execution>
+                        <id>copy-resources</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.basedir}/docs</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${asciidoctor.html.output.directory}</directory>
+                                </resource>
+                                <resource>
+                                    <directory>${asciidoctor.pdf.output.directory}</directory>
+                                </resource>
+                                <resource>
+                                    <directory>${generated.asciidoc.directory}</directory>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.1.0</version>
+                <configuration>
+                    <!-- 项目启动jar包排除目录 -->
+                    <excludes>
+                        <exclude>bin/**</exclude>
+                        <exclude>config/**</exclude>
+                        <exclude>logs/**</exclude>
+                        <exclude>*.yml</exclude>
+                    </excludes>
+                    <archive>
+                        <manifestEntries>
+                            <Class-Path>../config/</Class-Path>
+                        </manifestEntries>
+                    </archive>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>2.4.1</version>
+                <configuration>
+                    <descriptor>src/main/resources/kafka-zk-springboot-distribution.xml
+                    </descriptor>
+                    <finalName>kafka-zk-api-${project.version}-dist</finalName>
+                    <appendAssemblyId>false</appendAssemblyId>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.avro</groupId>
+                <artifactId>avro-maven-plugin</artifactId>
+                <version>1.8.2</version>
+                <executions>
+                    <execution>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>schema</goal>
+                        </goals>
+                        <configuration>
+                            <sourceDirectory>${project.basedir}/src/test/java/org/gnuhpc/bigdata/service/avro/</sourceDirectory>
+                            <outputDirectory>${project.basedir}/src/test/java/</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Docker maven plugin -->
+            <plugin>
+                <groupId>com.spotify</groupId>
+                <artifactId>docker-maven-plugin</artifactId>
+                <version>1.0.0</version>
+                <executions>
+                    <execution>
+                        <id>build-image</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>build</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <imageName>${docker.image.prefix}/${project.artifactId}</imageName>
+                    <newName>${docker.image.prefix}/${project.artifactId}</newName>
+                    <baseImage>openjdk:8-jdk-alpine</baseImage>
+                    <!--Dockerfile path-->
+                    <dockerDirectory>${project.basedir}/src/main/docker</dockerDirectory>
+                    <resources>
+                        <resource>
+                            <targetPath>/</targetPath>
+                            <directory>${project.build.directory}</directory>
+                            <include>${project.build.finalName}.jar</include>
+                            <include>${project.build.finalName}-executable.jar</include>
+                            <include>classes/config/*</include>
+                            <include>classes/jmxtemplates/*</include>
+                            <include>classes/security.yml</include>
+                        </resource>
+                    </resources>
+                    <!--Push to docker hub-->
+                    <serverId>docker-hub</serverId>
+                    <registryUrl>https://index.docker.io/v1/</registryUrl>
+                </configuration>
+            </plugin>
+            <!-- Docker maven plugin -->
+        </plugins>
+    </build>
 </project>
 

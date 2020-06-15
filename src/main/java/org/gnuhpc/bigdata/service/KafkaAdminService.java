@@ -27,6 +27,8 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -196,6 +198,8 @@ public class KafkaAdminService {
   private AdminClient oldAdminClient = null;
 
   private scala.Option<String> none = scala.Option.apply(null);
+
+  Lock lock = new ReentrantLock();
 
   @Lazy
   @Autowired
@@ -970,13 +974,23 @@ public class KafkaAdminService {
 
   public Set<String> listAllNewConsumerGroups() {
     AdminClient adminClient = kafkaUtils.createAdminClient();
+    Set activeGroups = null;
+
+    lock.lock();
     log.info("Calling the listAllConsumerGroupsFlattened");
-    // Send LIST_GROUPS Request to kafka
-    Set activeGroups =
-        CollectionConvertor.seqConvertJavaList(adminClient.listAllConsumerGroupsFlattened())
-            .stream()
-            .map(GroupOverview::groupId)
-            .collect(toSet());
+    try {
+      // Send LIST_GROUPS Request to kafka
+      activeGroups =
+              CollectionConvertor.seqConvertJavaList(adminClient.listAllConsumerGroupsFlattened())
+                      .stream()
+                      .map(GroupOverview::groupId)
+                      .collect(toSet());
+
+    }catch (Exception e){
+      log.error(e.getMessage());
+    }finally {
+      lock.unlock();
+    }
 
     log.info("Finish getting new consumers");
     adminClient.close();

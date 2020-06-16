@@ -45,6 +45,8 @@ public class KafkaUtils {
 
   private KafkaProducer producer;
 
+  private AdminClient adminClient = null;
+
   public static final String DEFAULTCP = "kafka-rest-consumergroup";
   public static final Map<String, Class<Object>> DESERIALIZER_TYPE_MAP = new HashMap() {
     {
@@ -215,7 +217,13 @@ public class KafkaUtils {
 
   public AdminClient createAdminClient() {
     Properties props = initProps();
-    return AdminClient.create(props);
+
+    if(adminClient == null){
+      synchronized (AdminClient.class){
+        adminClient = AdminClient.create(props);
+      }
+    }
+    return adminClient;
   }
 
   private Properties initProps() {

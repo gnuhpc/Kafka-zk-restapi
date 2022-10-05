@@ -38,7 +38,7 @@
         </asciidoctor.pdf.output.directory>
 
         <swagger.input>${swagger.output.dir}/swagger.json</swagger.input>
-        <jackson.version>2.10.0</jackson.version>
+        <jackson.version>2.12.6.1</jackson.version>
         <jackson.module.scala.version>2.9.9</jackson.module.scala.version>
         <snakeyaml.version>1.19</snakeyaml.version>
         <docker.image.prefix>tinawenqiao</docker.image.prefix>
